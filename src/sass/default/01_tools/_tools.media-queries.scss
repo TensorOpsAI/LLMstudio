@@ -1,0 +1,124 @@
+// =========================================================================
+// Media query mixins.
+// =========================================================================
+
+/**
+ * Media queries targeting a device and smaller
+ **/
+
+@mixin screen-mobile-and-smaller {
+  @media only screen and (max-width: em($mobile-end)) {
+    @content;
+  }
+}
+
+@mixin screen-mobile-plus-and-smaller {
+  @media only screen and (max-width: em($mobile-plus-end)) {
+    @content;
+  }
+}
+
+@mixin screen-tablet-portrait-and-smaller {
+  @media only screen and (max-width: em($tablet-portrait-end)) {
+    @content;
+  }
+}
+
+@mixin screen-tablet-landscape-and-smaller {
+  @media only screen and (max-width: em($tablet-landscape-end)) {
+    @content;
+  }
+}
+
+@mixin screen-laptop-and-smaller {
+  @media only screen and (max-width: em($laptop-end)) {
+    @content;
+  }
+}
+
+/**
+ * Media queries targeting a device and bigger
+ **/
+
+@mixin screen-mobile-plus-and-bigger {
+  @media only screen and (min-width: em($mobile-plus-start)) {
+    @content;
+  }
+}
+
+@mixin screen-tablet-portrait-and-bigger {
+  @media only screen and (min-width: em($tablet-portrait-start)) {
+    @content;
+  }
+}
+
+@mixin screen-tablet-landscape-and-bigger {
+  @media only screen and (min-width: em($tablet-landscape-start)) {
+    @content;
+  }
+}
+
+@mixin screen-laptop-and-bigger {
+  @media only screen and (min-width: em($laptop-start)) {
+    @content;
+  }
+}
+
+@mixin screen-desktop-and-bigger {
+  @media only screen and (min-width: em($desktop-start)) {
+    @content;
+  }
+}
+
+/**
+ * Media queries targeting a device and bigger
+ * - - screen-mobile-only? > use screen-mobile-and-smaller
+ * - - screen-desktop-only? > use screen-desktop-and-bigger
+ **/
+
+@mixin screen-mobile-plus-only {
+  @media only screen and (min-width: em($mobile-plus-start)) and (max-width: em($mobile-plus-end)) {
+    @content;
+  }
+}
+
+@mixin screen-tablet-portrait-only {
+  @media only screen and (min-width: em($tablet-portrait-start)) and (max-width: em($tablet-portrait-end)) {
+    @content;
+  }
+}
+
+@mixin screen-tablet-landscape-only {
+  @media only screen and (min-width: em($tablet-landscape-start)) and (max-width: em($tablet-landscape-end)) {
+    @content;
+  }
+}
+
+// Both tablet portrait and landscape
+@mixin screen-tablet-only {
+  @media only screen and (min-width: em($tablet-portrait-start)) and (max-width: em($tablet-landscape-end)) {
+    @content;
+  }
+}
+
+@mixin screen-laptop-only {
+  @media only screen and (min-width: em($laptop-start)) and (max-width: em($laptop-end)) {
+    @content;
+  }
+}
+
+/**
+ * Custom Media queries
+ **/
+
+@mixin screen-min-width($size) {
+  @media only screen and (min-width: em($size)) {
+    @content;
+  }
+}
+
+@mixin screen-max-width($size) {
+  @media only screen and (max-width: em($size)) {
+    @content;
+  }
+}

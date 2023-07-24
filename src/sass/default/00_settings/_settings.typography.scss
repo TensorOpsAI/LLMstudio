@@ -1,0 +1,65 @@
+/*----------------------------------*\
+  #TYPOGRAPHY
+\*----------------------------------*/
+
+// Font stacks
+
+$font-stack-primary: "Satoshi", "Open Sans", "Helvetica Neue", Helvetica, Arial,
+  sans-serif;
+$font-stack-secondary: "VioletSans", "Open Sans", "Helvetica Neue", Helvetica,
+  Arial, sans-serif;
+
+// Font sizes
+
+$font-size-root: 10px; // The font size set on the root html element.
+
+$font-size-body: 1.6rem; // Regular font size
+
+$font-size-h1: 3.2rem;
+
+$font-size-h2: 2.4rem;
+
+$font-size-h3: 1.9rem;
+
+$font-size-h4: 1.6rem;
+
+$font-size-h5: 1.3rem;
+
+$font-size-h6: 1.1rem;
+
+// Font line heights
+// Divide the the given line height by the font size to give an unitless line height
+// @example {design line height} / {font size} = {unitless lineheight}
+//
+// NOTE: Never use px as line-height value!!!
+
+$font-line-height-body: 1.65; // {design-line-height} / strip-unit($font-size-body);
+
+$font-line-height-h1: 1.5; // {design-line-height} / strip-unit($font-size-h1);
+
+$font-line-height-h2: 1.5; // {design-line-height} / strip-unit($font-size-h2);
+
+$font-line-height-h3: 1.5; // {design-line-height} / strip-unit($font-size-h3);
+
+$font-line-height-h4: 1.5; // {design-line-height} / strip-unit($font-size-h4);
+
+$font-line-height-h5: 1.5; // {design-line-height} / strip-unit($font-size-h5);
+
+$font-line-height-h6: 1.5; // {design-line-height} / strip-unit($font-size-h6);
+
+// Font weights
+$font-weight-ultralight: 100;
+
+$font-weight-light: 200;
+
+$font-weight-book: 300;
+
+$font-weight-regular: 400;
+
+$font-weight-medium: 500;
+
+$font-weight-bold: 600;
+
+$font-weight-extrabold: 700;
+
+$font-weight-black: 800;

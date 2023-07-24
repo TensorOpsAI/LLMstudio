@@ -1,0 +1,83 @@
+/*----------------------------------*\
+  #MEDIA
+\*----------------------------------*/
+
+//    Place your media queries here.
+//
+//    example usage:
+//    -------------
+//
+//    @media #{ $ screen-small-and-down } {
+//
+//        .some-class {
+//
+//            font-size: 1.4rem;
+//
+//        }
+//
+//    }
+
+// Breakpoints, used for the grid.
+
+$breakpoint-mobile: 320px;
+$breakpoint-mobile-plus: 480px;
+$breakpoint-tablet-portrait: 768px;
+$breakpoint-tablet-landscape: 1024px;
+$breakpoint-laptop: 1240px;
+$breakpoint-desktop: 1600px;
+
+// Device named breakpoints, used for the mixins.
+
+$mobile-start: $breakpoint-mobile;
+$mobile-end: $breakpoint-mobile-plus - 0.5;
+
+$mobile-plus-start: $breakpoint-mobile-plus;
+$mobile-plus-end: $breakpoint-tablet-portrait - 0.5;
+
+$tablet-portrait-start: $breakpoint-tablet-portrait;
+$tablet-portrait-end: $breakpoint-tablet-landscape - 0.5;
+
+$tablet-landscape-start: $breakpoint-tablet-landscape;
+$tablet-landscape-end: $breakpoint-laptop - 0.5;
+
+$laptop-start: $breakpoint-laptop;
+$laptop-end: $breakpoint-desktop - 0.5;
+
+$desktop-start: $breakpoint-desktop;
+
+// Media queries
+
+$screen-mobile-only: 'only screen and ( min-width : #{em($mobile-start)} ) and ( max-width : #{em($mobile-end)} )';
+$screen-mobile-and-smaller: 'only screen and ( max-width : #{em($mobile-end)} )';
+$screen-mobile-and-bigger: 'only screen and ( min-width : #{em($mobile-start)} )';
+
+$screen-mobile-plus-only: 'only screen and ( min-width : #{em($mobile-plus-start)} ) and ( max-width : #{em($mobile-plus-end)} )';
+$screen-mobile-plus-and-smaller: 'only screen and ( max-width : #{em($mobile-plus-end)} )';
+$screen-mobile-plus-and-bigger: 'only screen and ( min-width : #{em($mobile-plus-start)} )';
+
+$screen-tablet-portrait-only: 'only screen and ( min-width : #{em($tablet-portrait-start)} ) and ( max-width : #{em($tablet-portrait-end)} )';
+$screen-tablet-portrait-and-smaller: 'only screen and ( max-width : #{em($tablet-portrait-end)} )';
+$screen-tablet-portrait-and-bigger: 'only screen and ( min-width : #{em($tablet-portrait-start)} )';
+
+$screen-tablet-landscape-only: 'only screen and ( min-width : #{em($tablet-landscape-start)} ) and ( max-width : #{em($tablet-landscape-end)} )';
+$screen-tablet-landscape-and-smaller: 'only screen and ( max-width : #{em($tablet-landscape-end)} )';
+$screen-tablet-landscape-and-bigger: 'only screen and ( min-width : #{em($tablet-landscape-start)} )';
+
+$screen-laptop-only: 'only screen and ( min-width : #{em($laptop-start)} ) and ( max-width : #{em($laptop-end)} )';
+$screen-laptop-and-bigger: 'only screen and ( min-width : #{em($laptop-start)} )';
+
+$screen-desktop-and-bigger: 'only screen and ( min-width : #{em($desktop-start)} )';
+
+$screen-portrait: 'screen and (orientation: portrait)';
+$screen-landscape: 'screen and (orientation: landscape)';
+
+// Grid breakpoint names mapped to @media values, used for responsive utilities.
+
+$breakpoint-list: (
+  'xxlg': $screen-desktop-and-bigger,
+  'xlg': $screen-laptop-only,
+  'lg': $screen-tablet-landscape-only,
+  'md': $screen-tablet-portrait-only,
+  'sm': $screen-mobile-plus-only,
+  'xs': $screen-mobile-and-smaller,
+);

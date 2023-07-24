@@ -1,0 +1,92 @@
+.header--container {
+  padding: $global-spacing-sm $global-spacing-sm 0 $global-spacing-sm;
+  display: flex;
+  position: relative;
+
+  .header--left {
+    display: inline-flex;
+    align-items: center;
+
+    .icon {
+      width: 65px;
+    }
+
+    .title {
+      margin: 0 $global-spacing-xs/2 0 $global-spacing-sm;
+      font-size: 2em;
+      transform-origin: center;
+      display: inline-grid;
+      align-items: center;
+      text-align: center;
+    }
+
+    .beta {
+      background-color: $color-blue;
+      padding: 1px 14px;
+      margin-top: $global-spacing-xs/4;
+      border-radius: 100px;
+    }
+  }
+
+  .header--center {
+    display: inline-flex;
+    align-items: center;
+    gap: 20px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      padding: $global-spacing-xs * 1.5 $global-spacing-xs * 2;
+      gap: $global-spacing-xs;
+      border-radius: 100px;
+
+      img {
+        width: 20px;
+        height: 20px;
+      }
+
+      &.selected {
+        background-color: $color-dark;
+      }
+
+      &:hover {
+        background-color: $color-dark;
+      }
+
+      span {
+        font-weight: 700;
+      }
+    }
+  }
+
+  .header--right {
+    display: inline-flex;
+    align-items: center;
+    margin-left: auto;
+    gap: $global-spacing-xs;
+
+    .icon {
+      width: 65px;
+      border-radius: 100px;
+    }
+
+    .user {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+
+      .name {
+        font-size: 1.5em;
+        line-height: 1;
+      }
+      .email {
+        font-size: 0.9em;
+        font-weight: 300;
+        line-height: 1;
+      }
+    }
+  }
+}

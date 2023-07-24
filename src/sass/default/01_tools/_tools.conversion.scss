@@ -1,0 +1,23 @@
+//
+//    Conversion functions:
+//
+//    @function 	strip-unit
+//    @see: https://css-tricks.com/snippets/sass/strip-unit-function/
+//    @param number               - any value to strip the unit off.
+//
+//    e.g.:   strip-unit( 1em )   // outputs 1.
+//
+
+@function strip-unit($number) {
+  @if type-of($number) == 'number' and not unitless($number) {
+    @return $number / ($number * 0 + 1);
+  }
+
+  @return $number;
+}
+
+// Px to em
+
+@function em($px, $context: 16px) {
+  @return ($px / $context) * 1em;
+}

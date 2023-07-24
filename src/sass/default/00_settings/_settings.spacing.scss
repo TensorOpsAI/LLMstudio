@@ -1,0 +1,52 @@
+/*----------------------------------*\
+  #SPACING
+\*----------------------------------*/
+
+//
+//    Set the spacing for each viewport
+//
+//    @see: utiltiies/utilties.spacing
+//
+//    @example: .u-margin-top--xs
+//
+//
+
+$global-spacing: 12px;
+$global-spacing-xs: $global-spacing;
+$global-spacing-sm: $global-spacing * 2;
+$global-spacing-md: $global-spacing * 3;
+$global-spacing-lg: $global-spacing * 4;
+$global-spacing-xlg: $global-spacing * 5;
+
+$spacing-sizes: (
+  // Spacing modifier
+  // .u-margin-top--{ modifier }
+  "xlg":
+    (
+      // Breakpoint triggers
+      "xxlg": $global-spacing * 8,
+      "xlg": $global-spacing * 8,
+      "lg": $global-spacing * 4,
+      "md": $global-spacing * 3,
+      "sm": $global-spacing * 2,
+      "xs": $global-spacing * 2
+    ),
+  "lg": (
+    "xxlg": $global-spacing * 6,
+    "xlg": $global-spacing * 6,
+    "lg": $global-spacing * 4,
+    "md": $global-spacing * 2,
+    "sm": $global-spacing * 2,
+    "xs": $global-spacing * 2,
+  ),
+  "md": (
+    "xxlg": $global-spacing * 4,
+    "xlg": $global-spacing * 4,
+    "lg": $global-spacing * 4,
+    "md": $global-spacing * 2,
+    "sm": $global-spacing * 2,
+    "xs": $global-spacing * 2,
+  ),
+  "sm": $global-spacing * 2,
+  "xs": $global-spacing
+);

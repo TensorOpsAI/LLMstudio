@@ -1,0 +1,28 @@
+// stylelint-disable property-no-vendor-prefix, declaration-no-important
+
+html,
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-width: 320px;
+  min-height: 100%;
+}
+
+html {
+  font-family: $font-stack-primary;
+  font-size: $font-size-root;
+  color: $color-text;
+  background-color: $color-background-html;
+  min-height: 100%;
+
+  &.no--scroll {
+    overflow-y: hidden !important;
+  }
+}
+
+body {
+  @include fluid-type($font-size-body, $font-size-body * 0.875);
+  line-height: $font-line-height-body;
+  hyphens: auto;
+  word-break: normal;
+}

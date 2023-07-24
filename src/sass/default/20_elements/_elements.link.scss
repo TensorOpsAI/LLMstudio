@@ -1,0 +1,23 @@
+$link-transition-time: 200ms;
+$link-transition-ease: $ease-in-out-quad;
+
+// most basic link style
+@mixin link--base {
+  color: $color-primary;
+  cursor: pointer;
+  text-overflow: ellipsis;
+  transition: $link-transition-time $link-transition-ease;
+  transition-property: border, color, background-color;
+}
+
+a {
+  @include link--base;
+}
+
+.has--keyboard-focus {
+  a:focus {
+    position: relative;
+
+    @include focus-state-pulse;
+  }
+}

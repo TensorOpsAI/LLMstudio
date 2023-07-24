@@ -1,0 +1,45 @@
+// =========================================================================
+//
+//  PRECISE CONTROL OVER RESPONSIVE TYPOGRAPHY FOR SASS
+//  ---------------------------------------------------
+//  Indrek Paas @indrekpaas
+//  Edited by Adrian Klingen for rem support
+//
+// =========================================================================
+
+@mixin fluid-type(
+  $max-value,
+  $min-value,
+  $properties: font-size,
+  $max-vw: $breakpoint-laptop,
+  $min-vw: $breakpoint-mobile-plus
+) {
+  @each $property in $properties {
+    #{$property}: rem-to-px($min-value);
+  }
+
+  @media screen and (min-width: $min-vw) {
+    @each $property in $properties {
+      #{$property}: calc(
+        #{rem-to-px($min-value)} +
+          #{tenfold(strip-unit($max-value - $min-value))} *
+          (100vw - #{$min-vw}) /
+          #{strip-unit($max-vw - $min-vw)}
+      );
+    }
+  }
+
+  @media screen and (min-width: $max-vw) {
+    @each $property in $properties {
+      #{$property}: rem-to-px($max-value);
+    }
+  }
+}
+
+@function tenfold($size) {
+  @return (strip-unit($size) * 10);
+}
+
+@function rem-to-px($size) {
+  @return tenfold($size) + px;
+}

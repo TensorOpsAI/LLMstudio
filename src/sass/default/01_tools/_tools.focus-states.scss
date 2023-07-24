@@ -1,0 +1,72 @@
+//
+//    Adds a pseudo element that can be used as a focus state for any parent element
+//
+//    @param round      { boolean }             - square animation per default, with the option to be round
+//    @param size       { string }              - amount of pixels/percentage/rem value that the focus state overflows its parent
+//    @param color      { string }              - base color for the focus state
+//
+//    example usage:
+//    --------------
+//
+//    .foo {
+//      position: relative;
+//      @include focus-state-pulse(true, 20px, $color-foo)
+//    }
+//
+
+@mixin focus-state-pulse($round: false, $size: 15px, $color: $color-primary) {
+  &::before {
+    display: block;
+    width: calc(100% + #{$size});
+    height: calc(100% + #{$size});
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate3d(-50%, -50%, 0);
+    background-color: $color;
+    animation: focus-pulse 1500ms $ease-in-out-circ infinite;
+    z-index: -1;
+    content: "";
+
+    @if ($round) {
+      border-radius: 50%;
+    }
+  }
+
+  @keyframes focus-pulse {
+    0% {
+      opacity: 0;
+      transform: translate3d(-50%, -50%, 0) scale(0.85);
+    }
+
+    50% {
+      opacity: 0.15;
+      transform: translate3d(-50%, -50%, 0) scale(1);
+    }
+
+    100% {
+      opacity: 0;
+      transform: translate3d(-50%, -50%, 0) scale(0.85);
+    }
+  }
+}
+
+@mixin focus-state-input($height: 2px, $color: $color-primary) {
+  &::before {
+    display: block;
+    width: 100%;
+    height: #{$height};
+    bottom: calc(-1 * (#{$height} / 2));
+    position: absolute;
+    background-color: $color;
+    content: "";
+  }
+}
+
+@mixin keyboard-focus {
+  .has--keyboard-focus & {
+    &:focus {
+      @content;
+    }
+  }
+}

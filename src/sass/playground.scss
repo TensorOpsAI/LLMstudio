@@ -1,0 +1,294 @@
+.playground--container {
+  padding: $global-spacing-sm;
+  width: 100%;
+
+  .editor--container {
+    display: flex;
+    flex-direction: column;
+    gap: $global-spacing-xs;
+    height: 100%;
+
+    .editor--top {
+      display: flex;
+      gap: $global-spacing-xs;
+      min-height: 350px;
+      max-height: 50%;
+    }
+  }
+
+  .history--container {
+    .history--top {
+      display: inline-flex;
+      align-items: center;
+      gap: $global-spacing-xs;
+
+      .history--title {
+        font-size: 2em;
+        font-weight: 700;
+        line-height: 1;
+      }
+
+      .history--export {
+        background-color: $color-grey-3;
+        padding: 1px 14px;
+        margin-top: $global-spacing-xs/4;
+        border-radius: 100px;
+
+        &:hover {
+          background-color: lighten($color-grey-3, 10%);
+          cursor: pointer;
+        }
+      }
+    }
+
+    .history--table {
+      border-collapse: collapse;
+      margin: 25px 0;
+      font-size: 0.9em;
+      font-family: sans-serif;
+      min-width: 400px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+
+      thead {
+        border-radius: 20px;
+      }
+
+      thead tr {
+        background-color: $color-blue;
+        color: #ffffff;
+        text-align: left;
+        border-radius: 10px;
+      }
+
+      th,
+      td {
+        padding: 12px 15px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        // width: 100%;
+        max-width: 100px;
+      }
+
+      tbody tr {
+        border-bottom: 1px solid #dddddd;
+      }
+
+      // tbody tr:nth-of-type(even) {
+      // background-color: $color-grey-3;
+      // }
+
+      tbody tr:last-of-type {
+        border-bottom: 2px solid #009879;
+      }
+
+      tbody tr.active-row {
+        font-weight: bold;
+        color: #009879;
+      }
+    }
+  }
+
+  .input--container {
+    color: $color-dark;
+    background-color: $color-light;
+    gap: $global-spacing-xs;
+    border-radius: 15px;
+    width: 40%;
+    padding: $global-spacing-sm;
+    display: flex;
+    flex-direction: column;
+
+    .input--top {
+      display: flex;
+      align-items: center;
+      gap: $global-spacing-xs/2;
+    }
+
+    .input--title {
+      font-size: 2em;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .input--submit {
+      width: 20px;
+      height: 20px;
+
+      &.waiting {
+        filter: saturate(5%);
+      }
+
+      &:not(.waiting) {
+        cursor: pointer;
+      }
+    }
+
+    .input--textarea {
+      border: none;
+      overflow: auto;
+      outline: none;
+      box-shadow: none;
+      resize: none;
+      background-color: $color-light;
+    }
+  }
+
+  .output--container {
+    width: 40%;
+    padding: $global-spacing-sm;
+    display: flex;
+    flex-direction: column;
+    border-radius: 15px;
+    background-color: $color-dark;
+
+    .output--top {
+      display: flex;
+      align-items: center;
+      gap: $global-spacing-xs/2;
+    }
+
+    .output--title {
+      font-size: 2em;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .output--status {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: $global-spacing-xs/2;
+
+      div {
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+
+        &.idle {
+          background-color: $color-grey-2;
+        }
+
+        &.waiting {
+          background-color: $color-yellow;
+        }
+
+        &.done {
+          background-color: $color-green;
+        }
+      }
+    }
+  }
+
+  .parameters--container {
+    width: 20%;
+    padding: $global-spacing-sm;
+    display: flex;
+    flex-direction: column;
+    gap: $global-spacing-xs;
+
+    .parameters--title {
+      font-size: 2em;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .parameters--single-top {
+      display: flex;
+      margin-bottom: $global-spacing-xs/2;
+
+      input[type="text"] {
+        margin-left: auto;
+        width: 45px;
+        text-align: right;
+        background-color: transparent;
+        border: none;
+        border-radius: 5px;
+
+        &:focus {
+          border: solid 1px $color-blue;
+        }
+      }
+    }
+
+    .parameters--single-bottom {
+      input {
+        width: 100%;
+      }
+
+      input[type="text"] {
+        margin-left: auto;
+        // width: 45px;
+        text-align: left;
+        background-color: transparent;
+        border: none;
+        border-radius: 5px;
+
+        &:focus {
+          border: solid 1px $color-blue;
+        }
+      }
+
+      // input[type="range"]:focus,
+      // input[type="number"]:focus {
+      // box-shadow: none;
+      // outline: none;
+      // -webkit-appearance: none;
+      // }
+
+      input[type="range"] {
+        -webkit-appearance: none;
+        margin-right: 15px;
+        height: 7px;
+        background: $color-grey-1;
+        border-radius: 5px;
+        background-image: linear-gradient($color-red, $color-red);
+        background-size: 20% 100%;
+        background-repeat: no-repeat;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 15px;
+        width: 15px;
+        border-radius: 50%;
+        background: $color-red;
+        cursor: grab;
+        box-shadow: 0 0 10px 0 $color-grey-3;
+        transition: background 0.3s ease-in-out;
+
+        &:hover {
+          background: $color-yellow;
+        }
+
+        &:active {
+          cursor: grabbing;
+        }
+      }
+    }
+  }
+
+  .prompt-list--container {
+    display: flex;
+    flex-direction: column;
+    width: 20%;
+
+    > * {
+      margin: 0 auto;
+    }
+
+    .prompt-list--item {
+      margin: 0;
+    }
+
+    .prompt-list--add-icon {
+      width: 50px;
+      border-radius: 50%;
+      padding: $global-spacing-xs;
+
+      &:hover {
+        background-color: $color-dark;
+      }
+    }
+  }
+}

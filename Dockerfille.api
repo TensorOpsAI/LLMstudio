@@ -1,0 +1,10 @@
+FROM python:3.9
+RUN mkdir -p /app
+WORKDIR /app
+
+COPY ./api .
+RUN pip install -r ./requirements.txt
+ENV FLASK_ENV production
+
+EXPOSE 5001
+CMD ["gunicorn", "-b", ":5001", "app:app"]
