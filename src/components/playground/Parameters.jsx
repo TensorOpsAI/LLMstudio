@@ -1,8 +1,6 @@
 // create jsons with definitions for parameteres + ranges for each model supported
 import { useEffect, useRef } from "react";
 import InputLabel from "@mui/material/InputLabel";
-import MenuItem from "@mui/material/MenuItem";
-import ListSubheader from "@mui/material/ListSubheader";
 import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
 
@@ -53,17 +51,18 @@ export default function Parameters({ parameters, setParameters }) {
             }}
           >
             <option aria-label="None" value="" />
-            <optgroup label="Open AI">
-              <option value={"gpt3"}>gpt3.5turbo</option>
-              <option value={"gpt4"}>gpt4</option>
+            <optgroup label="OpenAI">
+              <option value={"gpt-3.5-turbo"}>gpt-3.5-turbo</option>
+              <option value={"gpt-4"}>gpt-4</option>
             </optgroup>
             <optgroup label="Vertex AI">
-              <option value={"palm"}>palm</option>
+              <option value={"text-bison@001"}>text-bison@001</option>
+              <option value={"chat-bison@001"}>chat-bison@001</option>
             </optgroup>
           </Select>
         </FormControl>
       </div>
-      {parameters.model !== "palm" && (
+      {parameters.model.includes("gpt") && (
         <>
           <div className="parameters--single">
             <div className="parameters--single-top">
@@ -209,8 +208,20 @@ export default function Parameters({ parameters, setParameters }) {
           </div>
         </>
       )}
-      {parameters.model === "palm" && (
+      {!parameters.model.includes("gpt") && (
         <>
+          <div className="parameters--single">
+            <div className="parameters--single-top">
+              <span>API Key</span>
+            </div>
+            <div className="parameters--single-bottom">
+              <input
+                type="text"
+                placeholder="Insert your API Key"
+                onBlur={(e) => updateParameters(e.target.value, "apiKey")}
+              ></input>
+            </div>
+          </div>
           <div className="parameters--single">
             <div className="parameters--single-top">
               <span>Temperature</span>

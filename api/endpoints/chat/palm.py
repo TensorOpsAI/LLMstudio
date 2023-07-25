@@ -17,7 +17,7 @@ def get_palm_cost(input_tokens, output_tokens, model):
 def get_palm_chat():
     vertexai.init(
         credentials=service_account.Credentials.from_service_account_info(
-            json.loads(json.dumps(request.json["apiKey"]))
+            json.loads(request.json["apiKey"])
         ),
     )
 

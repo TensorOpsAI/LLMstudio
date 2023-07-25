@@ -47,7 +47,7 @@ export default function Editor(props) {
     setResponse(null);
     setResponseStatus("waiting");
 
-    if (parameters.model !== "palm") {
+    if (parameters.model.includes("gpt")) {
       fetch(`http://127.0.0.1:3001/chat/openai`, {
         method: "POST",
         headers: {
@@ -56,37 +56,36 @@ export default function Editor(props) {
         },
         body: JSON.stringify({
           prompt: prompt,
-          model: "gpt-4",
+          model: parameters.model,
           apiKey: parameters.apiKey,
-          temperature: parameters.temperature,
-          maximumLength: parameters.maximumLength,
-          topP: parameters.topP,
-          frequencyPenalty: parameters.frequencyPenalty,
-          presencePenalty: parameters.presencePenalty,
+          temperature: Number(parameters.temperature),
+          maximumLength: Number(parameters.maximumLength),
+          topP: Number(parameters.topP),
+          frequencyPenalty: Number(parameters.frequencyPenalty),
+          presencePenalty: Number(parameters.presencePenalty),
           stream: true,
         }),
       }).then((res) => {
         const reader = res.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let output = "";
-        let completionTokens = 0;
+        let inputTokens = 0;
+        let outputTokens = 0;
+        let cost = 0;
 
         reader.read().then(function pump({ done, value }) {
           if (done) {
             setResponseStatus("done");
-            const promptTokens = getEncoding("gpt2").encode(prompt).length;
             setExecutions([
               ...executions,
               {
                 id: executions.length + 1,
                 input: prompt,
                 output: output,
-                promptTokens: promptTokens,
-                completionTokens: completionTokens,
-                totalTokens: promptTokens + completionTokens,
-                totalCost:
-                  promptTokens * (0.0015 / 1000) +
-                  completionTokens * (0.002 / 1000),
+                promptTokens: inputTokens,
+                completionTokens: outputTokens,
+                totalTokens: inputTokens + outputTokens,
+                totalCost: cost,
                 timestamp: Date.now(),
                 model: parameters.model,
                 parameters: {
@@ -102,10 +101,15 @@ export default function Editor(props) {
           }
 
           const chunk = decoder.decode(value);
-          if (chunk.startsWith("<END_TOKEN>")) console.log(chunk.split(","));
-          output += chunk;
-          completionTokens++;
-          setResponse(chunk);
+          if (chunk.startsWith("<END_TOKEN>")) {
+            let endChunk = chunk.split(",");
+            inputTokens = endChunk[1];
+            outputTokens = endChunk[2];
+            cost = endChunk[3];
+          } else {
+            output += chunk;
+            setResponse(chunk);
+          }
           return reader.read().then(pump);
         });
       });
@@ -118,53 +122,40 @@ export default function Editor(props) {
         },
         body: JSON.stringify({
           prompt: prompt,
-          temperature: parameters.temperature,
-          maximumLength: parameters.maximumLength,
-          topP: parameters.topP,
-          topK: parameters.topK,
+          model: parameters.model,
+          apiKey: parameters.apiKey,
+          temperature: Number(parameters.temperature),
+          maximumLength: Number(parameters.maximumLength),
+          topP: Number(parameters.topP),
+          topK: Number(parameters.topK),
         }),
-      }).then((res) => {
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder("utf-8");
-        let output = "";
-        let completionTokens = 0;
-
-        reader.read().then(function pump({ done, value }) {
-          if (done) {
-            setResponseStatus("done");
-            const promptTokens = getEncoding("gpt2").encode(prompt).length;
-            setExecutions([
-              ...executions,
-              {
-                id: executions.length + 1,
-                input: prompt,
-                output: output,
-                promptTokens: promptTokens,
-                completionTokens: completionTokens,
-                totalTokens: promptTokens + completionTokens,
-                totalCost:
-                  promptTokens * (0.0015 / 1000) +
-                  completionTokens * (0.002 / 1000),
-                timestamp: Date.now(),
-                model: parameters.model,
-                parameters: {
-                  temperature: parameters.temperature,
-                  maximumLength: parameters.maximumLength,
-                  topP: parameters.topP,
-                  topK: parameters.topK,
-                },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setResponse(null);
+          setResponse(data.output);
+          setResponseStatus("done");
+          setExecutions([
+            ...executions,
+            {
+              id: executions.length + 1,
+              input: prompt,
+              output: data.output,
+              promptTokens: data.input_tokens,
+              completionTokens: data.output_tokens,
+              totalTokens: data.inputTokens + data.output_tokens,
+              totalCost: data.cost,
+              timestamp: Date.now(),
+              model: parameters.model,
+              parameters: {
+                temperature: parameters.temperature,
+                maximumLength: parameters.maximumLength,
+                topP: parameters.topP,
+                topK: parameters.topK,
               },
-            ]);
-            return;
-          }
-
-          const chunk = decoder.decode(value);
-          output += chunk;
-          completionTokens++;
-          setResponse(chunk);
-          return reader.read().then(pump);
+            },
+          ]);
         });
-      });
     }
   }
 
