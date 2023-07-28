@@ -1,22 +1,13 @@
 import React from "react";
 import Header from "./components/Header";
-import Playground from "./components/playground/Playground";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
-
-const darkTheme = createTheme({
-  palette: {
-    mode: "dark",
-  },
-});
+import Playground from "./features/playground/routes/Playground";
 
 function App() {
   return (
-    <ThemeProvider theme={darkTheme}>
-      <div className="App">
-        <Header />
-        <Playground />
-      </div>
-    </ThemeProvider>
+    <div className="App">
+      <Header />
+      <Playground />
+    </div>
   );
 }
 

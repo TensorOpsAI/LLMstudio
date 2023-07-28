@@ -30,11 +30,11 @@ def get_openai_chat():
                 "content": request.json["prompt"],
             }
         ],
-        temperature=request.json["temperature"],
-        max_tokens=request.json["maximumLength"],
-        top_p=request.json["topP"],
-        frequency_penalty=request.json["frequencyPenalty"],
-        presence_penalty=request.json["presencePenalty"],
+        temperature=request.json["parameters"]["temperature"],
+        max_tokens=request.json["parameters"]["maxTokens"],
+        top_p=request.json["parameters"]["topP"],
+        frequency_penalty=request.json["parameters"]["frequencyPenalty"],
+        presence_penalty=request.json["parameters"]["presencePenalty"],
         stream=request.json["stream"],
     )
 

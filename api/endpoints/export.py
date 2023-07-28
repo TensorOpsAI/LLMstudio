@@ -10,10 +10,7 @@ def export():
     if len(request.json) > 0:
         csv += ";".join(request.json[0].keys()) + "\n"
         for execution in request.json:
-            for value in execution.values():
-                print(type(value))
             csv += ";".join([json.dumps(value) for value in execution.values()]) + "\n"
-            print(csv)
 
     return Response(
         csv,
