@@ -22,3 +22,5 @@ def index():
 import endpoints.export
 import endpoints.chat.openai
 import endpoints.chat.vertexai
+import endpoints.test.openai
+import endpoints.test.vertexai

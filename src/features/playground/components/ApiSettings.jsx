@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTest } from "../api/useTest";
 import { Button } from "../../../components/primitives/Button";
 import {
   Dialog,
@@ -11,16 +12,26 @@ import {
 } from "../../../components/primitives/Dialog";
 import { GearIcon } from "@radix-ui/react-icons";
 import { usePlaygroundStore } from "../stores/PlaygroundStore";
+import { toast } from "sonner";
 
 export default function ApiSettings() {
   const [open, setOpen] = useState(false);
-  const { apiKey, setApiKey } = usePlaygroundStore();
+  const { apiKey, setApiKey, model } = usePlaygroundStore();
+  const testApi = useTest();
 
   const onSubmit = (e) => {
     e.preventDefault();
     const apikey = new FormData(e.target).get("apikey");
-    setApiKey(apikey);
-    setOpen(false);
+    const promise = testApi(apikey);
+    toast.promise(promise, {
+      loading: "Loading...",
+      success: (data) => {
+        setApiKey(apikey);
+        setOpen(false);
+        return "API key has been updated";
+      },
+      error: `API key is not valid or doesn't have access to ${model}`,
+    });
   };
 
   return (
