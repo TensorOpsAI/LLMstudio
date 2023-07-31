@@ -3,11 +3,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.api
-    image: react-flask-app-api
+    image: llm-studio-api
   client:
     build:
       context: .
       dockerfile: Dockerfile.client
-    image: react-flask-app-client
+    image: llm-studio-client
     ports:
       - "3000:80"
