@@ -46,7 +46,7 @@ export const columns = [
       return (
         <div className="flex space-x-2">
           {label && <Badge variant="outline">{label.label}</Badge>}
-          <span className="max-w-[500px] truncate font-medium">
+          <span className="max-w-[300px] truncate font-medium">
             {row.getValue("input")}
           </span>
         </div>
@@ -63,7 +63,7 @@ export const columns = [
       return (
         <div className="flex space-x-2">
           {label && <Badge variant="outline">{label.label}</Badge>}
-          <span className="max-w-[500px] truncate font-medium">
+          <span className="max-w-[300px] truncate font-medium">
             {row.getValue("output")}
           </span>
         </div>
@@ -115,7 +115,7 @@ export const columns = [
         <div className="flex space-x-2">
           {label && <Badge variant="outline">{label.label}</Badge>}
           <span className="max-w-[500px] truncate font-medium">
-            {row.getValue("totalCost")}
+            {row.getValue("totalCost").toFixed(7)}
           </span>
         </div>
       );
