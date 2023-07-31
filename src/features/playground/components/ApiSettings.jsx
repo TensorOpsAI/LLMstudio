@@ -12,6 +12,7 @@ import {
 } from "../../../components/primitives/Dialog";
 import { GearIcon } from "@radix-ui/react-icons";
 import { usePlaygroundStore } from "../stores/PlaygroundStore";
+import { getChatProvider } from "../utils";
 import { toast } from "sonner";
 
 export default function ApiSettings() {
@@ -44,7 +45,9 @@ export default function ApiSettings() {
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Edit API Key</DialogTitle>
-          <DialogDescription>Enter your OpenAI API Key</DialogDescription>
+          <DialogDescription>
+            Enter your {getChatProvider(model)} API Key
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit}>
           <div className="px-4 py-2 my-4 bg-gray-800 rounded-lg">
