@@ -5,7 +5,7 @@ export const useExport = () => {
   const { executions } = usePlaygroundStore();
 
   const exportCSV = useCallback(() => {
-    fetch(`http://127.0.0.1:3001/export`, {
+    fetch(`http://localhost:3001/export`, {
       method: "POST",
       headers: {
         Accept: "application/json, text/plain",

@@ -3,23 +3,23 @@ import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import { Button } from "../../../../components/primitives/Button";
 import {
   DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
+  // DropdownMenuContent,
+  // DropdownMenuItem,
+  // DropdownMenuRadioGroup,
+  // DropdownMenuRadioItem,
+  // DropdownMenuSeparator,
+  // DropdownMenuShortcut,
+  // DropdownMenuSub,
+  // DropdownMenuSubContent,
+  // DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "../../../../components/primitives/DropdownMenu";
 
-import { labels } from "./Data";
-import { taskSchema } from "./Schema";
+// import { labels } from "./Data";
+// import { taskSchema } from "./Schema";
 
 export function DataTableRowActions({ row }) {
-  const task = taskSchema.parse(row.original);
+  // const task = taskSchema.parse(row.original);
 
   return (
     <DropdownMenu>
@@ -32,7 +32,7 @@ export function DataTableRowActions({ row }) {
           <span className="sr-only">Open menu</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[160px]">
+      {/* <DropdownMenuContent align="end" className="w-[160px]">
         <DropdownMenuItem>Edit</DropdownMenuItem>
         <DropdownMenuItem>Make a copy</DropdownMenuItem>
         <DropdownMenuItem>Favorite</DropdownMenuItem>
@@ -54,7 +54,7 @@ export function DataTableRowActions({ row }) {
           Delete
           <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
         </DropdownMenuItem>
-      </DropdownMenuContent>
+      </DropdownMenuContent> */}
     </DropdownMenu>
   );
 }

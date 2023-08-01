@@ -1,46 +1,24 @@
-# Getting Started with Create React App
+# 👀 LLM Studio
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Craft. 🧠 Test. 🤖 Perfect. ⚡️
 
-## Available Scripts
+Prompt Perfection at Your Fingertips
 
-In the project directory, you can run:
+## Installation
 
-### `npm start`
+For a quick installation of LLM Studio, you can pull our DockerHub image:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+`docker pull tensoropsai/llmstudio`
+`docker run --rm -p 3001:3001 tensoropsai/llmstudio`
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+LLM studio will be accessible in [http://localhost:3001/](http://localhost:3001/)
 
-### `npm test`
+## 🤔 What is LLM Studio?
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+LLM Studio is your personal AI playground brought to life by TensorOps. It's a game-changer for those who work with Google's PaLM and OpenAI's GPT language models, designed to streamline your prompt engineering process. The interface is more than just a tool, it's an environment where your team can experiment, tweak, and perfect your interactions, letting you leverage the full potential of these advanced language models.
 
-### `npm run build`
+It is also your time capsule, meticulously logging and organizing your past executions so you can track progress and iterate more effectively. Need to share your team's efforts? No worries, LLM Studio allows for effortless data export, turning your hard work into easy-to-share CSV files. It's not just a product, it's a revolution in data interaction and management. Welcome to the future of AI, welcome to LLM Studio.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 📖 Documentation
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+Coming soon

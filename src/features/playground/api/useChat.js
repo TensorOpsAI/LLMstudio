@@ -76,7 +76,7 @@ export const useChat = () => {
   const submitChat = useCallback(() => {
     setResponseStatus("waiting");
     const chatProvider = getChatProvider(model);
-    fetch(`http://127.0.0.1:3001/chat/${chatProvider}`, {
+    fetch(`http://localhost:3001/chat/${chatProvider}`, {
       method: "post",
       headers: {
         "Content-Type": "application/json;charset=UTF-8",
