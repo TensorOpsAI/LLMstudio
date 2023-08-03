@@ -1,14 +1,23 @@
 import { usePlaygroundStore } from "../stores/PlaygroundStore";
 import { useChat } from "../api/useChat";
+import { toast } from "sonner";
 
 export default function Input({ className }) {
-  const { input, setInput, responseStatus, setResponseStatus } =
+  const { input, setInput, apiKey, responseStatus, setResponseStatus } =
     usePlaygroundStore();
   const submitChat = useChat();
 
   const onSubmit = (e) => {
     e.preventDefault();
-    if (responseStatus !== "waiting") submitChat();
+    if (responseStatus !== "waiting") {
+      const promise = submitChat();
+      promise.catch((error) => {
+        setResponseStatus("error");
+        toast.error(
+          apiKey === "" ? "Please set an API key" : "API key is not valid"
+        );
+      });
+    }
   };
 
   const onInputChange = (e) => {

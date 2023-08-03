@@ -73,10 +73,10 @@ export const useChat = () => {
     [input, model, parameters, setOutput, setResponseStatus, addExecution]
   );
 
-  const submitChat = useCallback(() => {
+  const submitChat = useCallback(async () => {
     setResponseStatus("waiting");
     const chatProvider = getChatProvider(model);
-    fetch(`http://localhost:3001/chat/${chatProvider}`, {
+    const promise = fetch(`http://localhost:3001/chat/${chatProvider}`, {
       method: "post",
       headers: {
         "Content-Type": "application/json;charset=UTF-8",
@@ -88,11 +88,17 @@ export const useChat = () => {
         parameters: parameters,
         stream: chatProvider !== "vertexai",
       }),
-    }).then((response) => {
-      chatProvider === "openai"
-        ? handleStream(response)
-        : handleResponse(response);
-    });
+    })
+      .then((response) => {
+        chatProvider === "openai"
+          ? handleStream(response)
+          : handleResponse(response);
+      })
+      .catch((error) => {
+        throw new Error();
+      });
+
+    return await promise;
   }, [
     input,
     model,
