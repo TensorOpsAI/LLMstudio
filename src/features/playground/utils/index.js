@@ -1,7 +1,8 @@
-export const getChatProvider = (model) => {
-  if (model === "gpt-3.5-turbo" || model === "gpt-4") return "openai";
+export const getChatProvider = (model, uppercase) => {
+  if (model === "gpt-3.5-turbo" || model === "gpt-4")
+    return uppercase ? "OpenAI" : "openai";
   if (model === "text-bison@001" || model === "chat-bison@001")
-    return "vertexai";
+    return uppercase ? "Vertex AI" : "vertexai";
 };
 
 export const getStatusColor = (status) => {

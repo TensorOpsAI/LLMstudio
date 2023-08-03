@@ -42,6 +42,8 @@ export const usePlaygroundStore = create((set) => ({
         },
       ],
     })),
+  setExecution: (input, output, model, parameters) =>
+    set({ input: input, output: output, model: model, parameters: parameters }),
   setInput: (input) => set({ input: input }),
   setOutput: (output, isChunk = false) =>
     set((state) => ({ output: isChunk ? state.output + output : output })),

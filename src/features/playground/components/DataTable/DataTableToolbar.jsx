@@ -1,50 +1,42 @@
-// import { Cross2Icon } from "@radix-ui/react-icons";
-
 import { Button } from "../../../../components/primitives/Button";
 import { useExport } from "../../api/useExport";
-// import { Input } from "../../../../components/primitives/Input";
-// import { DataTableViewOptions } from "./DataTableViewOptions";
-
-// import { priorities, statuses } from "./Data";
-// import { DataTableFacetedFilter } from "./DataTableFacetedFilter";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../../../../components/primitives/DropdownMenu";
 
 export function DataTableToolbar({ table }) {
-  // return <></>;
-  // const isFiltered = table.getState().columnFilters.length > 0;
-
   const exportCSV = useExport();
 
   return (
     <div className="flex items-end justify-between">
-      <Button onClick={exportCSV}>Export</Button>
-      {/* <div className="flex flex-1 items-center space-x-2">
-        <Input
-          placeholder="Filter tasks..."
-          value={table.getColumn("title")?.getFilterValue() ?? ""}
-          onChange={(event) =>
-            table.getColumn("title")?.setFilterValue(event.target.value)
-          }
-          className="h-8 w-[150px] lg:w-[250px]"
-        />
-        {table.getColumn("id") && (
-          <DataTableFacetedFilter
-            column={table.getColumn("id")}
-            title="ID"
-            options={["id"]}
-          />
-        )}
-        {isFiltered && (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <Button
-            variant="ghost"
-            onClick={() => table.resetColumnFilters()}
-            className="h-8 px-2 lg:px-3"
+            variant="secondary"
+            className="flex data-[state=open]:bg-muted"
           >
-            Reset
-            <Cross2Icon className="ml-2 h-4 w-4" />
+            Export data
+            <span className="sr-only">Export</span>
           </Button>
-        )}
-      </div>
-      <DataTableViewOptions table={table} /> */}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-[160px]">
+          <DropdownMenuItem onClick={() => exportCSV()}>
+            Export all
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              exportCSV(
+                table.getSelectedRowModel().rows.map((row) => row.original)
+              )
+            }
+          >
+            Export selected
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

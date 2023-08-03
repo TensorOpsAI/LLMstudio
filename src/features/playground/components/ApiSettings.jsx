@@ -46,7 +46,7 @@ export default function ApiSettings() {
         <DialogHeader>
           <DialogTitle>Edit API Key</DialogTitle>
           <DialogDescription>
-            Enter your {getChatProvider(model)} API Key
+            Enter your {getChatProvider(model, true)} API Key
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit}>

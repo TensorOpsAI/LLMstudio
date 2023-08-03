@@ -34,7 +34,7 @@ export default function SliderParameter({
               id={id}
               min={min}
               max={max}
-              defaultValue={[parameters[id]]}
+              value={[parameters[id]]}
               step={step}
               onValueChange={(value) => setParameter(id, value[0])}
               className="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4"
