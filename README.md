@@ -3,6 +3,7 @@
 Craft. 🧠 Test. 🤖 Perfect. ⚡️
 
 Prompt Perfection at Your Fingertips
+![](images/My Movie.gif)
 
 ## Installation
 
