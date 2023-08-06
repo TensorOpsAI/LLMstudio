@@ -3,9 +3,7 @@
 Craft. 🧠 Test. 🤖 Perfect. ⚡️
 
 Prompt Perfection at Your Fingertips
-
-[![demo]()](images/My%20Movie.mp4)
-
+https://github.com/TensorOpsAI/LLMStudio/blob/main/images/My%20Movie.gif 
 
 ## Installation
 
