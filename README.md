@@ -4,8 +4,7 @@ Craft. 🧠 Test. 🤖 Perfect. ⚡️
 
 Prompt Perfection at Your Fingertips
 
-[![asciicast]()]([https://asciinema.org/a/113463](https://github.com/TensorOpsAI/LLMStudio/blob/main/images/My%20Movie.mp4))
-
+[![demo]()](images/My%20Movie.mp4)
 
 
 ## Installation
