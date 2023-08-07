@@ -1,13 +1,8 @@
 services:
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile.api
-    image: llm-studio-api
   client:
     build:
       context: .
-      dockerfile: Dockerfile.client
-    image: llm-studio-client
+      dockerfile: Dockerfile.combo
+    image: llmstudio
     ports:
-      - "3000:80"
+      - "3001:3001"

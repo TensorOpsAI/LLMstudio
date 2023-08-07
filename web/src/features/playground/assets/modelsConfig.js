@@ -9,6 +9,7 @@ export const models = [
     type: "OpenAI",
     strengths:
       "Complex intent, cause and effect, creative generation, search, summarization for audience",
+    cost: "Complex intent, cause and effect, creative generation, search, summarization for audience",
   },
   {
     id: "464a47c3-7ab5-44d7-b669-f9cb5a9e8465",
@@ -17,6 +18,7 @@ export const models = [
     type: "OpenAI",
     strengths:
       "Language translation, complex classification, sentiment, summarization",
+    cost: "Complex intent, cause and effect, creative generation, search, summarization for audience",
   },
   {
     id: "b43c0ea9-5ad4-456a-ae29-26cd77b6d0fb",
@@ -24,6 +26,9 @@ export const models = [
     description:
       "Most capable Vertex AI model. Particularly good at translating natural language to code. In addition to completing code, also supports inserting completions within code.",
     type: "Vertex AI",
+    strengths:
+      "Language translation, complex classification, sentiment, summarization",
+    cost: "Complex intent, cause and effect, creative generation, search, summarization for audience",
   },
   {
     id: "bbd57291-4622-4a21-9eed-dd6bd786fdd1",
@@ -32,6 +37,7 @@ export const models = [
       "Almost as capable as Davinci Vertex AI, but slightly faster. This speed advantage may make it preferable for real-time applications.",
     type: "Vertex AI",
     strengths: "Real-time application where low-latency is preferable",
+    cost: "Complex intent, cause and effect, creative generation, search, summarization for audience",
   },
 ];
 
