@@ -1,19 +1,27 @@
-from app import app
-from flask import request, json
+from fastapi import APIRouter, Request
+from pydantic import BaseModel
 import vertexai
 from google.oauth2 import service_account
+import json
+
+router = APIRouter()
 
 
-@app.route("/test/vertexai", methods=["POST"])
-def test_vertexai():
+class VertexAIRequest(BaseModel):
+    apiKey: str
+
+
+@router.post("/vertexai")
+async def test_vertexai(data: VertexAIRequest):
     try:
-        json_credential = json.loads(request.json["apiKey"])
+        json_credential = json.loads(data.apiKey)
         vertexai.init(
             project=json_credential["project_id"],
             credentials=service_account.Credentials.from_service_account_info(
                 json_credential
             ),
         )
-        return json.dumps(True)
-    except:
-        return json.dumps(False)
+        return True
+    except Exception as e:
+        print(e)
+        return False

@@ -18,3 +18,31 @@ ENV FLASK_ENV production
 EXPOSE 3001
 WORKDIR /app/api
 CMD ["gunicorn", "-b", ":3001", "app:app"]
+
+# # Step #1: Build React frontend
+# FROM node:16-alpine as build-step
+# WORKDIR /app/web
+# COPY ./web/package.json ./web/package-lock.json ./
+# RUN npm install
+# COPY ./web ./
+# RUN npm run build
+
+# # Step #2: Build FastAPI backend
+# FROM python:3.9
+# WORKDIR /app
+
+# # Copy React static files from build-step
+# COPY --from=build-step /app/web/build ./build
+
+# # Set up FastAPI backend
+# COPY ./api/requirements.txt ./api/
+# RUN pip install --no-cache-dir -r ./api/requirements.txt
+
+# # Copy backend source files
+# COPY ./api ./api/
+
+# # FastAPI runs on port 8000 by default, but you can change this if you've set a different port.
+# EXPOSE 8000
+
+# # Use Uvicorn to run the FastAPI app
+# CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

@@ -1,8 +1,16 @@
+import { useEffect, useRef } from "react";
 import { usePlaygroundStore } from "../stores/PlaygroundStore";
 import { getStatusColor } from "../utils";
 
 export default function Output({ className }) {
   const { output, responseStatus } = usePlaygroundStore();
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    if (textareaRef.current)
+      textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+  });
+
   return (
     <div className={className}>
       <div className="border rounded-lg bg-gray-700 border-gray-600">
@@ -15,6 +23,7 @@ export default function Output({ className }) {
         <div className="px-4 py-2">
           <textarea
             id="output"
+            ref={textareaRef}
             value={output}
             rows="20"
             readOnly
