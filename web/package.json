@@ -49,7 +49,7 @@
     "zustand": "^4.3.9"
   },
   "scripts": {
-    "start:backend": "cd ../api && uvicorn main:app --host 0.0.0.0 --port 3001 --reload",
+    "start:backend": "cd ../api && uvicorn main:app --host 0.0.0.0 --port 8000 --reload",
     "start": "react-scripts start",
     "dev": "concurrently \"npm start\" \"npm run start:backend\"",
     "build": "react-scripts build",

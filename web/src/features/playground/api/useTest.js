@@ -8,7 +8,7 @@ export const useTest = () => {
   const testApi = useCallback(
     async (apikey) => {
       const chatProvider = getChatProvider(model);
-      const promise = fetch(`http://localhost:3001/api/test/${chatProvider}`, {
+      const promise = fetch(`http://localhost:8000/api/test/${chatProvider}`, {
         method: "post",
         headers: {
           "Content-Type": "application/json;charset=UTF-8",

@@ -7,7 +7,7 @@ export const useExport = () => {
   const exportCSV = useCallback(
     (selected) => {
       console.log(selected);
-      fetch(`http://localhost:3001/api/export`, {
+      fetch(`http://localhost:8000/api/export`, {
         method: "POST",
         headers: {
           Accept: "application/json, text/plain",

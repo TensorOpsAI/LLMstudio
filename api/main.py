@@ -17,12 +17,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.get("/")
-async def read_root():
-    return FileResponse("../build/index.html")
-
-
 app.include_router(chat_openai_router, prefix="/api/chat")
 app.include_router(test_openai_router, prefix="/api/test")
 app.include_router(chat_vertexai_router, prefix="/api/chat")

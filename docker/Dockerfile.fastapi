@@ -1,0 +1,14 @@
+# Dockerfile for FastAPI backend
+FROM python:3.9
+WORKDIR /app
+
+# Installing requirements
+COPY ./api/requirements.txt ./
+RUN pip install -r requirements.txt
+
+# Copying source code
+COPY ./api ./
+
+EXPOSE 8000
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

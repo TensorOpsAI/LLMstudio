@@ -1,8 +1,28 @@
+version: "3.8"
+
 services:
-  client:
+  frontend:
     build:
       context: .
-      dockerfile: Dockerfile.combo
-    image: llmstudio
+      dockerfile: docker/Dockerfile.react
+    image: react-frontend
     ports:
-      - "3001:3001"
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.fastapi
+    image: fastapi-backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - rabbitmq
+
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    ports:
+      - "15672:15672"
+      - "5672:5672"

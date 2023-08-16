@@ -61,7 +61,6 @@ async def get_openai_chat(data: OpenAIRequest):
         def streamer():
             output = ""
             for chunk in response:
-                print(chunk)
                 if (
                     chunk["choices"][0]["finish_reason"] != "stop"
                     and chunk["choices"][0]["finish_reason"] != "length"
