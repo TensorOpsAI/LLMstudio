@@ -4,9 +4,9 @@ import { getChatProvider } from "../utils";
 
 export const useChat = () => {
   const {
-    input,
-    setOutput,
-    model,
+    chatInput,
+    setChatOutput,
+    modelName,
     apiKey,
     parameters,
     setResponseStatus,
@@ -16,28 +16,36 @@ export const useChat = () => {
   const handleResponse = useCallback(
     (response) => {
       response.json().then((data) => {
-        setOutput(data.output);
+        console.log(data);
+        setChatOutput(data.chat_output);
         setResponseStatus("done");
         addExecution(
-          input,
-          data.output,
+          chatInput,
+          data.chat_output,
           data.input_tokens,
           data.output_tokens,
           data.cost,
-          model,
+          modelName,
           parameters
         );
       });
     },
-    [input, model, parameters, setOutput, setResponseStatus, addExecution]
+    [
+      chatInput,
+      modelName,
+      parameters,
+      setChatOutput,
+      setResponseStatus,
+      addExecution,
+    ]
   );
 
   const handleStream = useCallback(
     (response) => {
-      setOutput("");
+      setChatOutput("");
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
-      let output = "";
+      let chatOutput = "";
       let inputTokens = 0;
       let outputTokens = 0;
       let cost = 0;
@@ -46,12 +54,12 @@ export const useChat = () => {
         if (done) {
           setResponseStatus("done");
           addExecution(
-            input,
-            output,
+            chatInput,
+            chatOutput,
             inputTokens,
             outputTokens,
             cost,
-            model,
+            modelName,
             parameters
           );
           return;
@@ -64,29 +72,36 @@ export const useChat = () => {
           outputTokens = endChunk[2];
           cost = endChunk[3];
         } else {
-          output += chunk;
-          setOutput(chunk, true);
+          chatOutput += chunk;
+          setChatOutput(chunk, true);
         }
         return reader.read().then(pump);
       });
     },
-    [input, model, parameters, setOutput, setResponseStatus, addExecution]
+    [
+      chatInput,
+      modelName,
+      parameters,
+      setChatOutput,
+      setResponseStatus,
+      addExecution,
+    ]
   );
 
   const submitChat = useCallback(async () => {
     setResponseStatus("waiting");
-    const chatProvider = getChatProvider(model);
+    const chatProvider = getChatProvider(modelName);
     const promise = fetch(`http://localhost:8000/api/chat/${chatProvider}`, {
       method: "post",
       headers: {
         "Content-Type": "application/json;charset=UTF-8",
       },
       body: JSON.stringify({
-        prompt: input,
-        model: model,
-        apiKey: apiKey,
+        chat_input: chatInput,
+        model_name: modelName,
+        api_key: apiKey,
         parameters: parameters,
-        stream: chatProvider !== "vertexai",
+        is_stream: chatProvider !== "vertexai",
       }),
     })
       .then((response) => {
@@ -100,8 +115,8 @@ export const useChat = () => {
 
     return await promise;
   }, [
-    input,
-    model,
+    chatInput,
+    modelName,
     apiKey,
     parameters,
     setResponseStatus,

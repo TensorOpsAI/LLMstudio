@@ -3,19 +3,19 @@ import { usePlaygroundStore } from "../stores/PlaygroundStore";
 import { getChatProvider } from "../utils";
 
 export const useTest = () => {
-  const { model } = usePlaygroundStore();
+  const { modelName } = usePlaygroundStore();
 
   const testApi = useCallback(
     async (apikey) => {
-      const chatProvider = getChatProvider(model);
+      const chatProvider = getChatProvider(modelName);
       const promise = fetch(`http://localhost:8000/api/test/${chatProvider}`, {
         method: "post",
         headers: {
           "Content-Type": "application/json;charset=UTF-8",
         },
         body: JSON.stringify({
-          apiKey: apikey,
-          model: model,
+          api_key: apikey,
+          model_name: modelName,
         }),
       })
         .then((res) => res.json())
@@ -26,7 +26,7 @@ export const useTest = () => {
 
       return await promise;
     },
-    [model]
+    [modelName]
   );
 
   return testApi;

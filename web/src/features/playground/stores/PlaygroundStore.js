@@ -3,9 +3,9 @@ import { create } from "zustand";
 export const usePlaygroundStore = create((set) => ({
   responseStatus: "idle",
   executions: [],
-  input: "",
-  output: "",
-  model: "gpt-3.5-turbo",
+  chatInput: "",
+  chatOutput: "",
+  modelName: "gpt-3.5-turbo",
   apiKey: "",
   parameters: {
     temperature: 1,
@@ -17,12 +17,12 @@ export const usePlaygroundStore = create((set) => ({
   },
   setResponseStatus: (status) => set({ responseStatus: status }),
   addExecution: (
-    input,
-    output,
+    chatInput,
+    chatOutput,
     inputTokens,
     outputTokens,
     cost,
-    model,
+    modelName,
     parameters
   ) =>
     set((state) => ({
@@ -30,24 +30,31 @@ export const usePlaygroundStore = create((set) => ({
         ...state.executions,
         {
           id: state.executions.length + 1,
-          input: input,
-          output: output,
-          promptTokens: Number(inputTokens),
-          completionTokens: Number(outputTokens),
+          chatInput: chatInput,
+          chatOutput: chatOutput,
+          inputTokens: Number(inputTokens),
+          outputTokens: Number(outputTokens),
           totalTokens: Number(inputTokens + outputTokens),
           totalCost: Number(cost),
           timestamp: new Date(),
-          model: model,
+          modelName: modelName,
           parameters: parameters,
         },
       ],
     })),
-  setExecution: (input, output, model, parameters) =>
-    set({ input: input, output: output, model: model, parameters: parameters }),
-  setInput: (input) => set({ input: input }),
-  setOutput: (output, isChunk = false) =>
-    set((state) => ({ output: isChunk ? state.output + output : output })),
-  setModel: (model) => set({ model: model }),
+  setExecution: (chatInput, chatOutput, modelName, parameters) =>
+    set({
+      chatInput: chatInput,
+      chatOutput: chatOutput,
+      modelName: modelName,
+      parameters: parameters,
+    }),
+  setChatInput: (chatInput) => set({ chatInput: chatInput }),
+  setChatOutput: (chatOutput, isChunk = false) =>
+    set((state) => ({
+      chatOutput: isChunk ? state.chatOutput + chatOutput : chatOutput,
+    })),
+  setModelName: (modelName) => set({ modelName: modelName }),
   setApiKey: (apiKey) => set({ apiKey: apiKey }),
   setParameter: (parameter, value) => {
     set((state) => ({

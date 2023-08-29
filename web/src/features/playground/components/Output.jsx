@@ -3,7 +3,7 @@ import { usePlaygroundStore } from "../stores/PlaygroundStore";
 import { getStatusColor } from "../utils";
 
 export default function Output({ className }) {
-  const { output, responseStatus } = usePlaygroundStore();
+  const { chatOutput, responseStatus } = usePlaygroundStore();
   const textareaRef = useRef(null);
 
   useEffect(() => {
@@ -24,7 +24,7 @@ export default function Output({ className }) {
           <textarea
             id="output"
             ref={textareaRef}
-            value={output}
+            value={chatOutput}
             rows="20"
             readOnly
             className="w-full px-0 text-sm bg-transparent focus:outline-none resize-none"

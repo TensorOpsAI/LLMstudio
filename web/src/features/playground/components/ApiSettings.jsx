@@ -17,7 +17,7 @@ import { toast } from "sonner";
 
 export default function ApiSettings() {
   const [open, setOpen] = useState(false);
-  const { apiKey, setApiKey, model } = usePlaygroundStore();
+  const { apiKey, setApiKey, modelName } = usePlaygroundStore();
   const testApi = useTest();
 
   const onSubmit = (e) => {
@@ -31,7 +31,7 @@ export default function ApiSettings() {
         setOpen(false);
         return "API key has been updated";
       },
-      error: `API key is not valid or doesn't have access to ${model}`,
+      error: `API key is not valid or doesn't have access to ${modelName}`,
     });
   };
 
@@ -46,7 +46,7 @@ export default function ApiSettings() {
         <DialogHeader>
           <DialogTitle>Edit API Key</DialogTitle>
           <DialogDescription>
-            Enter your {getChatProvider(model, true)} API Key
+            Enter your {getChatProvider(modelName, true)} API Key
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit}>

@@ -15,9 +15,9 @@ export function DataTableRowActions({ row }) {
 
   const restoreExecution = () => {
     setExecution(
-      row.original.input,
-      row.original.output,
-      row.original.model,
+      row.original.chatInput,
+      row.original.chatOutput,
+      row.original.modelName,
       row.original.parameters
     );
   };

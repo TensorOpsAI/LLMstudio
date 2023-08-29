@@ -8,4 +8,5 @@ setup(
     author="TensorOps",
     author_email="claudio.lemos@tensorops.ai",
     description="Prompt Perfection at Your Fingertips",
+    package_dir={"llmstudio": "client"},
 )

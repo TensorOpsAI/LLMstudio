@@ -3,7 +3,7 @@ import { useChat } from "../api/useChat";
 import { toast } from "sonner";
 
 export default function Input({ className }) {
-  const { input, setInput, apiKey, responseStatus, setResponseStatus } =
+  const { chatInput, setChatInput, apiKey, responseStatus, setResponseStatus } =
     usePlaygroundStore();
   const submitChat = useChat();
 
@@ -21,7 +21,7 @@ export default function Input({ className }) {
   };
 
   const onInputChange = (e) => {
-    setInput(e.target.value);
+    setChatInput(e.target.value);
     setResponseStatus("idle");
   };
 
@@ -42,7 +42,7 @@ export default function Input({ className }) {
           <div className="px-4 py-2 bg-gray-800 rounded-lg">
             <textarea
               id="input"
-              value={input}
+              value={chatInput}
               onChange={onInputChange}
               rows="20"
               className="w-full px-0 text-sm text-white bg-gray-800 focus:outline-none placeholder-gray-400 resize-none"

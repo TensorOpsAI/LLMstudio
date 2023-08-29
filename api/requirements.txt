@@ -9,3 +9,6 @@ tiktoken
 fastapi
 uvicorn
 pika
+celery
+redis
+uuid

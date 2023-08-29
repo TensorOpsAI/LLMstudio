@@ -1,1 +1,1 @@
-from .client import LLMStudioClient
+from .client import LLMStudio

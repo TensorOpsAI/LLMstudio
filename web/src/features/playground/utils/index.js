@@ -1,7 +1,7 @@
-export const getChatProvider = (model, uppercase) => {
-  if (model === "gpt-3.5-turbo" || model === "gpt-4")
+export const getChatProvider = (modelName, uppercase) => {
+  if (modelName === "gpt-3.5-turbo" || modelName === "gpt-4")
     return uppercase ? "OpenAI" : "openai";
-  if (model === "text-bison@001" || model === "chat-bison@001")
+  if (modelName === "text-bison@001" || modelName === "chat-bison@001")
     return uppercase ? "Vertex AI" : "vertexai";
 };
 

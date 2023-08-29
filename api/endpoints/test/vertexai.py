@@ -1,27 +1,34 @@
-from fastapi import APIRouter, Request
-from pydantic import BaseModel
-import vertexai
-from google.oauth2 import service_account
 import json
+
+from fastapi import APIRouter, Request
+from google.oauth2 import service_account
+from pydantic import BaseModel, validator
+import vertexai
+
 
 router = APIRouter()
 
 
-class VertexAIRequest(BaseModel):
-    apiKey: str
+class VertexAITest(BaseModel):
+    api_key: dict
+
+    @validator("api_key", pre=True, always=True)
+    def parse_api_key(cls, value):
+        if isinstance(value, str):
+            try:
+                return json.loads(value)
+            except json.JSONDecodeError:
+                raise ValueError(f"Given string is not valid JSON: {value}")
+        return value
 
 
 @router.post("/vertexai")
-async def test_vertexai(data: VertexAIRequest):
+async def test_vertexai(data: VertexAITest):
     try:
-        json_credential = json.loads(data.apiKey)
-        vertexai.init(
-            project=json_credential["project_id"],
-            credentials=service_account.Credentials.from_service_account_info(
-                json_credential
-            ),
+        credentials = service_account.Credentials.from_service_account_info(
+            data.api_key
         )
+        vertexai.init(project=data.api_key["project_id"], credentials=credentials)
         return True
-    except Exception as e:
-        print(e)
+    except Exception:
         return False

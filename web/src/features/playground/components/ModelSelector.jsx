@@ -28,13 +28,13 @@ import {
 import { models, types } from "./../assets/modelsConfig";
 
 export default function ModelSelector() {
-  const { model, setModel } = usePlaygroundStore();
+  const { modelName, setModelName } = usePlaygroundStore();
   const [open, setOpen] = React.useState(false);
   const [selectedModel, setSelectedModel] = React.useState(
-    models.filter((m) => m.name === model)[0]
+    models.filter((m) => m.name === modelName)[0]
   );
   const [peekedModel, setPeekedModel] = React.useState(
-    models.filter((m) => m.name === model)[0]
+    models.filter((m) => m.name === modelName)[0]
   );
 
   return (
@@ -107,7 +107,7 @@ export default function ModelSelector() {
                           onPeek={(model) => setPeekedModel(model)}
                           onSelect={() => {
                             setSelectedModel(model);
-                            setModel(model.name);
+                            setModelName(model.name);
                             setOpen(false);
                           }}
                         />

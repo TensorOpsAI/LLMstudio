@@ -1,6 +1,6 @@
 # Dockerfile for FastAPI backend
 FROM python:3.9
-WORKDIR /app
+WORKDIR /api
 
 # Installing requirements
 COPY ./api/requirements.txt ./
@@ -11,4 +11,5 @@ COPY ./api ./
 
 EXPOSE 8000
 
+ENV PYTHONPATH=/:$PYTHONPATH
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

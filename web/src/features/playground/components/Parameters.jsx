@@ -7,14 +7,14 @@ import { getChatProvider } from "../utils";
 import { parameters } from "./../assets/modelsConfig";
 
 export default function Parameters({ className }) {
-  const { model } = usePlaygroundStore();
+  const { modelName } = usePlaygroundStore();
 
   return (
     <div className={className}>
       <div className="hidden flex-col space-y-4 sm:flex md:order-2">
         <ApiSettings />
         <ModelSelector />
-        {parameters[getChatProvider(model)].map((parameter) => (
+        {parameters[getChatProvider(modelName)].map((parameter) => (
           <SliderParameter
             key={parameter.id}
             id={parameter.id}

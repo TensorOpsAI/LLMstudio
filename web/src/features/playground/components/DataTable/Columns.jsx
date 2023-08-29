@@ -1,7 +1,8 @@
 import { Badge } from "../../../../components/primitives/Badge";
 import { Checkbox } from "../../../../components/primitives/Checkbox";
 
-import { labels, priorities, statuses } from "./Data";
+// import { labels, priorities, statuses } from "./Data";
+import { labels } from "./Data";
 import { DataTableColumnHeader } from "./DataTableColumnHeader";
 import { DataTableRowActions } from "./DataTableRowActions";
 
@@ -37,7 +38,7 @@ export const columns = [
     enableHiding: false,
   },
   {
-    accessorKey: "input",
+    accessorKey: "chatInput",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Input" />
     ),
@@ -47,14 +48,14 @@ export const columns = [
         <div className="flex space-x-2">
           {label && <Badge variant="outline">{label.label}</Badge>}
           <span className="max-w-[300px] truncate font-medium">
-            {row.getValue("input")}
+            {row.getValue("chatInput")}
           </span>
         </div>
       );
     },
   },
   {
-    accessorKey: "output",
+    accessorKey: "chatOutput",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Output" />
     ),
@@ -64,16 +65,16 @@ export const columns = [
         <div className="flex space-x-2">
           {label && <Badge variant="outline">{label.label}</Badge>}
           <span className="max-w-[300px] truncate font-medium">
-            {row.getValue("output")}
+            {row.getValue("chatOutput")}
           </span>
         </div>
       );
     },
   },
   {
-    accessorKey: "promptTokens",
+    accessorKey: "inputTokens",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Prompt Tokens" />
+      <DataTableColumnHeader column={column} title="Input Tokens" />
     ),
     cell: ({ row }) => {
       const label = labels.find((label) => label.value === row.original.label);
@@ -81,16 +82,16 @@ export const columns = [
         <div className="flex space-x-2">
           {label && <Badge variant="outline">{label.label}</Badge>}
           <span className="max-w-[500px] truncate font-medium">
-            {row.getValue("promptTokens")}
+            {row.getValue("inputTokens")}
           </span>
         </div>
       );
     },
   },
   {
-    accessorKey: "completionTokens",
+    accessorKey: "outputTokens",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Completion Tokens" />
+      <DataTableColumnHeader column={column} title="Output Tokens" />
     ),
     cell: ({ row }) => {
       const label = labels.find((label) => label.value === row.original.label);
@@ -98,7 +99,7 @@ export const columns = [
         <div className="flex space-x-2">
           {label && <Badge variant="outline">{label.label}</Badge>}
           <span className="max-w-[500px] truncate font-medium">
-            {row.getValue("completionTokens")}
+            {row.getValue("outputTokens")}
           </span>
         </div>
       );
@@ -139,7 +140,7 @@ export const columns = [
     },
   },
   {
-    accessorKey: "model",
+    accessorKey: "modelName",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Model" />
     ),
@@ -149,7 +150,7 @@ export const columns = [
         <div className="flex space-x-2">
           {label && <Badge variant="outline">{label.label}</Badge>}
           <span className="max-w-[500px] truncate font-medium">
-            {row.getValue("model")}
+            {row.getValue("modelName")}
           </span>
         </div>
       );
