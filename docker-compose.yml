@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.react
+    image: react-frontend
+    volumes:
+      - ./web:/web
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.fastapi
+    image: backend
+    volumes:
+      - ./api:/api
+    ports:
+      - "8000:8000"
+    # depends_on:
+    # - rabbitmq
+
+  celery-worker:
+    image: backend
+    command: celery -A api.worker.config:celery_app worker --loglevel=info
+    depends_on:
+      - rabbitmq
+
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+
+  redis:
+    image: "redis:latest"
+    ports:
+      - "6379:6379"
+
+volumes:
+  shared_logs:
