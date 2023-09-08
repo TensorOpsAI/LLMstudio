@@ -39,4 +39,5 @@ __pycache__
 #vscode
 .vscode
 
-playground.ipynb
+# random files
+/playground.ipynb

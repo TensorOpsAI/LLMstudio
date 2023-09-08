@@ -1,6 +1,6 @@
 import requests
 
-from models import LLMModel, LLMVendorClient
+from .models import LLMModel, LLMVendorClient
 
 
 class BedrockClient(LLMVendorClient):
@@ -11,7 +11,20 @@ class BedrockClient(LLMVendorClient):
         "anthropic.claude-v2": "Claude",
     }
 
-    class BedrockModel(LLMModel)
+    def get_model(self, model_name: str):
+        model_class_name = self.MODEL_MAPPING.get(model_name)
+        if not model_class_name:
+            raise ValueError(f"Unknown model: {model_name}")
+
+        model_class = getattr(self, model_class_name)
+        return model_class(
+            model_name=model_name,
+            api_key=self.api_key,
+            api_secret=self.api_secret,
+            api_region=self.api_region,
+        )
+
+    class BedrockModel(LLMModel):
         CHAT_URL = "http://localhost:8000/api/chat/bedrock"
         TEST_URL = "http://localhost:8000/api/test/bedrock"
 

@@ -5,9 +5,10 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.react
-    image: react-frontend
+    image: frontend
     volumes:
-      - ./web:/web
+      - ./web/public:/web/public
+      - ./web/src:/web/src
     ports:
       - "3000:3000"
     depends_on:

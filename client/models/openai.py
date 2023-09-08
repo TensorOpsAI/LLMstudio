@@ -1,6 +1,7 @@
+import os
 import requests
 
-from models import LLMModel, LLMVendorClient
+from .models import LLMModel, LLMVendorClient
 
 
 class OpenAIClient(LLMVendorClient):
@@ -12,8 +13,18 @@ class OpenAIClient(LLMVendorClient):
 
         def __init__(self, model_name, api_key):
             self.model_name = model_name
-            self.api_key = api_key
+            self.api_key = (
+                api_key
+                or os.environ.get("LS_OPENAI_KEY")
+                or self._raise_api_key_error()
+            )
             self._check_api_access()
+
+        @staticmethod
+        def _raise_api_key_error():
+            raise ValueError(
+                "Please provide api_key parameter or set the LS_OPENAI_KEY environment variable."
+            )
 
         def _check_api_access(self):
             response = requests.post(
@@ -44,11 +55,11 @@ class OpenAIClient(LLMVendorClient):
 
             return response.json()
 
-            # if is_stream:
-            #     for chunk in response.iter_content(chunk_size=8192):
-            #         yield chunk
-            # else:
-            #     return response.json()
+            if is_stream:
+                for chunk in response.iter_content(chunk_size=8192):
+                    yield chunk
+            else:
+                return response.json()
 
     class GPT3_5(OpenAIModel):
         def __init__(self, model_name, api_key):

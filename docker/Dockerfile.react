@@ -1,9 +1,9 @@
 # Dockerfile for React frontend
 FROM node:16-alpine
 WORKDIR /web
+COPY ./web ./
 COPY ./web/package.json ./
 RUN yarn install
-COPY ./web ./
 RUN yarn build
 EXPOSE 3000
 

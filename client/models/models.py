@@ -3,7 +3,17 @@ from abc import ABC, abstractmethod
 
 class LLMModel(ABC):
     @abstractmethod
-    def chat(self, input: str, parameters: dict):
+    def __init__(
+        self,
+        model_name: str,
+        api_key: str = None,
+        api_secret: str = None,
+        api_region: str = None,
+    ):
+        pass
+
+    @abstractmethod
+    def chat(self, chat_input: str, parameters: dict):
         pass
 
 
@@ -11,8 +21,8 @@ class LLMVendorClient(ABC):
     MODEL_MAPPING = {}
 
     def __init__(
-        self, api_key: str, api_secret: str = None, api_region: str = None
-    ) -> LLMModel:
+        self, api_key: str = None, api_secret: str = None, api_region: str = None
+    ):
         self.api_key = api_key
         self.api_secret = api_secret
         self.api_region = api_region
@@ -26,6 +36,4 @@ class LLMVendorClient(ABC):
         return model_class(
             model_name=model_name,
             api_key=self.api_key,
-            api_secret=self.api_secret,
-            api_region=self.api_region,
         )

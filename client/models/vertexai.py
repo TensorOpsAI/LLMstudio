@@ -1,4 +1,4 @@
-from models import LLMModel, LLMVendorClient
+from .models import LLMModel, LLMVendorClient
 
 
 class VertexAIClient(LLMVendorClient):
