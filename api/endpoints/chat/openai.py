@@ -31,7 +31,7 @@ class OpenAIRequest(BaseModel):
 
     @validator("model_name", always=True)
     def validate_model_name(cls, value):
-        allowed_values = ["gpt-3.5-turbo", "gpt-4"]
+        allowed_values = ["gpt-3.5-turbo", "gpt-4", "gpt-3.5-turbo-16k"]
         if value not in allowed_values:
             raise ValueError(f"model_name should be one of {allowed_values}")
         return value
@@ -44,6 +44,8 @@ async def openai_chat_endpoint(data: OpenAIRequest):
             return 0.0000015 * input_tokens + 0.000002 * output_tokens
         elif model_name == "gpt-4":
             return 0.00003 * input_tokens + 0.00006 * output_tokens
+        elif model_name == "gpt-3.5-turbo-16k":
+            return 0.00003 * input_tokens + 0.00004 * output_tokens
 
     def get_tokens(chat_input: str, model_name: str) -> int:
         tokenizer = tiktoken.encoding_for_model(model_name)

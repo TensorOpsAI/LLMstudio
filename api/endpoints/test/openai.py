@@ -11,7 +11,7 @@ class OpenAITest(BaseModel):
 
     @validator("model_name", always=True)
     def validate_model_name(cls, value):
-        allowed_values = ["gpt-3.5-turbo", "gpt-4"]
+        allowed_values = ["gpt-3.5-turbo", "gpt-4", "gpt-3.5-turbo-16k"]
         if value not in allowed_values:
             raise ValueError(f"model_name should be one of {allowed_values}")
         return value
