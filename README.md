@@ -3,6 +3,8 @@
 Craft. 🧠 Test. 🤖 Perfect. ⚡️
 
 Prompt Perfection at Your Fingertips
+
+
 [![IMAGE ALT TEXT](http://img.youtube.com/vi/0_01CNzoaf0/0.jpg)](http://www.youtube.com/watch?v=0_01CNzoaf0 "Intro to LLMStudio")
 
 ## Installation
