@@ -55,11 +55,11 @@ class OpenAIClient(LLMVendorClient):
 
             return response.json()
 
-            if is_stream:
-                for chunk in response.iter_content(chunk_size=8192):
-                    yield chunk
-            else:
-                return response.json()
+            # if is_stream:
+            #     for chunk in response.iter_content(chunk_size=8192):
+            #         yield chunk
+            # else:
+            #     return response.json()
 
     class GPT3_5(OpenAIModel):
         def __init__(self, model_name, api_key):
