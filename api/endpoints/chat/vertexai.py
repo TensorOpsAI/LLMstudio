@@ -37,7 +37,7 @@ class VertexAIRequest(BaseModel):
 
     @validator("model_name", always=True)
     def validate_model_name(cls, value):
-        allowed_values = ["text-bison@001", "chat-bison@001"]
+        allowed_values = ["text-bison", "chat-bison"]
         if value not in allowed_values:
             raise ValueError(f"model_name should be one of {allowed_values}")
         return value
@@ -51,7 +51,7 @@ async def get_vertexai_chat(data: VertexAIRequest):
     credentials = service_account.Credentials.from_service_account_info(data.api_key)
     vertexai.init(project=data.api_key["project_id"], credentials=credentials)
 
-    if data.model_name == "text-bison@001":
+    if data.model_name == "text-bison":
         response = TextGenerationModel.from_pretrained(data.model_name).predict(
             prompt=data.chat_input,
             temperature=data.parameters.temperature,
@@ -59,9 +59,9 @@ async def get_vertexai_chat(data: VertexAIRequest):
             top_p=data.parameters.top_p,
             top_k=data.parameters.top_k,
         )
-    elif data.model_name == "chat-bison@001":
+    elif data.model_name == "chat-bison":
         response = (
-            ChatModel.from_pretrained("data.model_name")
+            ChatModel.from_pretrained(data.model_name)
             .start_chat()
             .send_message(
                 message=data.chat_input,

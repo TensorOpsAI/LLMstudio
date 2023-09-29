@@ -15,7 +15,7 @@ class OpenAIClient(LLMVendorClient):
             self.model_name = model_name
             self.api_key = (
                 api_key
-                or os.environ.get("LS_OPENAI_KEY")
+                or os.environ.get("OPENAI_API_KEY")
                 or self._raise_api_key_error()
             )
             self._check_api_access()

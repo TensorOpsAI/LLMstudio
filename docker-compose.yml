@@ -26,22 +26,19 @@ services:
     # depends_on:
     # - rabbitmq
 
-  celery-worker:
-    image: backend
-    command: celery -A api.worker.config:celery_app worker --loglevel=info
-    depends_on:
-      - rabbitmq
+  # celery-worker:
+  #   image: backend
+  #   command: celery -A api.worker.config:celery_app worker --loglevel=info
+  #   depends_on:
+  #     - rabbitmq
 
-  rabbitmq:
-    image: "rabbitmq:3-management"
-    ports:
-      - "15672:15672"
-      - "5672:5672"
+  # rabbitmq:
+  #   image: "rabbitmq:3-management"
+  #   ports:
+  #     - "15672:15672"
+  #     - "5672:5672"
 
-  redis:
-    image: "redis:latest"
-    ports:
-      - "6379:6379"
-
-volumes:
-  shared_logs:
+  # redis:
+  #   image: "redis:latest"
+  #   ports:
+  #     - "6379:6379"
