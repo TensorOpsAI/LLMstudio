@@ -59,7 +59,3 @@ Details on how to use LLM Studio will be provided soon. Stay tuned!
 ---
 
 Thank you for choosing LLM Studio. Your journey to perfecting AI interactions begins here.
-
----
-
-Copy everything between the horizontal lines (without the lines themselves) and paste it into your README file.
