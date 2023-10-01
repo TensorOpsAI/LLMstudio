@@ -1,27 +1,65 @@
-# 👀 LLM Studio
+
+# LLMStudio by [TensorOps](http://tensorops.ai "TensorOps")
 
 Craft. 🧠 Test. 🤖 Perfect. ⚡️
 
-Prompt Perfection at Your Fingertips
+Your AI playground for prompt perfection.
 
+[![LLM Studio Intro Video](http://img.youtube.com/vi/I9h701fbD18/0.jpg)](http://www.youtube.com/watch?v=I9h701fbD18 "Intro to LLMStudio")
 
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/I9h701fbD18/0.jpg)](http://www.youtube.com/watch?v=I9h701fbD18 "Intro to LLMStudio")
+---
 
-## Installation
+## Table of Contents
 
-For a quick installation of LLM Studio, you can pull our DockerHub image:
+- [Features](#features)
+- [Installation](#installation)
+- [About LLM Studio](#about-llm-studio)
+- [Documentation](#documentation)
 
-`docker pull tensoropsai/llmstudio`
-`docker run --rm -p 3001:3001 tensoropsai/llmstudio`
+---
 
-LLM studio will be accessible in [http://localhost:3001/](http://localhost:3001/)
+## 🌟 Features
 
-## 🤔 What is LLM Studio?
+1. **Python Client Gateway**: Seamless integration with multiple LLMs and chaining libraries such as LangChain.
+2. **Prompt Editing UI**: An intuitive interface designed for prompt engineering.
+3. **History Management**: Track past runs and easily export your data as needed.
 
-LLM Studio is your personal AI playground brought to life by TensorOps. It's a game-changer for those who work with Google's PaLM and OpenAI's GPT language models, designed to streamline your prompt engineering process. The interface is more than just a tool, it's an environment where your team can experiment, tweak, and perfect your interactions, letting you leverage the full potential of these advanced language models.
+---
 
-It is also your time capsule, meticulously logging and organizing your past executions so you can track progress and iterate more effectively. Need to share your team's efforts? No worries, LLM Studio allows for effortless data export, turning your hard work into easy-to-share CSV files. It's not just a product, it's a revolution in data interaction and management. Welcome to the future of AI, welcome to LLM Studio.
+## 🚀 Installation
+
+To get started with LLM Studio, you can use our DockerHub image for a swift setup:
+
+```
+docker pull tensoropsai/llmstudio
+docker run --rm -p 3001:3001 tensoropsai/llmstudio
+```
+
+Once installed, access LLM Studio at [http://localhost:3001/](http://localhost:3001/).
+
+---
+
+## 🤔 About LLM Studio
+
+Powered by TensorOps, LLM Studio redefines your experience with Google's PaLM and OpenAI's GPT language models. More than just a tool, it’s an evolving environment where teams can experiment, modify, and optimize their interactions with advanced language models.
+
+Benefits include:
+- **Streamlined Prompt Engineering**: Simplify and enhance your prompt design process.
+- **Execution History**: Keep a detailed log of past executions, track progress, and make iterative improvements effortlessly.
+- **Effortless Data Export**: Share your team's endeavors by exporting data to shareable CSV files.
+
+Step into the future of AI with LLM Studio.
+
+---
 
 ## 📖 Documentation
 
-Coming soon
+Details on how to use LLM Studio will be provided soon. Stay tuned!
+
+---
+
+Thank you for choosing LLM Studio. Your journey to perfecting AI interactions begins here.
+
+---
+
+Copy everything between the horizontal lines (without the lines themselves) and paste it into your README file.
