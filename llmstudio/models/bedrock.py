@@ -1,9 +1,17 @@
-import requests
+from .models import LLMModel, LLMClient
+from ..validators import ClaudeParameters, TitanParameters
 
-from .models import LLMModel, LLMVendorClient
 
+class BedrockClient(LLMClient):
+    """
+    Client class for interfacing with Bedrock LLM models.
+    
+    This class serves as a specific client for Bedrock LLM models, which may include various versions 
+    or types of models. The available models are mapped in `MODEL_MAPPING`.
 
-class BedrockClient(LLMVendorClient):
+    Attributes:
+    MODEL_MAPPING (dict): A dictionary mapping human-readable model names to corresponding class names.
+    """
     MODEL_MAPPING = {
         "amazon.titan-tg1-large": "Titan",
         "anthropic.claude-v1": "Claude",
@@ -11,63 +19,36 @@ class BedrockClient(LLMVendorClient):
         "anthropic.claude-v2": "Claude",
     }
 
-    def get_model(self, model_name: str):
-        model_class_name = self.MODEL_MAPPING.get(model_name)
-        if not model_class_name:
-            raise ValueError(f"Unknown model: {model_name}")
-
-        model_class = getattr(self, model_class_name)
-        return model_class(
-            model_name=model_name,
-            api_key=self.api_key,
-            api_secret=self.api_secret,
-            api_region=self.api_region,
-        )
-
     class BedrockModel(LLMModel):
+        """
+        Model class for interfacing with a generic Bedrock LLM.
+
+        This class is meant to serve as a way to communicate with the Bedrock API, providing 
+        chat functionality through an API. It uses predefined URLs for checking API access and chatting.
+
+        Attributes:
+        CHAT_URL (str): Endpoint URL for chat functionality.
+        TEST_URL (str): Endpoint URL for testing API access.
+        """
         CHAT_URL = "http://localhost:8000/api/chat/bedrock"
         TEST_URL = "http://localhost:8000/api/test/bedrock"
 
         def __init__(
             self, model_name: str, api_key: str, api_secret: str, api_region: str
         ):
-            self.model_name = model_name
-            self.api_key = api_key
-            self.api_secret = api_secret
-            self.api_region = api_region
-            # self._check_api_access()
-
-        def _check_api_access(self):
-            response = requests.post(
-                self.TEST_URL,
-                json={
-                    "model_name": self.model_name,
-                    "api_key": self.api_key,
-                },
-                headers={"Content-Type": "application/json"},
-            )
-            if not response.json():
-                raise ValueError(
-                    f"The API key doesn't have access to {self.model_name}"
-                )
-
-        def chat(self, chat_input: str, parameters: dict = {}):
-            response = requests.post(
-                self.CHAT_URL,
-                json={
-                    "model_name": self.model_name,
-                    "api_key": self.api_key,
-                    "api_secret": self.api_secret,
-                    "api_region": self.api_region,
-                    "chat_input": chat_input,
-                    "parameters": parameters,
-                },
-                headers={"Content-Type": "application/json"},
-            )
-
-            return response.json()
+            super().__init__(model_name, api_key, api_secret, api_region)
+            self._check_api_access()
 
     class Claude(BedrockModel):
+        """
+        Model class for interfacing with the 'Claude' Bedrock LLM.
+
+        A specific implementation of `BedrockModel` designed to work with different versions 
+        of the 'Claude' Bedrock LLM.
+
+        Note: Inheriting from `BedrockModel` provides access to `CHAT_URL` and `TEST_URL` 
+        as well as general-purpose methods for chatting and API access verification.
+        """
         def __init__(
             self, model_name: str, api_key: str, api_secret: str, api_region: str
         ):
@@ -78,7 +59,29 @@ class BedrockClient(LLMVendorClient):
                 api_region=api_region,
             )
 
+        def validate_parameters(self, parameters: ClaudeParameters = None) -> ClaudeParameters:
+            """
+            Validate and possibly adjust the provided parameters for Claude model.
+
+            Args:
+            parameters (ClaudeParameters): Parameters to validate.
+
+            Returns:
+            ClaudeParameters: Validated/adjusted parameters.
+            """
+            parameters = parameters or {}
+            return ClaudeParameters(**parameters).model_dump()
+
     class Titan(BedrockModel):
+        """
+        Model class for interfacing with the 'Titan' Bedrock LLM.
+
+        A specialized implementation of `BedrockModel` intended for use with the 'Titan' 
+        Bedrock LLM model, leveraging predefined chat and testing URLs.
+
+        Note: Inherits general methods for chat functionality and API access verification 
+        from `BedrockModel`.
+        """
         def __init__(
             self, model_name: str, api_key: str, api_secret: str, api_region: str
         ):
@@ -88,3 +91,16 @@ class BedrockClient(LLMVendorClient):
                 api_secret=api_secret,
                 api_region=api_region,
             )
+
+        def validate_parameters(self, parameters: TitanParameters = None) -> TitanParameters:
+            """
+            Validate and possibly adjust the provided parameters for Titan model.
+
+            Args:
+            parameters (TitanParameters): Parameters to validate.
+
+            Returns:
+            TitanParameters: Validated/adjusted parameters.
+            """
+            parameters = parameters or {}
+            return TitanParameters(**parameters).model_dump()

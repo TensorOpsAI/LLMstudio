@@ -1,70 +1,71 @@
 import os
-import requests
 
-from .models import LLMModel, LLMVendorClient
+from .models import LLMModel, LLMClient
+from ..validators import OpenAIParameters
 
 
-class OpenAIClient(LLMVendorClient):
+class OpenAIClient(LLMClient):
+    """
+    Client class for interfacing with OpenAI LLM models.
+
+    This client is tailored for interfacing with OpenAI LLM models and contains 
+    a mapping of human-readable model names to class names in `MODEL_MAPPING`.
+
+    Attributes:
+    MODEL_MAPPING (dict): A dictionary mapping model names to corresponding class names.
+    """
     MODEL_MAPPING = {"gpt-3.5-turbo": "GPT3_5", "gpt-4": "GPT4"}
 
     class OpenAIModel(LLMModel):
+        """
+        Model class for interfacing with a generic OpenAI LLM.
+
+        This class is designed to interact with the OpenAI API, offering chat 
+        functionality through predefined API endpoints.
+
+        Attributes:
+        CHAT_URL (str): Endpoint URL for chat functionality.
+        TEST_URL (str): Endpoint URL for API access testing.
+        """
         CHAT_URL = "http://localhost:8000/api/chat/openai"
         TEST_URL = "http://localhost:8000/api/test/openai"
 
         def __init__(self, model_name, api_key):
-            self.model_name = model_name
-            self.api_key = (
-                api_key
-                or os.environ.get("OPENAI_API_KEY")
-                or self._raise_api_key_error()
+            super().__init__(
+                model_name,
+                api_key or os.environ.get("OPENAI_API_KEY") or self._raise_api_key_error()
             )
             self._check_api_access()
 
-        @staticmethod
-        def _raise_api_key_error():
-            raise ValueError(
-                "Please provide api_key parameter or set the LS_OPENAI_KEY environment variable."
-            )
+        def validate_parameters(self, parameters: OpenAIParameters = None) -> OpenAIParameters:
+            """
+            Validate and possibly adjust the provided parameters for OpenAI models.
 
-        def _check_api_access(self):
-            response = requests.post(
-                self.TEST_URL,
-                json={
-                    "model_name": self.model_name,
-                    "api_key": self.api_key,
-                },
-                headers={"Content-Type": "application/json"},
-            )
-            if not response.json():
-                raise ValueError(
-                    f"The API key doesn't have access to {self.model_name}"
-                )
+            Args:
+            parameters (OpenAIParameters): Parameters to validate.
 
-        def chat(self, chat_input: str, parameters: dict = {}, is_stream: bool = False):
-            response = requests.post(
-                self.CHAT_URL,
-                json={
-                    "model_name": self.model_name,
-                    "api_key": self.api_key,
-                    "chat_input": chat_input,
-                    "parameters": parameters,
-                    "is_stream": is_stream,
-                },
-                headers={"Content-Type": "application/json"},
-            )
-
-            return response.json()
-
-            # if is_stream:
-            #     for chunk in response.iter_content(chunk_size=8192):
-            #         yield chunk
-            # else:
-            #     return response.json()
+            Returns:
+            OpenAIParameters: Validated/adjusted parameters.
+            """
+            parameters = parameters or {}
+            return OpenAIParameters(**parameters).model_dump()
 
     class GPT3_5(OpenAIModel):
-        def __init__(self, model_name, api_key):
+        """
+        Model class for interfacing with the 'GPT-3.5-turbo' OpenAI LLM.
+
+        A specialized implementation of `OpenAIModel` designed to work with the 
+        'GPT-3.5-turbo' OpenAI LLM.
+        """
+        def __init__(self, model_name, api_key, **kwargs):
             super().__init__(model_name=model_name, api_key=api_key)
 
     class GPT4(OpenAIModel):
-        def __init__(self, model_name, api_key):
+        """
+        Model class for interfacing with the 'GPT-4' OpenAI LLM.
+
+        A specialized implementation of `OpenAIModel` meant for interfacing 
+        with the 'GPT-4' OpenAI LLM.
+        """
+        def __init__(self, model_name, api_key, **kwargs):
             super().__init__(model_name=model_name, api_key=api_key)
