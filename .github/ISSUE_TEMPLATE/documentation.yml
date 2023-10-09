@@ -1,0 +1,17 @@
+name: "\U0001F4DD Documentation"
+description: Report an issue related to the LLMstudio documentation.
+title: "DOC: "
+labels: [03 Documentation]
+
+body:
+- type: textarea
+  attributes: 
+    label: "Issue with current documentation"
+    description: >
+      Please make sure to leave a reference to the file you're referring to.
+
+- type: textarea
+  attributes:
+    label: "Idea or Request"
+    description: >
+      Please describe as clearly as possible what topics you think are missing from the current documentation.
