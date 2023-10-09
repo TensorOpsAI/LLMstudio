@@ -21,8 +21,8 @@ export const models = [
     cost: "Complex intent, cause and effect, creative generation, search, summarization for audience",
   },
   {
-    id: "text-bison@001",
-    name: "text-bison@001",
+    id: "text-bison",
+    name: "text-bison",
     description:
       "Most capable Vertex AI model. Particularly good at translating natural language to code. In addition to completing code, also supports inserting completions within code.",
     type: "Vertex AI",
@@ -31,8 +31,8 @@ export const models = [
     cost: "Complex intent, cause and effect, creative generation, search, summarization for audience",
   },
   {
-    id: "chat-bison@001",
-    name: "chat-bison@001",
+    id: "chat-bison",
+    name: "chat-bison",
     description:
       "Slightly faster. This speed advantage may make it preferable for real-time applications.",
     type: "Vertex AI",
@@ -40,16 +40,16 @@ export const models = [
     cost: "Complex intent, cause and effect, creative generation, search, summarization for audience",
   },
   {
-    id: "code-bison@001",
-    name: "code-bison@001",
+    id: "code-bison",
+    name: "code-bison",
     description: "dummy",
     type: "Vertex AI",
     strengths: "dummy",
     cost: "dummy",
   },
   {
-    id: "codechat-bison@001",
-    name: "codechat-bison@001",
+    id: "codechat-bison",
+    name: "codechat-bison",
     description: "dummy",
     type: "Vertex AI",
     strengths: "dummy",
@@ -100,22 +100,22 @@ export const credentials = {
     needsSecret: false,
     needsRegion: false,
   },
-  "text-bison@001": {
+  "text-bison": {
     needsKey: true,
     needsSecret: false,
     needsRegion: false,
   },
-  "chat-bison@001": {
+  "chat-bison": {
     needsKey: true,
     needsSecret: false,
     needsRegion: false,
   },
-  "code-bison@001": {
+  "code-bison": {
     needsKey: true,
     needsSecret: false,
     needsRegion: false,
   },
-  "codechat-bison@001": {
+  "codechat-bison": {
     needsKey: true,
     needsSecret: false,
     needsRegion: false,
@@ -205,10 +205,10 @@ export const parameters = {
       id: "temperature",
       name: "Temperature",
       models: [
-        "text-bison@001",
-        "chat-bison@001",
-        "code-bison@001",
-        "codechat-bison@001",
+        "text-bison",
+        "chat-bison",
+        "code-bison",
+        "codechat-bison",
       ],
       defaultValue: 0.2,
       min: 0,
@@ -221,10 +221,10 @@ export const parameters = {
       id: "maxTokens",
       name: "Token limit",
       models: [
-        "text-bison@001",
-        "chat-bison@001",
-        "code-bison@001",
-        "codechat-bison@001",
+        "text-bison",
+        "chat-bison",
+        "code-bison",
+        "codechat-bison",
       ],
       defaultValue: 256,
       min: 1,
@@ -236,7 +236,7 @@ export const parameters = {
     {
       id: "topK",
       name: "Top K",
-      models: ["text-bison@001", "chat-bison@001"],
+      models: ["text-bison", "chat-bison"],
       defaultValue: 40,
       min: 1,
       max: 40,
@@ -247,7 +247,7 @@ export const parameters = {
     {
       id: "topP",
       name: "Top P",
-      models: ["text-bison@001", "chat-bison@001"],
+      models: ["text-bison", "chat-bison"],
       defaultValue: 0.8,
       min: 0,
       max: 1,

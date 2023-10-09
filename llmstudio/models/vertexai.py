@@ -10,7 +10,7 @@ class VertexAIClient(LLMClient):
     which can include various kinds or versions of models as mapped in `MODEL_MAPPING`.
 
     Attributes:
-    MODEL_MAPPING (dict): A dictionary mapping model names to corresponding class names.
+        MODEL_MAPPING (dict): A dictionary mapping model names to corresponding class names.
     """
     MODEL_MAPPING = {"text-bison": "TextBison", "chat-bison": "ChatBison"}
 
@@ -22,8 +22,8 @@ class VertexAIClient(LLMClient):
         providing chat functionality through predefined API endpoints.
 
         Attributes:
-        CHAT_URL (str): API endpoint URL for chat functionality.
-        TEST_URL (str): API endpoint URL for testing API access.
+            CHAT_URL (str): API endpoint URL for chat functionality.
+            TEST_URL (str): API endpoint URL for testing API access.
         """
         CHAT_URL = "http://localhost:8000/api/chat/vertexai"
         TEST_URL = "http://localhost:8000/api/test/vertexai"
@@ -40,10 +40,10 @@ class VertexAIClient(LLMClient):
             Validate and possibly adjust the provided parameters for Vertex AI models.
 
             Args:
-            parameters (VertexAIParameters): Parameters to validate.
+                parameters (VertexAIParameters): Parameters to validate.
 
             Returns:
-            VertexAIParameters: Validated/adjusted parameters.
+                VertexAIParameters: Validated/adjusted parameters.
             """
             parameters = parameters or {}
             return VertexAIParameters(**parameters).model_dump()

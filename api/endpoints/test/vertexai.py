@@ -14,10 +14,10 @@ class VertexAITest(BaseModel):
     A Pydantic model to validate the input for testing Vertex AI API key.
 
     Attributes:
-    api_key (Union[dict, str]): A dictionary containing API key data for Vertex AI.
+        api_key (Union[dict, str]): A dictionary containing API key data for Vertex AI.
 
     Methods:
-    parse_api_key(cls, value): Parses the `api_key` attribute to ensure it's a dict
+        parse_api_key(cls, value): Parses the `api_key` attribute to ensure it's a dict
     """
     api_key: dict
 
@@ -27,13 +27,13 @@ class VertexAITest(BaseModel):
         Validate and/or parse the `api_key` attribute.
 
         Args:
-        value (Union[dict, str]): API key either as a JSON-formatted string or dictionary.
+            value (Union[dict, str]): API key either as a JSON-formatted string or dictionary.
 
         Returns:
-        dict: The parsed `api_key` as a Python dictionary.
+            dict: The parsed `api_key` as a Python dictionary.
 
         Raises:
-        ValueError: If `value` is a string and is not valid JSON
+            ValueError: If `value` is a string and is not valid JSON
         """
         if isinstance(value, str):
             try:
@@ -49,10 +49,10 @@ async def test_vertexai(data: VertexAITest) -> bool:
     Test the validity of the Vertex AI API key.
 
     Args:
-    data (VertexAITest): A model instance which includes the API key for Vertex AI.
+        data (VertexAITest): A model instance which includes the API key for Vertex AI.
 
     Returns:
-    bool: `True` if the API key is valid and initialization succeeds, otherwise `False`.
+        bool: `True` if the API key is valid and initialization succeeds, otherwise `False`.
     """
     try:
         credentials = service_account.Credentials.from_service_account_info(

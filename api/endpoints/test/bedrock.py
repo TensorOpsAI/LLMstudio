@@ -10,13 +10,13 @@ class BedrockTest(BaseModel):
     A Pydantic model for validating Bedrock API requests.
 
     Attributes:
-    api_key (str): The API key provided by the user for authentication with Bedrock's API.
-    api_secret (str): The API secret key provided by the user for authentication.
-    api_region (str): The API region for Bedrock API requests.
-    model_name (str): The name of the model intended for use with the Bedrock API.
+        api_key (str): The API key provided by the user for authentication with Bedrock's API.
+        api_secret (str): The API secret key provided by the user for authentication.
+        api_region (str): The API region for Bedrock API requests.
+        model_name (str): The name of the model intended for use with the Bedrock API.
 
     Methods:
-    validate_model_name: Ensures that `model_name` is one of the allowed values.
+        validate_model_name: Ensures that `model_name` is one of the allowed values.
     """
     api_key: str
     api_secret: str
@@ -30,13 +30,13 @@ class BedrockTest(BaseModel):
         to prevent potential invalid requests to the Bedrock API.
 
         Args:
-        value (str): The name of the model.
+            value (str): The name of the model.
 
         Returns:
-        str: The validated `model_name`.
+            str: The validated `model_name`.
 
         Raises:
-        ValueError: If `model_name` is not one of the allowed values.
+            ValueError: If `model_name` is not one of the allowed values.
         ```
         """
         allowed_values = [
@@ -56,11 +56,11 @@ async def test_openai(data: BedrockTest) -> bool:
     Test the validity of the Bedrock API credentials and model name.
 
     Args:
-    data (BedrockTest): A model instance containing the Bedrock API credentials
+        data (BedrockTest): A model instance containing the Bedrock API credentials
                           and model name to test.
 
     Returns:
-    bool: `True` if the API credentials and model name are valid, otherwise `False`.
+        bool: `True` if the API credentials and model name are valid, otherwise `False`.
     """
     try:
         session = boto3.Session(

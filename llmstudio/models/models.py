@@ -12,13 +12,13 @@ class LLMModel(ABC):
     of the model.
 
     Attributes:
-    model_name (str): The name of the model being used.
-    api_key (str, optional): The API key for authenticating with the model provider.
-    api_secret (str, optional): The API secret for authenticating with the model provider.
-    api_region (str, optional): The API region for interfacing with the model provider.
+        model_name (str): The name of the model being used.
+        api_key (str, optional): The API key for authenticating with the model provider.
+        api_secret (str, optional): The API secret for authenticating with the model provider.
+        api_region (str, optional): The API region for interfacing with the model provider.
 
     Methods:
-    chat: To be implemented in child classes for providing chatting functionality.
+        chat: To be implemented in child classes for providing chatting functionality.
     """
     CHAT_URL = ""
     TEST_URL = ""
@@ -35,10 +35,10 @@ class LLMModel(ABC):
         Initialize the LLMModel instance.
 
         Args:
-        model_name (str): The name of the model to be used.
-        api_key (str, optional): The API key for authentication. Default is None.
-        api_secret (str, optional): The API secret for enhanced security. Default is None.
-        api_region (str, optional): The API region for interfacing. Default is None.
+            model_name (str): The name of the model to be used.
+            api_key (str, optional): The API key for authentication. Default is None.
+            api_secret (str, optional): The API secret for enhanced security. Default is None.
+            api_region (str, optional): The API region for interfacing. Default is None.
         """
         self.model_name = model_name
         self.api_key = api_key
@@ -72,10 +72,10 @@ class LLMModel(ABC):
         Validate and possibly adjust the provided parameters.
 
         Args:
-        parameters (BaseModel): Parameters to validate, encapsulated in a Pydantic model.
+            parameters (BaseModel): Parameters to validate, encapsulated in a Pydantic model.
 
         Returns:
-        BaseModel: Validated/adjusted parameters encapsulated in a Pydantic model.
+            BaseModel: Validated/adjusted parameters encapsulated in a Pydantic model.
         """
 
     def chat(self, chat_input: str, parameters: BaseModel = None, is_stream: bool = False):
@@ -87,20 +87,20 @@ class LLMModel(ABC):
         model's output as received from the API.
 
         Args:
-        chat_input (str): The input string to send to the model. This is typically a prompt 
+            chat_input (str): The input string to send to the model. This is typically a prompt 
                           that you want the model to respond to.
-        parameters (BaseModel, optional): A Pydantic model containing parameters that affect 
+            parameters (BaseModel, optional): A Pydantic model containing parameters that affect 
                                           the model's responses, such as "temperature" or 
                                           "max tokens". Defaults to None.
-        is_stream (bool, optional): A boolean flag that indicates whether the request should 
+            is_stream (bool, optional): A boolean flag that indicates whether the request should 
                                     be handled as a stream. Defaults to False.
 
         Returns:
-        dict: The response from the API, typically containing the model's output.
+            dict: The response from the API, typically containing the model's output.
 
         Raises:
-        RequestException: If the API request fails.
-        ValueError: If the API response cannot be parsed or contains error information.
+            RequestException: If the API request fails.
+            ValueError: If the API response cannot be parsed or contains error information.
         """
         validated_params = self.validate_parameters(parameters)
 
@@ -131,13 +131,13 @@ class LLMClient(ABC):
     to facilitate the retrieval of model instances.
 
     Attributes:
-    MODEL_MAPPING (dict): A mapping from string model names to model class names.
-    api_key (str, optional): The API key for authentication.
-    api_secret (str, optional): The API secret for enhanced security.
-    api_region (str, optional): The API region for interfacing.
+        MODEL_MAPPING (dict): A mapping from string model names to model class names.
+        api_key (str, optional): The API key for authentication.
+        api_secret (str, optional): The API secret for enhanced security.
+        api_region (str, optional): The API region for interfacing.
 
     Methods:
-    get_model: Retrieve an instance of an LLM model by name.
+        get_model: Retrieve an instance of an LLM model by name.
     """
     MODEL_MAPPING = {}
 
@@ -148,9 +148,9 @@ class LLMClient(ABC):
         Initialize the LLMClient instance.
 
         Args:
-        api_key (str, optional): The API key for authentication. Default is None.
-        api_secret (str, optional): The API secret for enhanced security. Default is None.
-        api_region (str, optional): The API region for interfacing. Default is None.
+            api_key (str, optional): The API key for authentication. Default is None.
+            api_secret (str, optional): The API secret for enhanced security. Default is None.
+            api_region (str, optional): The API region for interfacing. Default is None.
         """
         self.api_key = api_key
         self.api_secret = api_secret
@@ -163,13 +163,13 @@ class LLMClient(ABC):
         The method uses `MODEL_MAPPING` to locate and initialize the appropriate model class.
 
         Args:
-        model_name (str): The name of the model to be retrieved.
+            model_name (str): The name of the model to be retrieved.
 
         Returns:
-        instance of the desired model class, initialized with the provided model name and API key.
+            instance of the desired model class, initialized with the provided model name and API key.
 
         Raises:
-        ValueError: If the model name is not found in `MODEL_MAPPING`.
+            ValueError: If the model name is not found in `MODEL_MAPPING`.
         """
         model_class_name = self.MODEL_MAPPING.get(model_name)
         if not model_class_name:

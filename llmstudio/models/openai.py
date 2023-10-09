@@ -12,7 +12,7 @@ class OpenAIClient(LLMClient):
     a mapping of human-readable model names to class names in `MODEL_MAPPING`.
 
     Attributes:
-    MODEL_MAPPING (dict): A dictionary mapping model names to corresponding class names.
+        MODEL_MAPPING (dict): A dictionary mapping model names to corresponding class names.
     """
     MODEL_MAPPING = {"gpt-3.5-turbo": "GPT3_5", "gpt-4": "GPT4"}
 
@@ -24,8 +24,8 @@ class OpenAIClient(LLMClient):
         functionality through predefined API endpoints.
 
         Attributes:
-        CHAT_URL (str): Endpoint URL for chat functionality.
-        TEST_URL (str): Endpoint URL for API access testing.
+            CHAT_URL (str): Endpoint URL for chat functionality.
+            TEST_URL (str): Endpoint URL for API access testing.
         """
         CHAT_URL = "http://localhost:8000/api/chat/openai"
         TEST_URL = "http://localhost:8000/api/test/openai"
@@ -42,10 +42,10 @@ class OpenAIClient(LLMClient):
             Validate and possibly adjust the provided parameters for OpenAI models.
 
             Args:
-            parameters (OpenAIParameters): Parameters to validate.
+                parameters (OpenAIParameters): Parameters to validate.
 
             Returns:
-            OpenAIParameters: Validated/adjusted parameters.
+                OpenAIParameters: Validated/adjusted parameters.
             """
             parameters = parameters or {}
             return OpenAIParameters(**parameters).model_dump()

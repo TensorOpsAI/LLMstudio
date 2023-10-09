@@ -10,7 +10,7 @@ class BedrockClient(LLMClient):
     or types of models. The available models are mapped in `MODEL_MAPPING`.
 
     Attributes:
-    MODEL_MAPPING (dict): A dictionary mapping human-readable model names to corresponding class names.
+        MODEL_MAPPING (dict): A dictionary mapping human-readable model names to corresponding class names.
     """
     MODEL_MAPPING = {
         "amazon.titan-tg1-large": "Titan",
@@ -27,8 +27,8 @@ class BedrockClient(LLMClient):
         chat functionality through an API. It uses predefined URLs for checking API access and chatting.
 
         Attributes:
-        CHAT_URL (str): Endpoint URL for chat functionality.
-        TEST_URL (str): Endpoint URL for testing API access.
+            CHAT_URL (str): Endpoint URL for chat functionality.
+            TEST_URL (str): Endpoint URL for testing API access.
         """
         CHAT_URL = "http://localhost:8000/api/chat/bedrock"
         TEST_URL = "http://localhost:8000/api/test/bedrock"
@@ -45,9 +45,6 @@ class BedrockClient(LLMClient):
 
         A specific implementation of `BedrockModel` designed to work with different versions 
         of the 'Claude' Bedrock LLM.
-
-        Note: Inheriting from `BedrockModel` provides access to `CHAT_URL` and `TEST_URL` 
-        as well as general-purpose methods for chatting and API access verification.
         """
         def __init__(
             self, model_name: str, api_key: str, api_secret: str, api_region: str
@@ -64,10 +61,10 @@ class BedrockClient(LLMClient):
             Validate and possibly adjust the provided parameters for Claude model.
 
             Args:
-            parameters (ClaudeParameters): Parameters to validate.
+                parameters (ClaudeParameters): Parameters to validate.
 
             Returns:
-            ClaudeParameters: Validated/adjusted parameters.
+                ClaudeParameters: Validated/adjusted parameters.
             """
             parameters = parameters or {}
             return ClaudeParameters(**parameters).model_dump()
@@ -78,9 +75,6 @@ class BedrockClient(LLMClient):
 
         A specialized implementation of `BedrockModel` intended for use with the 'Titan' 
         Bedrock LLM model, leveraging predefined chat and testing URLs.
-
-        Note: Inherits general methods for chat functionality and API access verification 
-        from `BedrockModel`.
         """
         def __init__(
             self, model_name: str, api_key: str, api_secret: str, api_region: str
@@ -97,10 +91,10 @@ class BedrockClient(LLMClient):
             Validate and possibly adjust the provided parameters for Titan model.
 
             Args:
-            parameters (TitanParameters): Parameters to validate.
+                parameters (TitanParameters): Parameters to validate.
 
             Returns:
-            TitanParameters: Validated/adjusted parameters.
+                TitanParameters: Validated/adjusted parameters.
             """
             parameters = parameters or {}
             return TitanParameters(**parameters).model_dump()

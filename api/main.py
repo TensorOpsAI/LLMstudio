@@ -21,17 +21,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.websocket("/ws/{channel_name}")
-async def websocket_endpoint(websocket: WebSocket, channel_name: str):
-    await websocket.accept()
-    pubsub.subscribe(channel_name)
-
-    for message in pubsub.listen():
-        if message["type"] == "message":
-            await websocket.send_text(message["data"].decode("utf-8"))
-
-
 @app.get("/logs")
 def read_logs():
     return FileResponse("/api/logs/execution_logs.jsonl", media_type="application/json")
