@@ -5,6 +5,7 @@ from statistics import mean
 
 import numpy as np
 import requests
+import asyncio
 from pydantic import BaseModel
 import threading
 
@@ -282,12 +283,10 @@ class LLMCompare(ABC):
             latency_list.append(model_response["latency"])
             cost_list.append(model_response["cost"])
             out_tokens_list.append(model_response["outputTokens"])
-
         # now compute some metrics
         statistics = self._get_metrics()
 
         return statistics
-
 
 
 
@@ -339,7 +338,6 @@ class LLMCompare(ABC):
                 
         for thread in threads:
             thread.join()
-
 
     async def dataset_prompt_compare(self, models, prompt_list, expected_output_list):
 
