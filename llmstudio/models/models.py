@@ -22,6 +22,7 @@ class LLMModel(ABC):
     """
     CHAT_URL = ""
     TEST_URL = ""
+    EVALUATE_URL = ""
 
     @abstractmethod
     def __init__(
@@ -30,6 +31,7 @@ class LLMModel(ABC):
         api_key: str = None,
         api_secret: str = None,
         api_region: str = None,
+        tests: dict = {}
     ):
         """
         Initialize the LLMModel instance.
@@ -39,11 +41,13 @@ class LLMModel(ABC):
             api_key (str, optional): The API key for authentication. Default is None.
             api_secret (str, optional): The API secret for enhanced security. Default is None.
             api_region (str, optional): The API region for interfacing. Default is None.
+            tests (dict, optional): The batch of tests to be used when evaluating. Default is Empty Dict.
         """
         self.model_name = model_name
         self.api_key = api_key
         self.api_secret = api_secret
         self.api_region = api_region
+        self.tests = tests
 
     @staticmethod
     def _raise_api_key_error():
@@ -120,6 +124,29 @@ class LLMModel(ABC):
         )
 
         return response.json()
+    
+
+    def set_tests(self, tests: dict = {}):
+        self.tests = tests
+
+    def evaluate(self, tests: dict = {}, parameters: dict = {}, is_stream: bool = False):
+
+        if not tests:
+            tests = self.tests
+
+        response = requests.post(
+            self.EVALUATE_URL,
+            json={
+                "model_name": self.model_name,
+                "api_key": self.api_key,
+                "tests": tests,
+                "parameters": parameters,
+                "is_stream": is_stream,
+            },
+            headers={"Content-Type": "application/json"},
+        )
+        return response
+        #return response.json()
 
 
 class LLMClient(ABC):

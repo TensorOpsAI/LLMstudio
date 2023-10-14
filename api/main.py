@@ -8,6 +8,7 @@ from endpoints.chat.vertexai import router as chat_vertexai_router
 from endpoints.test.vertexai import router as test_vertexai_router
 from endpoints.chat.bedrock import router as chat_bedrock_router
 from endpoints.test.bedrock import router as test_bedrock_router
+from endpoints.evaluate.openai import router as evaluate_bedrock_router
 from endpoints.export import router as export_router
 
 from api.worker.config import pubsub
@@ -32,4 +33,5 @@ app.include_router(chat_vertexai_router, prefix="/api/chat")
 app.include_router(test_vertexai_router, prefix="/api/test")
 app.include_router(chat_bedrock_router, prefix="/api/chat")
 app.include_router(test_bedrock_router, prefix="/api/test")
+app.include_router(evaluate_bedrock_router, prefix="/api/evaluate")
 app.include_router(export_router, prefix="/api")

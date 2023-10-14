@@ -26,9 +26,11 @@ class OpenAIClient(LLMClient):
         Attributes:
             CHAT_URL (str): Endpoint URL for chat functionality.
             TEST_URL (str): Endpoint URL for API access testing.
+            EVALUATE_URL (str): Endpoint URL for evaluate functionality.
         """
         CHAT_URL = "http://localhost:8000/api/chat/openai"
         TEST_URL = "http://localhost:8000/api/test/openai"
+        EVALUATE_URL = "http://localhost:8000/api/evaluate/openai"
 
         def __init__(self, model_name, api_key):
             super().__init__(
