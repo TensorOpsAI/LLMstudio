@@ -134,19 +134,22 @@ class LLMModel(ABC):
         if not tests:
             tests = self.tests
 
+        validated_params = self.validate_parameters(parameters)
+
         response = requests.post(
             self.EVALUATE_URL,
             json={
                 "model_name": self.model_name,
                 "api_key": self.api_key,
+                "api_secret": self.api_secret,
+                "api_region": self.api_region,
                 "tests": tests,
-                "parameters": parameters,
+                "parameters": validated_params,
                 "is_stream": is_stream,
             },
             headers={"Content-Type": "application/json"},
         )
         return response
-        #return response.json()
 
 
 class LLMClient(ABC):

@@ -3,6 +3,9 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, validator
 import openai
+import requests
+
+from ..chat.openai import openai_chat_endpoint
 
 
 router = APIRouter()
@@ -33,12 +36,13 @@ class OpenAIEvaluator(BaseModel):
     Attributes:
         api_key (str): Authentication key for the OpenAI API.
         model_name (str): The identifier of the GPT model to be used.
-        tests (str): The input tests for the model.
+        tests (dict): The input tests for the model.
         parameters (Optional[OpenAIParameters]): Additional parameters to control the model’s output.
         is_stream (Optional[bool]): Flag to determine whether to receive streamed responses from the API.
     
     Methods:
         validate_model_name: Ensures that the chosen model_name is one of the allowed models.
+        validate_tests: Ensure that tests are not empty or None
     """
     api_key: str
     model_name: str
@@ -66,12 +70,12 @@ class OpenAIEvaluator(BaseModel):
         return value
 
     @validator("tests", always=True)
-    def validate_tests(cls, value):
+    def validate_tests(cls, tests):
         """
         Validate that the tests are not empty
         
         Args:
-            value: The tests to validate.
+            tests: The tests to validate.
         
         Returns:
             str: The validated tests.
@@ -79,10 +83,21 @@ class OpenAIEvaluator(BaseModel):
         Raises:
             ValueError: If the tests are empty.
         """
-        if not value:
+        if not tests:
             raise ValueError(f"tests should not be empty")
-        return value
-
+    
+        if not isinstance(tests, dict):
+            raise ValueError(f"tests is not a dict")
+        for key, value in tests.items():
+            if not isinstance(key, str):
+                raise ValueError(f"key of tests is not a string")
+            if not isinstance(value, dict):
+                raise ValueError(f"value of tests is not a Dictionary")
+            if 'test' not in value or 'answer' not in value:
+                raise ValueError("tests value should be in format \{test: \"...\", answer: \"...\"\}")
+            if not (isinstance(value['test'], str) and isinstance(value['answer'], str)):
+                raise ValueError(f"test and answer should be strings")
+        return tests
 
 @router.post("/openai")
 async def openai_evaluate_endpoint(data: OpenAIEvaluator):
@@ -95,48 +110,31 @@ async def openai_evaluate_endpoint(data: OpenAIEvaluator):
     Returns:
         Union[StreamingResponse, dict]: Streaming response if is_stream is True, otherwise a dict with chat and token data.
     """
-    openai.api_key = data.api_key
+    test_responses = {}
+    for key in data.tests:
+        test, answer = data.tests[key].values()
+        print(f"Key: {key} / Test: {test} / Answer: {answer}")
 
-    return "Working"
+        chat_data= {
+            "model_name": data.model_name,
+            "api_key": data.api_key,
+            "chat_input": test,
+            "parameters": data.parameters,
+            "is_stream": data.is_stream
+        }
+        response = await openai_chat_endpoint(chat_data)
+        """response = requests.post(
+            "http://localhost:8000/api/chat/openai",
+            json={
+                "model_name": data.model_name,
+                "api_key": data.api_key,
+                "chat_input": test,
+                "parameters": data.parameters,
+                "is_stream": data.is_stream
+            },
+            headers={"Content-Type": "application/json"},
+            timeout=10
+        )"""
+        test_responses[key] = response["chatOutput"]
 
-    """response = openai.ChatCompletion.create(
-        model=data.model_name,
-        messages=[
-            {
-                "role": "user",
-                "content": data.chat_input,
-            }
-        ],
-        temperature=data.parameters.temperature,
-        max_tokens=data.parameters.max_tokens,
-        top_p=data.parameters.top_p,
-        frequency_penalty=data.parameters.frequency_penalty,
-        presence_penalty=data.parameters.presence_penalty,
-        stream=data.is_stream,
-    )
-
-    if data.is_stream:
-        return StreamingResponse(generate_stream_response(response, data))
-    
-    input_tokens = get_tokens(data.chat_input, data.model_name)
-    output_tokens = get_tokens(
-        response["choices"][0]["message"]["content"], data.model_name
-    )
-
-    import random, time # delete
-
-    data = {
-        "id": random.randint(0, 1000),
-        "chatInput": data.chat_input,
-        "chatOutput": response["choices"][0]["message"]["content"],
-        "inputTokens": input_tokens,
-        "outputTokens": output_tokens,
-        "totalTokens": input_tokens + output_tokens,
-        "cost": get_cost(input_tokens, output_tokens, data.model_name),
-        "timestamp": time.time(),
-        "modelName": data.model_name,
-        "parameters": data.parameters.dict(),
-    }
-
-    append_log(data)
-    return data"""
+    return test_responses
