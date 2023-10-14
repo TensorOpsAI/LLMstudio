@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 import requests
+import asyncio
 from pydantic import BaseModel
+import threading
 
 
 class LLMModel(ABC):
@@ -182,3 +184,83 @@ class LLMClient(ABC):
             api_secret=self.api_secret,
             api_region=self.api_region,
         )
+class LLMCompare(ABC):
+
+    def __int__(self):
+        pass
+
+    async def _get_response_from_model(self, model: LLMModel, prompt:str, output_dict:dict):
+        """
+        Helper method to get response from a given model and store it in the output dictionary.
+
+        Args:
+            model (LLMModel): The language model to get a response from.
+            prompt (str): The input prompt for the model.
+            output_dict (dict): Dictionary to store the responses.
+
+        Returns:
+            dict: The updated output_dict.
+        """
+        output_dict[model.model_name] = model.chat(prompt)
+        return output_dict
+    
+    def _get_llm_performance(self, model: LLMModel, array):
+        
+        latency = []
+        cost = []
+        out_tokens = []
+        
+
+        for entry in array:
+            prompt = entry[0]
+            expected_output = entry[1]
+            output_dict = model.chat(prompt)
+            chat_output = output_dict['chat_Output']
+            latency.append(output_dict['latency'])
+            cost.append(output_dict['cost'])
+            out_tokens.append(output_dict['outputTokens'])
+
+
+        # now compute some metrics
+        statistics = self._get_metrics()
+
+        return statistics
+
+
+
+
+    async def single_prompt_compare(self, models:list[LLMClient],prompt:str ):
+        """
+        Compare multiple language models by obtaining their responses to a given prompt.
+
+        Args:
+            models (list[LLMClient]): List of language models to compare.
+            prompt (str): Input prompt for the models.
+
+        Returns:
+            dict: A dictionary where keys are model names and values are their corresponding responses.
+        """
+
+        output_dict = {}
+
+        tasks = [self._get_response_from_model(model, prompt, output_dict) for model in models]
+
+        await asyncio.gather(*tasks)
+
+        return output_dict
+    
+    def dataset_prompt_compare(self, models:list[LLMClient], array):
+
+        threads = []
+        output_dict = {}
+
+
+        for model in models:
+            thread = threading.Thread(target=self._get_llm_performance, args=(model, prompt, output_dict))
+            thread.start()
+            threads.append(thread)
+                
+        for thread in threads:
+            thread.join()
+
+        return output_dict
