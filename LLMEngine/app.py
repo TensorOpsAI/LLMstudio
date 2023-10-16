@@ -1,18 +1,10 @@
 from fastapi import FastAPI, HTTPException, Request
-from typing import Any, Dict, List, Optional, Union
-from LLMEngine.config import LLMEngineConfig, Route, RouteType
+from typing import Any, Dict, Optional
 
-
+from LLMEngine.config import LLMEngineConfig, Route
+from LLMEngine.constants import LLM_ENGINE_HEALTH_ENDPOINT, LLM_ENGINE_ROUTE_BASE, VERSION
 from LLMEngine.providers import get_provider
 
-from fastapi.responses import FileResponse, RedirectResponse
-from fastapi.openapi.docs import get_swagger_ui_html
-# TODO: Change to LLMEngine.constants.py
-LLM_ENGINE_ROUTE_BASE = "/llmengine/"
-LLM_ENGINE_HEALTH_ENDPOINT = "/health"
-
-# TODO: Change to LLMEngine.constants.py
-VERSION = '0.1.0'
 
 class LLMEngineAPI(FastAPI):
     def __init__(self, config: LLMEngineConfig, *args: Any, **kwargs: Any):

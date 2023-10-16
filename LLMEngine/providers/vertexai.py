@@ -8,12 +8,11 @@ import random
 import time
 from google.oauth2 import service_account
 import vertexai
-from vertexai.language_models import TextGenerationModel, ChatModel, CodeGenerationModel, CodeChatModel
 from LLMEngine.providers.base_provider import BaseProvider
 from LLMEngine.utils import validate_provider_config
+from LLMEngine.constants import END_TOKEN, VERTEXAI_MODEL_MAP, VERTEXAI_INPUT_MAP, VERTEXAI_TOKEN_PRICE
+from vertexai.language_models import TextGenerationModel, CodeGenerationModel
 
-# TODO: Change to constants.py
-end_token = "<END_TOKEN>"
 
 
 class VertexAIParameters(BaseModel):
@@ -61,27 +60,12 @@ class VertexAIProvider(BaseProvider):
             self.vertexai_config['api_key'])
         vertexai.init(
             project=self.vertexai_config['api_key']["project_id"], credentials=credentials)
+        
         data = VertexAIRequest(**data)
-
-        # TODO: Change to constants.py
-        model_map = {
-            "text-bison": TextGenerationModel,
-            "chat-bison": ChatModel,
-            "code-bison": CodeGenerationModel,
-            "codechat-bison": CodeChatModel
-        }
-        self.validate_model_field(data, model_map.keys())
-        model_class = model_map.get(data.model_name)
-
-        # TODO: Change to constants.py
-        input_arg_name_map = {
-            TextGenerationModel: 'prompt',
-            CodeGenerationModel: 'prefix',
-            ChatModel: 'message',
-            CodeChatModel: 'message'
-        }
-
-        input_arg_name = input_arg_name_map.get(model_class)
+        
+        self.validate_model_field(data, VERTEXAI_MODEL_MAP.keys())
+        model_class = VERTEXAI_MODEL_MAP.get(data.model_name)
+        input_arg_name = VERTEXAI_INPUT_MAP.get(model_class)
 
         kwargs = {
             "temperature": data.parameters.temperature,
@@ -171,7 +155,7 @@ def get_cost(input_tokens: int, output_tokens: int) -> float:
     Returns:
         float: The calculated cost for the API usage.
     """
-    return 0.0000005 * (input_tokens + output_tokens)
+    return VERTEXAI_TOKEN_PRICE * (input_tokens + output_tokens)
 
 
 def get_tokens(chat_input: str, model_name: str) -> int:
@@ -211,6 +195,6 @@ def generate_stream_response(response: dict, data: VertexAIProvider):
     input_tokens = len(data.chat_input)
     output_tokens = len(chat_output)
     cost = get_cost(input_tokens, output_tokens)
-    yield f"{end_token},{input_tokens},{output_tokens},{cost}"  # json
+    yield f"{END_TOKEN},{input_tokens},{output_tokens},{cost}"  # json
 
 
