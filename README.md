@@ -63,7 +63,7 @@ Step into the future of AI with LLMstudio.
 
 ## 📖 Contributing
 
-- Head on to our [Contribution Guide](https://github.com/TensorOpsAI/LLMstudio/tree/main/CONTRIB.md) to see how you can help LLMstudio.
+- Head on to our [Contribution Guide](https://github.com/TensorOpsAI/LLMstudio/tree/main/CONTRIBUTING.md) to see how you can help LLMstudio.
 
 ---
 
