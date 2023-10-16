@@ -1,5 +1,5 @@
 
-from api.config import VertexAIConfig, RouteConfig
+from LLMEngine.config import VertexAIConfig, RouteConfig
 from pydantic import BaseModel, Field
 from typing import Optional
 import tiktoken
@@ -8,6 +8,7 @@ import random, time
 from google.oauth2 import service_account
 import vertexai
 from vertexai.language_models import TextGenerationModel, ChatModel, CodeGenerationModel, CodeChatModel
+from LLMEngine.providers.base_provider import BaseProvider
 
 # TODO: Change to constants.py
 end_token = "<END_TOKEN>"
@@ -28,7 +29,7 @@ class VertexAIParameters(BaseModel):
     top_p: Optional[float] = Field(1, ge=0, le=1)
     top_k: Optional[float] = Field(40, ge=1, le=40)
 
-class VertexAIProvider(BaseModel):
+class VertexAIProvider(BaseProvider):
     api_key: str
     model_name: str
     chat_input: str
@@ -95,17 +96,17 @@ class VertexAIProvider(BaseModel):
             self.vertexai_config.vertexai_api_key)
         vertexai.init(project=data.api_key["project_id"], credentials=credentials)
 
+        # TODO: Change to constants.py
         model_map = {
             "text-bison": TextGenerationModel,
             "chat-bison": ChatModel,
             "code-bison": CodeGenerationModel,
             "codechat-bison": CodeChatModel
         }
-
+        self.validate_model_field(data, model_map.keys())
         model_class = model_map.get(data.model_name)
-        if model_class is None:
-            raise ValueError(f"Unsupported model name: {data.model_name}")
-
+    
+        # TODO: Change to constants.py
         input_arg_name_map = {
             TextGenerationModel: 'prompt',
             CodeGenerationModel: 'prefix',

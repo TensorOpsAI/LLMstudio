@@ -1,11 +1,12 @@
 
-from api.config import OpenAIConfig, RouteConfig
+from LLMEngine.config import OpenAIConfig, RouteConfig
 from pydantic import BaseModel, Field
 from typing import Optional
 import openai
 import tiktoken
 from fastapi.responses import StreamingResponse
 import random, time
+from LLMEngine.providers.base_provider import BaseProvider
 
 # TODO: Change to constants.py
 end_token = "<END_TOKEN>"
@@ -35,7 +36,7 @@ class OpenAIParameters(BaseModel):
     frequency_penalty: Optional[float] = Field(default=0, ge=0, le=1)
     presence_penalty: Optional[float] = Field(default=0, ge=0, le=1)
 
-class OpenAIProvider(BaseModel):
+class OpenAIProvider(BaseProvider):
 
     api_key: str
     model_name: str
@@ -59,12 +60,7 @@ class OpenAIProvider(BaseModel):
         from fastapi import HTTPException
         from fastapi.encoders import jsonable_encoder
 
-        # TODO: Change method to base_provider.py
-        if data.model_name not in ["gpt-3.5-turbo", "gpt-4", "gpt-3.5-turbo-16k"]:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid model_name: {data.model_name}",
-            )
+        self.validate_model_field(data, OPENAI_PRICING_DICT.keys())
         data = jsonable_encoder(data, exclude_none=True)
         openai.api_key = self.openai_config.openai_api_key
         response = openai.ChatCompletion.create(
