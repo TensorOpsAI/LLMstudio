@@ -1,6 +1,6 @@
 
 from LLMEngine.config import BedrockConfig, RouteConfig
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from typing import Optional, Tuple
 import openai
 import tiktoken
@@ -53,8 +53,7 @@ class TitanParameters(BaseModel):
     max_tokens: Optional[int] = Field(512, ge=1, le=4096)
     top_p: Optional[float] = Field(0.9, ge=0.1, le=1)
 
-class BedrockProvider(BaseProvider):
-
+class BedrockRequest(BaseModel):
     api_key: str
     api_secret: str
     api_region: str
@@ -63,9 +62,26 @@ class BedrockProvider(BaseProvider):
     parameters: Optional[BaseModel]
     is_stream: Optional[bool] = False
 
+class BedrockProvider(BaseProvider):
 
-    def __init__(self, config: RouteConfig) -> None:
-        super().__init__(config)
+    bedrock_config: BedrockConfig
+    api_key: str = None
+
+    @validator("bedrock_config", "api_key", pre=True)
+    def validate_model_name(cls, values):
+        bedrock_config = values['bedrock_config']
+        api_key = values['api_key']
+        if not (bedrock_config or api_key):
+            raise ValueError(
+                f"Config was not specified neither an api_key was provided."
+            )
+        bedrock_config.setdefault('bedrock_config', api_key)
+        values['bedrock_config'] = bedrock_config
+        return values
+
+    def __init__(self, config: RouteConfig,api_key:str = None) -> None:
+        super().__init__()
+        config.model.config.bedrock_api_key = api_key
         if config.model.config is None or not isinstance(config.model.config, BedrockConfig):
             # Should be unreachable
             raise ValueError(
@@ -75,7 +91,7 @@ class BedrockProvider(BaseProvider):
     
     # TODO: Request base url and headers based on api_type (not implemented)
 
-    async def chat(self, data) -> dict:
+    async def chat(self, data: BedrockRequest, config: BedrockConfig) -> dict:
         """
         Endpoint to process chat input via Bedrock API and generate a model's response.
 
