@@ -1,13 +1,16 @@
 
 from LLMEngine.config import OpenAIConfig, RouteConfig
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from typing import Optional
 import openai
 import tiktoken
 from fastapi.responses import StreamingResponse
 import random, time
 from LLMEngine.providers.base_provider import BaseProvider
+from LLMEngine.utils import validate_provider_config
 
+from fastapi import HTTPException
+from fastapi.encoders import jsonable_encoder
 # TODO: Change to constants.py
 end_token = "<END_TOKEN>"
 
@@ -36,35 +39,30 @@ class OpenAIParameters(BaseModel):
     frequency_penalty: Optional[float] = Field(default=0, ge=0, le=1)
     presence_penalty: Optional[float] = Field(default=0, ge=0, le=1)
 
-class OpenAIProvider(BaseProvider):
-
-    api_key: str
+class OpenAIRequest(BaseModel):
+    api_key: Optional[str]
     model_name: str
     chat_input: str
     parameters: Optional[OpenAIParameters] = OpenAIParameters()
     is_stream: Optional[bool] = False
 
+class OpenAIProvider(BaseProvider):
 
-    def __init__(self, config: RouteConfig) -> None:
-        super().__init__(config)
-        if config.model.config is None or not isinstance(config.model.config, OpenAIConfig):
-            # Should be unreachable
-            raise ValueError(
-                "Invalid config type {config.model.config}"
-            )
-        self.openai_config: OpenAIConfig = config.model.config
+    def __init__(self, config: OpenAIConfig, api_key: dict):
+        super().__init__()
+        self.openai_config = validate_provider_config(config, api_key)
+
     
     # TODO: Request base url and headers based on api_type (not implemented)
 
-    async def chat(self, data) -> dict:
-        from fastapi import HTTPException
-        from fastapi.encoders import jsonable_encoder
+    async def chat(self, data: OpenAIRequest) -> dict:
+        data = OpenAIRequest(**data)
 
         self.validate_model_field(data, OPENAI_PRICING_DICT.keys())
-        data = jsonable_encoder(data, exclude_none=True)
-        openai.api_key = self.openai_config.openai_api_key
+        openai.api_key = self.openai_config.api_key
+
         response = openai.ChatCompletion.create(
-        model=data["model_name"],
+        model=data.model_name,
         messages=[
             {
                 "role": "user",
