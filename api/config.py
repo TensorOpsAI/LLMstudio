@@ -12,16 +12,6 @@ from pydantic import BaseModel
 from pydantic import ValidationError, root_validator, validator
 from utils import is_valid_endpoint_name
 
-# TODO: Change to models.py
-class ConfigModel(
-    BaseModel,
-    # Ignore extra fields for pydantic config models, since they are unused
-    extra="ignore",
-):
-    """
-    A pydantic model representing Gateway configuration data, such as an OpenAI completions
-    route definition including route name, model name, API keys, etc.
-    """
 
 # TODO: Change to constants
 LLM_ENGINE_ROUTE_BASE = "/gateway/"
@@ -43,7 +33,7 @@ class Provider(str, Enum):
     def values(cls):
         return {p.value for p in cls}
 
-class OpenAIConfig(ConfigModel):
+class OpenAIConfig(BaseModel):
     openai_api_key: str
     openai_api_type: Optional[str] = 'openai'
     openai_api_base: Optional[str] = None
@@ -56,7 +46,7 @@ class OpenAIConfig(ConfigModel):
     def validate_openai_api_key(cls, value):
         return _resolve_api_key_from_input(value)
 
-class VertexAIConfig(ConfigModel):
+class VertexAIConfig(BaseModel):
     vertexai_api_key: str
 
     # pylint: disable=no-self-argument
@@ -65,7 +55,7 @@ class VertexAIConfig(ConfigModel):
         return _resolve_api_key_from_input(value)
     
 
-class BedrockConfig(ConfigModel):
+class BedrockConfig(BaseModel):
     bedrock_api_key: str
 
     # pylint: disable=no-self-argument
@@ -115,7 +105,7 @@ def _resolve_api_key_from_input(api_key_input):
     # if the key itself is passed, return
     return api_key_input
 
-class ModelProvider(ConfigModel):
+class ModelProvider(BaseModel):
     provider: Union[str, Provider]
     config: Optional[
         Union[
@@ -155,10 +145,10 @@ class ModelProvider(ConfigModel):
         
 
 
-class RouteConfig(ConfigModel):
+class RouteConfig(BaseModel):
     name: str
     route_type: RouteType
-    model_provider: ModelProvider
+    model_providers: List[ModelProvider]
     
     @validator("name", pre=True)
     def validate_endpoint_name(cls, route_name):
@@ -170,21 +160,29 @@ class RouteConfig(ConfigModel):
             )
         return route_name
 
-    @validator("model_provider", pre=True)
-    def validate_model(cls, model_provider):
-        if model_provider:
-            model_instance = ModelProvider(**model_provider)
-            if model_instance.provider not in Provider.values():
-                raise ValueError(
-                    f"The provider entry for {model_instance.provider} is incorrect. Providers accepted are {Provider.values()}"
-                )
-        return model_provider
+    @validator("model_providers", pre=True)
+    def validate_model(cls, model_providers):
+        if not model_providers:
+            raise ValueError(
+                "No model providers were provided for the route. Please provide at least one model provider."
+            )
+        for model_provider in model_providers:
+            if model_provider:
+                model_instance = ModelProvider(**model_provider)
+                if model_instance.provider not in Provider.values():
+                    raise ValueError(
+                        f"The provider entry for {model_instance.provider} is incorrect. Providers accepted are {Provider.values()}"
+                    )
+        return model_providers
     
     @validator("route_type", pre=True)
     def validate_route_type(cls, value):
         if value in RouteType._value2member_map_:
             return value
         raise ValueError(f"The route_type '{value}' is not supported. Please use one of {RouteType._value2member_map_}")
+    
+    def to_routes(self) -> List["Route"]:
+        return [model_provider.config.to_route() for model_provider in self.model_providers]
 
     def to_route(self) -> "Route":
             return Route(
@@ -193,7 +191,7 @@ class RouteConfig(ConfigModel):
                 route_url=f"{LLM_ENGINE_ROUTE_BASE}{self.name}",
             )
 
-class Route(ConfigModel):
+class Route(BaseModel):
     name: str
     route_type: str
     route_url: str
@@ -201,14 +199,14 @@ class Route(ConfigModel):
     class Config:
         schema_extra = {
             "example": {
-                "name": "openai-completions",
+                "name": "openai",
                 "route_type": "llm/v1/completions",
-                "route_url": "/gateway/routes/completions/invocations",
+                "route_url": "/llmengine/openai",
             }
         }
     
 
-class LLMEngineConfig(ConfigModel):
+class LLMEngineConfig(BaseModel):
     routes: List[RouteConfig]
 
 
