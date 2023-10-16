@@ -1,5 +1,5 @@
 
-from api.config import BedrockConfig, RouteConfig
+from LLMEngine.config import BedrockConfig, RouteConfig
 from pydantic import BaseModel, Field
 from typing import Optional, Tuple
 import openai
@@ -8,6 +8,7 @@ from fastapi.responses import StreamingResponse
 import random, time
 import boto3
 import json
+from LLMEngine.providers.base_provider import BaseProvider
 
 # TODO: Change to constants.py
 TITAN_MODELS = ["amazon.titan-tg1-large"]
@@ -16,6 +17,9 @@ CLAUDE_MODELS = [
     "anthropic.claude-v1",
     "anthropic.claude-v2",
 ]
+
+BEDROCK_MODELS = TITAN_MODELS + CLAUDE_MODELS
+
 
 # TODO: Change to constants.py
 end_token = "<END_TOKEN>"
@@ -49,7 +53,7 @@ class TitanParameters(BaseModel):
     max_tokens: Optional[int] = Field(512, ge=1, le=4096)
     top_p: Optional[float] = Field(0.9, ge=0.1, le=1)
 
-class BedrockProvider(BaseModel):
+class BedrockProvider(BaseProvider):
 
     api_key: str
     api_secret: str
@@ -65,7 +69,7 @@ class BedrockProvider(BaseModel):
         if config.model.config is None or not isinstance(config.model.config, BedrockConfig):
             # Should be unreachable
             raise ValueError(
-                "Invalid config type {config.model.config}"
+                f"Invalid config type {config.model.config}"
             )
         self.openai_config: BedrockConfig = config.model.config
     
@@ -81,6 +85,7 @@ class BedrockProvider(BaseModel):
         Returns:
             Union[StreamingResponse, dict]: Streaming response if is_stream is True, otherwise a dict with chat and token data.
         """
+        self.validate_model_field(data, BEDROCK_MODELS)
         session = boto3.Session(
             aws_access_key_id=data.api_key, aws_secret_access_key=data.api_secret
         )
