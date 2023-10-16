@@ -10,9 +10,22 @@ from google.oauth2 import service_account
 import vertexai
 from LLMEngine.providers.base_provider import BaseProvider
 from LLMEngine.utils import validate_provider_config
-from LLMEngine.constants import END_TOKEN, VERTEXAI_MODEL_MAP, VERTEXAI_INPUT_MAP, VERTEXAI_TOKEN_PRICE
-from vertexai.language_models import TextGenerationModel, CodeGenerationModel
+from LLMEngine.constants import END_TOKEN, VERTEXAI_TOKEN_PRICE
+from vertexai.language_models import TextGenerationModel, CodeGenerationModel, ChatModel, CodeChatModel
 
+VERTEXAI_MODEL_MAP = {
+            "text-bison": TextGenerationModel,
+            "chat-bison": ChatModel,
+            "code-bison": CodeGenerationModel,
+            "codechat-bison": CodeChatModel
+        }
+
+VERTEXAI_INPUT_MAP = {
+            TextGenerationModel: 'prompt',
+            CodeGenerationModel: 'prefix',
+            ChatModel: 'message',
+            CodeChatModel: 'message'
+        }
 
 
 class VertexAIParameters(BaseModel):
