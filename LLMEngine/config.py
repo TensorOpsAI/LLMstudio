@@ -1,23 +1,18 @@
 from enum import Enum
 import pathlib
 import os
-import pydantic
-from packaging import version
 from pathlib import Path
 import yaml
 import json
 from typing import Union, List, Optional
 from pydantic.json import pydantic_encoder
 from pydantic import BaseModel
-from pydantic import ValidationError, root_validator, validator
+from pydantic import ValidationError, validator
 from LLMEngine.utils import is_valid_endpoint_name
+from LLMEngine.constants import IS_PYDANTIC_V2
 
 
-# TODO: Change to constants
-LLM_ENGINE_ROUTE_BASE = "/llmengine/"
 
-
-IS_PYDANTIC_V2 = version.parse(pydantic.version.VERSION) >= version.parse("2.0")
 
 class RouteType(str, Enum):
     LLM_CHAT = "api/llm/chat"

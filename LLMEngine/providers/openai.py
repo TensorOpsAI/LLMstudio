@@ -1,6 +1,6 @@
 
-from LLMEngine.config import OpenAIConfig, RouteConfig
-from pydantic import BaseModel, Field, validator
+from LLMEngine.config import OpenAIConfig
+from pydantic import BaseModel, Field
 from typing import Optional
 import openai
 import tiktoken
@@ -8,19 +8,8 @@ from fastapi.responses import StreamingResponse
 import random, time
 from LLMEngine.providers.base_provider import BaseProvider
 from LLMEngine.utils import validate_provider_config
+from LLMEngine.constants import OPENAI_PRICING_DICT, END_TOKEN
 
-from fastapi import HTTPException
-from fastapi.encoders import jsonable_encoder
-# TODO: Change to constants.py
-end_token = "<END_TOKEN>"
-
-
-# TODO: Change to constants.py
-OPENAI_PRICING_DICT = {
-            "gpt-3.5-turbo": {"input_tokens": 0.0000015, "output_tokens": 0.000002},
-            "gpt-4": {"input_tokens": 0.00003, "output_tokens": 0.00006},
-            "gpt-3.5-turbo-16k": {"input_tokens": 0.00003, "output_tokens": 0.00004},
-        }
 
 class OpenAIParameters(BaseModel):
     """
@@ -151,7 +140,7 @@ def generate_stream_response(response: dict, data: OpenAIProvider):
                 input_tokens = get_tokens(data.chat_input, data.model_name)
                 output_tokens = get_tokens(chat_output, data.model_name)
                 cost = get_cost(input_tokens, output_tokens, data.model_name)
-                yield f"{end_token},{input_tokens},{output_tokens},{cost}"  # json
+                yield f"{END_TOKEN},{input_tokens},{output_tokens},{cost}"  # json
 
 
 

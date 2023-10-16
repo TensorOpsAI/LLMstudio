@@ -9,20 +9,12 @@ import random, time
 import boto3
 import json
 from LLMEngine.providers.base_provider import BaseProvider
+from LLMEngine.constants import BEDROCK_MODELS, CLAUDE_MODELS, TITAN_MODELS, END_TOKEN
+from LLMEngine.utils import validate_provider_config
 
 # TODO: Change to constants.py
-TITAN_MODELS = ["amazon.titan-tg1-large"]
-CLAUDE_MODELS = [
-    "anthropic.claude-instant-v1",
-    "anthropic.claude-v1",
-    "anthropic.claude-v2",
-]
-
-BEDROCK_MODELS = TITAN_MODELS + CLAUDE_MODELS
 
 
-# TODO: Change to constants.py
-end_token = "<END_TOKEN>"
 
 class ClaudeParameters(BaseModel):
     """
@@ -64,34 +56,13 @@ class BedrockRequest(BaseModel):
 
 class BedrockProvider(BaseProvider):
 
-    bedrock_config: BedrockConfig
-    api_key: str = None
-
-    @validator("bedrock_config", "api_key", pre=True)
-    def validate_model_name(cls, values):
-        bedrock_config = values['bedrock_config']
-        api_key = values['api_key']
-        if not (bedrock_config or api_key):
-            raise ValueError(
-                f"Config was not specified neither an api_key was provided."
-            )
-        bedrock_config.setdefault('bedrock_config', api_key)
-        values['bedrock_config'] = bedrock_config
-        return values
-
-    def __init__(self, config: RouteConfig,api_key:str = None) -> None:
+    def __init__(self, config: BedrockConfig, api_key: dict):
         super().__init__()
-        config.model.config.bedrock_api_key = api_key
-        if config.model.config is None or not isinstance(config.model.config, BedrockConfig):
-            # Should be unreachable
-            raise ValueError(
-                f"Invalid config type {config.model.config}"
-            )
-        self.openai_config: BedrockConfig = config.model.config
+        self.openai_config = validate_provider_config(config, api_key)
     
     # TODO: Request base url and headers based on api_type (not implemented)
 
-    async def chat(self, data: BedrockRequest, config: BedrockConfig) -> dict:
+    async def chat(self, data: BedrockRequest) -> dict:
         """
         Endpoint to process chat input via Bedrock API and generate a model's response.
 
@@ -101,6 +72,7 @@ class BedrockProvider(BaseProvider):
         Returns:
             Union[StreamingResponse, dict]: Streaming response if is_stream is True, otherwise a dict with chat and token data.
         """
+        data = BedrockRequest(**data)
         self.validate_model_field(data, BEDROCK_MODELS)
         session = boto3.Session(
             aws_access_key_id=data.api_key, aws_secret_access_key=data.api_secret
@@ -230,7 +202,7 @@ def generate_stream_response(response, response_keys):
     input_tokens = 0
     output_tokens = 0
     cost = 0
-    yield f"{end_token},{input_tokens},{output_tokens},{cost}"
+    yield f"{END_TOKEN},{input_tokens},{output_tokens},{cost}"
 
 
 
