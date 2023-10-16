@@ -10,11 +10,11 @@ from typing import Union, List, Optional
 from pydantic.json import pydantic_encoder
 from pydantic import BaseModel
 from pydantic import ValidationError, root_validator, validator
-from utils import is_valid_endpoint_name
+from LLMEngine.utils import is_valid_endpoint_name
 
 
 # TODO: Change to constants
-LLM_ENGINE_ROUTE_BASE = "/gateway/"
+LLM_ENGINE_ROUTE_BASE = "/llmengine/"
 
 
 IS_PYDANTIC_V2 = version.parse(pydantic.version.VERSION) >= version.parse("2.0")
@@ -34,7 +34,7 @@ class Provider(str, Enum):
         return {p.value for p in cls}
 
 class OpenAIConfig(BaseModel):
-    openai_api_key: str
+    api_key: str
     openai_api_type: Optional[str] = 'openai'
     openai_api_base: Optional[str] = None
     openai_api_version: Optional[str] = None
@@ -42,25 +42,25 @@ class OpenAIConfig(BaseModel):
     openai_organization: Optional[str] = None
 
     # pylint: disable=no-self-argument
-    @validator("openai_api_key", pre=True)
-    def validate_openai_api_key(cls, value):
+    @validator("api_key", pre=True)
+    def validate_api_key(cls, value):
         return _resolve_api_key_from_input(value)
 
 class VertexAIConfig(BaseModel):
-    vertexai_api_key: str
+    api_key: str
 
     # pylint: disable=no-self-argument
-    @validator("vertexai_api_key", pre=True)
-    def validate_vertexai_api_key(cls, value):
+    @validator("api_key", pre=True)
+    def validate_api_key(cls, value):
         return _resolve_api_key_from_input(value)
     
 
 class BedrockConfig(BaseModel):
-    bedrock_api_key: str
+    api_key: str
 
     # pylint: disable=no-self-argument
-    @validator("bedrock_api_key", pre=True)
-    def validate_bedrock_api_key(cls, value):
+    @validator("api_key", pre=True)
+    def validate_api_key(cls, value):
         return _resolve_api_key_from_input(value)
     
     
@@ -181,14 +181,12 @@ class RouteConfig(BaseModel):
             return value
         raise ValueError(f"The route_type '{value}' is not supported. Please use one of {RouteType._value2member_map_}")
     
-    def to_routes(self) -> List["Route"]:
-        return [model_provider.config.to_route() for model_provider in self.model_providers]
 
-    def to_route(self) -> "Route":
+    def to_route(self, name, route_url) -> "Route":
             return Route(
-                name=self.name,
+                name=name,
                 route_type=self.route_type,
-                route_url=f"{LLM_ENGINE_ROUTE_BASE}{self.name}",
+                route_url=route_url,
             )
 
 class Route(BaseModel):
