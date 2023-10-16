@@ -28,3 +28,13 @@ def validate_provider_config(config, api_key):
     if api_key is not None:
         config.setdefault('api_key', api_key)
     return config
+
+def check_configuration_route_name_collisions(config):
+    if len(config["routes"]) < 2:
+        return
+    names = [route["name"] for route in config["routes"]]
+    if len(names) != len(set(names)):
+        raise ValueError(
+            "Duplicate names found in route configurations. Please remove the duplicate route "
+            "name from the configuration to ensure that route endpoints are created properly."
+        )
