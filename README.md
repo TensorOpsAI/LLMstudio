@@ -4,22 +4,13 @@ Prompt Engineering at your fingertips
 
 ![LLMstudio logo](https://imgur.com/1DzAuaW.jpg)
 
----
-
-## Table of Contents
-
-- [Features](#features)
-- [Quick install](#quick-install)
-- [About LLMstudio](#about-llm-studio)
-- [Documentation](#documentation)
-
----
-
 ## 🌟 Features
 
-1. **Python Client Gateway**: Seamless integration with multiple LLMs and chaining libraries such as LangChain.
-2. **Prompt Editing UI**: An intuitive interface designed for prompt engineering.
-3. **History Management**: Track past runs and easily export your data as needed.
+![LLMstudio UI](https://imgur.com/zBnhtTN.png)
+
+1.  **Python Client Gateway**: Seamless integration with multiple LLMs and chaining libraries such as LangChain.
+2.  **Prompt Editing UI**: An intuitive interface designed for prompt engineering.
+3.  **History Management**: Track past runs and easily export your data as needed.
 
 ### 👀 Coming soon:
 
@@ -28,19 +19,17 @@ Prompt Engineering at your fingertips
 - Projects and sessions
 - API keys manager
 
----
-
 ## 🚀 Quick Install
 
 Clone the repo and run the following command at root level
 
 ```
+
 docker-compose up --build
+
 ```
 
 You can access the UI at http://localhost:3000
-
----
 
 ## 🤔 About LLMstudio
 
@@ -52,13 +41,12 @@ Benefits include:
 - **Execution History**: Keep a detailed log of past executions, track progress, and make iterative improvements effortlessly.
 - **Effortless Data Export**: Share your team's endeavors by exporting data to shareable CSV files.
 
-Step into the future of AI with LLMstudio.
-
----
+Step into the future of AI with LLMstudio, by watching our [introduction video](https://www.youtube.com/watch?v=I9h701fbD18)
 
 ## 📖 Documentation
 
 - [Visit our docs to learn how the SDK works](https://docs.llmstudio.ai) (coming soon)
+
 - [Checkout our notebook examples to follow along with interactive tutorials](https://github.com/TensorOpsAI/LLMstudio/tree/main/examples)
 
 ## 👨‍💻 Contributing
