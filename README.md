@@ -2,7 +2,7 @@
 
 Prompt Engineering at your fingertips
 
-![LLMstudio logo](https://imgur.com/1DzAuaW.jpg)
+![LLMstudio logo](https://imgur.com/9sYNIYL.gif)
 
 ## 🌟 Features
 
