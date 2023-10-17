@@ -2,6 +2,9 @@
 
 LLMStudio is a versatile platform designed to be the interface between users and multiple LLM providers. The platform is engineered to simplify logging, progress tracking, and the iterative improvement of machine learning projects. This is facilitated through Python APIs.
 
+> **Note**: This is a roadmap and we're open to suggestions. If you have any, please feel free to discuss them in the [relevant issue thread](https://github.com/TensorOpsAI/LLMstudio/issues/14).
+
+
 ## Table of Concepts
 
 - [Concepts](#concepts)
@@ -50,6 +53,8 @@ LLMStudio client can interface with a variety of APIs and storage configuration.
 Run LLMStudio on your local machine. Both the LLM Engine API and the logging mechanisms are locally hosted. Logs are stored in a directory in the local filesystem at `./llmstudio_runs`.
 
 ![llmstudio-s1](llmstudio-s1.png)
+
+#### Detailed Workflow
 
 In this simple scenario, The LLMStudio client interacts with the LLM Engine API server via a REST request and logs into a simple file:
 
