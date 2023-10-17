@@ -54,6 +54,29 @@ class BedrockRequest(BaseModel):
     parameters: Optional[BaseModel]
     is_stream: Optional[bool] = False
 
+    @validator("parameters", pre=True, always=True)
+    def validate_parameters_based_on_model_name(cls, parameters, values):
+        """
+        Validate and convert parameters based on the model_name.
+
+        Args:
+            parameters (Dict[str, Any]): Parameters to validate and convert.
+            values (Dict[str, Any]): Contains previously validated fields.
+
+        Returns:
+            BaseModel: An instance of `TitanParameters` or `ClaudeParameters` based on `model_name`.
+
+        Raises:
+            ValueError if model_name is invalid.
+        """
+        model_name = values.get("model_name")
+        if model_name in TITAN_MODELS:
+            return TitanParameters(**parameters)
+        if model_name in CLAUDE_MODELS:
+            return ClaudeParameters(**parameters)
+        
+        raise ValueError(f"Invalid model_name: {model_name}")
+
 class BedrockTest(BaseModel):
     """
     A Pydantic model for validating Bedrock API requests.
