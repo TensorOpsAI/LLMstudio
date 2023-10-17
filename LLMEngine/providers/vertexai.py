@@ -45,11 +45,14 @@ class VertexAIParameters(BaseModel):
 
 
 class VertexAIRequest(BaseModel):
-    api_key: dict
+    api_key: Optional[dict]
     model_name: str
     chat_input: str
     parameters: Optional[VertexAIParameters] = VertexAIParameters()
     is_stream: Optional[bool] = False
+
+class VertexAITest(BaseModel):
+    api_key: Optional[dict]
 
 
 class VertexAIProvider(BaseProvider):
@@ -58,8 +61,6 @@ class VertexAIProvider(BaseProvider):
         super().__init__()
         self.vertexai_config = validate_provider_config(config, api_key)
     
-
-    # TODO: Request base url and headers based on api_type (not implemented)
 
     async def chat(self, data: VertexAIRequest) -> dict:
         """
@@ -116,6 +117,24 @@ class VertexAIProvider(BaseProvider):
         }
 
         return data
+    
+    async def test(self, data: VertexAITest) -> bool:
+        """
+        Test the validity of the Vertex AI API key.
+        Args:
+            data (VertexAITest): A model instance which includes the API key for Vertex AI.
+        Returns:
+            bool: `True` if the API key is valid and initialization succeeds, otherwise `False`.
+        """
+        data = VertexAITest(**data)
+        try:
+            credentials = service_account.Credentials.from_service_account_info(
+                self.vertexai_config['api_key'])
+            vertexai.init(
+                project=self.vertexai_config['api_key']["project_id"], credentials=credentials)
+            return True
+        except Exception as exception:
+            return False
 
 
 
