@@ -52,7 +52,7 @@ class OpenAITest(BaseModel):
 
 class OpenAIProvider(BaseProvider):
 
-    def __init__(self, config: OpenAIConfig, api_key: dict):
+    def __init__(self, config: OpenAIConfig, api_key: str):
         super().__init__()
         if isinstance(config, OpenAIConfig):
             self.openai_config = config
