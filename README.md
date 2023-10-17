@@ -46,8 +46,8 @@ Step into the future of AI with LLMstudio, by watching our [introduction video](
 ## 📖 Documentation
 
 - [Visit our docs to learn how the SDK works](https://docs.llmstudio.ai) (coming soon)
-
-- [Checkout our notebook examples to follow along with interactive tutorials](https://github.com/TensorOpsAI/LLMstudio/tree/main/examples)
+- Checkout our [notebook examples](https://github.com/TensorOpsAI/LLMstudio/tree/main/examples) to follow along with interactive tutorials
+- Checkout out [LLMStudio Architecture Roadmap](https://github.com/TensorOpsAI/LLMstudio/blob/main/docs/llmstudio-architecture/llmstudio-architecture-roadmap.md)
 
 ## 👨‍💻 Contributing
 
