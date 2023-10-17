@@ -54,7 +54,10 @@ class OpenAIProvider(BaseProvider):
 
     def __init__(self, config: OpenAIConfig, api_key: dict):
         super().__init__()
-        self.openai_config = validate_provider_config(config, api_key)
+        if isinstance(config, OpenAIConfig):
+            self.openai_config = config
+        else:
+            self.openai_config = OpenAIConfig(**validate_provider_config(config, api_key))
 
     async def chat(self, data: OpenAIRequest) -> dict:
         data = OpenAIRequest(**data)
