@@ -2,7 +2,18 @@
 
 Prompt Engineering at your fingertips
 
-![LLMstudio logo](https://imgur.com/Xqsj6V2.gif)
+![LLMstudio logo](https://imgur.com/1DzAuaW.jpg)
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Quick install](#quick-install)
+- [About LLMstudio](#about-llm-studio)
+- [Documentation](#documentation)
+
+---
 
 ## 🌟 Features
 
