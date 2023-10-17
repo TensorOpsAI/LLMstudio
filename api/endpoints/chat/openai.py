@@ -4,10 +4,12 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 import openai
 from pydantic import BaseModel, Field, validator
+import asyncio
 import tiktoken
-
+import random, time 
 from api.worker.config import celery_app
 from api.utils import append_log
+
 
 end_token = "<END_TOKEN>"
 
@@ -40,7 +42,7 @@ class OpenAIRequest(BaseModel):
         api_key (str): Authentication key for the OpenAI API.
         model_name (str): The identifier of the GPT model to be used.
         chat_input (str): The input text for the model.
-        parameters (Optional[OpenAIParameters]): Additional parameters to control the model’s output.
+        parameters (Optional[OpenAIParameters]): Additional parameters to control the model's output.
         is_stream (Optional[bool]): Flag to determine whether to receive streamed responses from the API.
     
     Methods:
@@ -94,7 +96,7 @@ def get_cost(input_tokens: int, output_tokens: int, model_name: str) -> float:
 
 def get_tokens(chat_input: str, model_name: str) -> int:
     """
-    Determine the number of tokens in a given input string using the specified model’s tokenizer.
+    Determine the number of tokens in a given input string using the specified model's tokenizer.
     
     Args:
         chat_input (str): Text to be tokenized.
@@ -145,7 +147,7 @@ async def openai_chat_endpoint(data: OpenAIRequest):
         Union[StreamingResponse, dict]: Streaming response if is_stream is True, otherwise a dict with chat and token data.
     """
     openai.api_key = data.api_key
-
+    response_start_time = time.time()
     response = openai.ChatCompletion.create(
         model=data.model_name,
         messages=[
@@ -161,16 +163,14 @@ async def openai_chat_endpoint(data: OpenAIRequest):
         presence_penalty=data.parameters.presence_penalty,
         stream=data.is_stream,
     )
-
     if data.is_stream:
         return StreamingResponse(generate_stream_response(response, data))
     
+    response_time = time.time() - response_start_time
     input_tokens = get_tokens(data.chat_input, data.model_name)
     output_tokens = get_tokens(
         response["choices"][0]["message"]["content"], data.model_name
     )
-
-    import random, time # delete
 
     data = {
         "id": random.randint(0, 1000),
@@ -183,6 +183,7 @@ async def openai_chat_endpoint(data: OpenAIRequest):
         "timestamp": time.time(),
         "modelName": data.model_name,
         "parameters": data.parameters.dict(),
+        "latency": response_time
     }
 
     append_log(data)
