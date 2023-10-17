@@ -8,12 +8,11 @@ from typing import Union, List, Optional
 from pydantic.json import pydantic_encoder
 from pydantic import BaseModel
 from pydantic import ValidationError, validator
-from LLMEngine.utils import is_valid_endpoint_name
-from LLMEngine.constants import IS_PYDANTIC_V2
+from LLMEngine.utils import is_valid_endpoint_name, check_configuration_route_name_collisions
+import pydantic
+from packaging import version
 
-
-
-
+IS_PYDANTIC_V2 = version.parse(pydantic.version.VERSION) >= version.parse("2.0")
 class RouteType(str, Enum):
     LLM_CHAT = "api/llm/chat"
     LLM_VALIDATION = "api/llm/validation"
@@ -241,13 +240,3 @@ def _validate_config(config_path: str) -> LLMEngineConfig:
         raise ValueError(f"Invalid gateway configuration: {e}") from e
 
 
-# TODO: Add to utils.py
-def check_configuration_route_name_collisions(config):
-    if len(config["routes"]) < 2:
-        return
-    names = [route["name"] for route in config["routes"]]
-    if len(names) != len(set(names)):
-        raise ValueError(
-            "Duplicate names found in route configurations. Please remove the duplicate route "
-            "name from the configuration to ensure that route endpoints are created properly."
-        )
