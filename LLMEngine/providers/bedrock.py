@@ -46,21 +46,37 @@ class TitanParameters(BaseModel):
     top_p: Optional[float] = Field(0.9, ge=0.1, le=1)
 
 class BedrockRequest(BaseModel):
-    api_key: str
-    api_secret: str
-    api_region: str
+    api_key: Optional[str]
+    api_secret: Optional[str]
+    api_region: Optional[str]
     model_name: str
     chat_input: str
     parameters: Optional[BaseModel]
     is_stream: Optional[bool] = False
 
+class BedrockTest(BaseModel):
+    """
+    A Pydantic model for validating Bedrock API requests.
+
+    Attributes:
+        api_key (str): The API key provided by the user for authentication with Bedrock's API.
+        api_secret (str): The API secret key provided by the user for authentication.
+        api_region (str): The API region for Bedrock API requests.
+        model_name (str): The name of the model intended for use with the Bedrock API.
+
+    Methods:
+        validate_model_name: Ensures that `model_name` is one of the allowed values.
+    """
+    api_key: Optional[str]
+    api_secret: Optional[str]
+    api_region: Optional[str]
+    model_name: str
+
 class BedrockProvider(BaseProvider):
 
     def __init__(self, config: BedrockConfig, api_key: dict):
         super().__init__()
-        self.openai_config = validate_provider_config(config, api_key)
-    
-    # TODO: Request base url and headers based on api_type (not implemented)
+        self.bedrock_config = validate_provider_config(config, api_key)
 
     async def chat(self, data: BedrockRequest) -> dict:
         """
@@ -75,9 +91,9 @@ class BedrockProvider(BaseProvider):
         data = BedrockRequest(**data)
         self.validate_model_field(data, BEDROCK_MODELS)
         session = boto3.Session(
-            aws_access_key_id=data.api_key, aws_secret_access_key=data.api_secret
+            aws_access_key_id=self.bedrock_config['api_key'], aws_secret_access_key=self.bedrock_config['api_secret']
         )
-        bedrock = session.client(service_name="bedrock", region_name=data.api_region)
+        bedrock = session.client(service_name="bedrock", region_name=self.bedrock_config['api_region'])
 
         body, response_keys = generate_body_and_response(data)
 
@@ -120,6 +136,33 @@ class BedrockProvider(BaseProvider):
         }
 
         return data
+    
+    async def test(self, data: BedrockTest) -> bool:
+        """
+        Test the validity of the Bedrock API credentials and model name.
+
+        Args:
+            data (BedrockTest): A model instance containing the Bedrock API credentials
+                            and model name to test.
+
+        Returns:
+            bool: `True` if the API credentials and model name are valid, otherwise `False`.
+        """
+        data = BedrockTest(**data)
+        try:
+            session = boto3.Session(
+                aws_access_key_id=self.bedrock_config['api_key'], aws_secret_access_key=self.bedrock_config['api_secret']
+            )
+            bedrock = session.client(service_name="bedrock", region_name=self.bedrock_config['api_region'])
+            response = bedrock.list_foundation_models()
+
+            if data.model_name in [i["modelId"] for i in response["modelSummaries"]]:
+                return True
+            else:
+                return False
+        except Exception:
+            return False
+
 
 def generate_body_and_response(data: BedrockProvider) -> Tuple[dict, dict]:
     """

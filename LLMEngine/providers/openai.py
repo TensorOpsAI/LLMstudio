@@ -35,14 +35,26 @@ class OpenAIRequest(BaseModel):
     parameters: Optional[OpenAIParameters] = OpenAIParameters()
     is_stream: Optional[bool] = False
 
+class OpenAITest(BaseModel):
+    """
+    A Pydantic model for validating OpenAI API requests.
+
+    Attributes:
+        api_key (str): The API key provided by the user authentication with OpenAI API.
+        model_name (str): The name of the model to be used for generating text
+
+    Methods:
+        validate_model_name: Ensures that `model_name` is one of the allowed values.
+    ```
+    """
+    api_key: Optional[str]
+    model_name: str
+
 class OpenAIProvider(BaseProvider):
 
     def __init__(self, config: OpenAIConfig, api_key: dict):
         super().__init__()
         self.openai_config = validate_provider_config(config, api_key)
-
-    
-    # TODO: Request base url and headers based on api_type (not implemented)
 
     async def chat(self, data: OpenAIRequest) -> dict:
         data = OpenAIRequest(**data)
@@ -87,6 +99,25 @@ class OpenAIProvider(BaseProvider):
             "parameters": data.parameters.dict(),
         }
         return data
+
+    async def test(self, data: OpenAITest) -> bool:
+        """
+        Test the validity of the OpenAI API key.
+        
+        Args:
+            data (OpenAITest): A model instance which includes the API key for OpenAI.
+
+        Returns:
+            bool: `True` if the API key is valid and initialization succeeds, otherwise `False`.
+        """
+        openai.api_key = self.openai_config.api_key
+        data = OpenAITest(**data)
+        try:
+            self.validate_model_field(data, OPENAI_PRICING_DICT.keys())
+            openai.Model.retrieve(data.model_name)
+            return True
+        except Exception:
+            return False
 
 def get_cost(input_tokens: int, output_tokens: int, model_name: str) -> float:
         """
