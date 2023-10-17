@@ -2,7 +2,7 @@
 
 Prompt Engineering at your fingertips
 
-![LLMstudio logo](https://imgur.com/9sYNIYL.gif)
+![LLMstudio logo](https://imgur.com/Xqsj6V2.gif)
 
 ## 🌟 Features
 
@@ -30,9 +30,7 @@ pip install llmstudio
 Clone the repo and run the following command at root level
 
 ```
-
 docker-compose up --build
-
 ```
 
 You can access the UI at http://localhost:3000
