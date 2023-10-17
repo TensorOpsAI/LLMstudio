@@ -1,8 +1,8 @@
 # LLMstudio by [TensorOps](http://tensorops.ai "TensorOps")
 
-Craft. 🧠 Test. 🤖 Perfect. ⚡️
+Prompt Engineering at your fingertips
 
-Your AI playground for prompt perfection.
+![LLMstudio logo](https://imgur.com/1DzAuaW.jpg)
 
 ---
 
@@ -58,10 +58,10 @@ Step into the future of AI with LLMstudio.
 
 ## 📖 Documentation
 
-- [Visit our docs to learn how the SDK works](https://docs.llmstudio.ai)
+- [Visit our docs to learn how the SDK works](https://docs.llmstudio.ai) (coming soon)
 - [Checkout our notebook examples to follow along with interactive tutorials](https://github.com/TensorOpsAI/LLMstudio/tree/main/examples)
 
-## 📖 Contributing
+## 👨‍💻 Contributing
 
 - Head on to our [Contribution Guide](https://github.com/TensorOpsAI/LLMstudio/tree/main/CONTRIBUTING.md) to see how you can help LLMstudio.
 

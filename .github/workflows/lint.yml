@@ -1,0 +1,27 @@
+name: Lint
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          cache: "pip"
+
+      - name: Lint and format
+        run: |
+          pip install pre-commit
+          pre-commit run --all-files --color always

@@ -17,13 +17,14 @@ class OpenAITest(BaseModel):
         validate_model_name: Ensures that `model_name` is one of the allowed values.
     ```
     """
+
     api_key: str
     model_name: str
 
     @validator("model_name", always=True)
     def validate_model_name(cls, value: str):
         """
-        Ensures that the provided `model_name` is one of the allowed values 
+        Ensures that the provided `model_name` is one of the allowed values
         to prevent potential invalid requests to the OpenAI API.
 
         Args:
@@ -45,7 +46,7 @@ class OpenAITest(BaseModel):
 async def test_openai(data: OpenAITest) -> bool:
     """
     Test the validity of the OpenAI API key.
-    
+
     Args:
         data (OpenAITest): A model instance which includes the API key for OpenAI.
 

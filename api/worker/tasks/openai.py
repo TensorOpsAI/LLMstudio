@@ -1,7 +1,9 @@
-from api.worker.config import celery_app, redis_conn
+import json
+
 import openai
 import tiktoken
-import json
+
+from api.worker.config import celery_app, redis_conn
 
 
 @celery_app.task(name="tasks.openai.openai_chat_worker")
@@ -32,9 +34,7 @@ def openai_chat_worker(
             ):
                 output += chunk["choices"][0]["delta"]["content"]
                 # yield chunk["choices"][0]["delta"]["content"]
-                redis_conn.publish(
-                    channel_name, chunk["choices"][0]["delta"]["content"]
-                )
+                redis_conn.publish(channel_name, chunk["choices"][0]["delta"]["content"])
             else:
                 input_tokens = get_tokens(input)
                 output_tokens = get_tokens(output)

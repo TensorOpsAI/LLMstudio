@@ -1,5 +1,7 @@
 from typing import Optional
+
 from pydantic import BaseModel, Field
+
 
 class VertexAIParameters(BaseModel):
     """
@@ -11,6 +13,7 @@ class VertexAIParameters(BaseModel):
         top_p (Optional[float]): Influences the diversity of output by controlling token sampling.
         top_k (Optional[float]): Sets the number of the most likely next tokens to filter for.
     """
+
     temperature: Optional[float] = Field(1, ge=0, le=1)
     max_tokens: Optional[int] = Field(256, ge=1, le=1024)
     top_p: Optional[float] = Field(1, ge=0, le=1)
