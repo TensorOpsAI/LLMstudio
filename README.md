@@ -4,17 +4,6 @@ Prompt Engineering at your fingertips
 
 ![LLMstudio logo](https://imgur.com/1DzAuaW.jpg)
 
----
-
-## Table of Contents
-
-- [Features](#features)
-- [Quick install](#quick-install)
-- [About LLMstudio](#about-llm-studio)
-- [Documentation](#documentation)
-
----
-
 ## 🌟 Features
 
 ![LLMstudio UI](https://imgur.com/zBnhtTN.png)
@@ -41,7 +30,9 @@ pip install llmstudio
 Clone the repo and run the following command at root level
 
 ```
+
 docker-compose up --build
+
 ```
 
 You can access the UI at http://localhost:3000
@@ -63,7 +54,6 @@ Step into the future of AI with LLMstudio, by watching our [introduction video](
 - [Visit our docs to learn how the SDK works](https://docs.llmstudio.ai) (coming soon)
 - Checkout our [notebook examples](https://github.com/TensorOpsAI/LLMstudio/tree/main/examples) to follow along with interactive tutorials
 - Checkout out [LLMStudio Architecture Roadmap](https://github.com/TensorOpsAI/LLMstudio/blob/main/docs/llmstudio-architecture/llmstudio-architecture-roadmap.md)
-
 ## 👨‍💻 Contributing
 
 - Head on to our [Contribution Guide](https://github.com/TensorOpsAI/LLMstudio/tree/main/CONTRIBUTING.md) to see how you can help LLMstudio.
