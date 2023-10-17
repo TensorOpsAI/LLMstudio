@@ -1,14 +1,14 @@
-from typing import Optional, Dict, Any, Tuple
-import os
 import json
+import os
+from typing import Any, Dict, Optional, Tuple
 
 import boto3
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, validator
 
-from api.worker.config import celery_app
 from api.utils import append_log
+from api.worker.config import celery_app
 
 end_token = "<END_TOKEN>"
 
@@ -32,6 +32,7 @@ class ClaudeParameters(BaseModel):
         top_p (Optional[float]): Influences the diversity of output by controlling token sampling.
         top_k (Optional[float]): Sets the number of the most likely next tokens to filter for.
     """
+
     temperature: Optional[float] = Field(1, ge=0, le=1)
     max_tokens: Optional[int] = Field(300, ge=1, le=2048)
     top_p: Optional[float] = Field(0.999, ge=0, le=1)
@@ -47,6 +48,7 @@ class TitanParameters(BaseModel):
         max_tokens (Optional[int]): The maximum number of tokens in the output.
         top_p (Optional[float]): Influences the diversity of output by controlling token sampling.
     """
+
     temperature: Optional[float] = Field(0, ge=0, le=1)
     max_tokens: Optional[int] = Field(512, ge=1, le=4096)
     top_p: Optional[float] = Field(0.9, ge=0.1, le=1)
@@ -70,6 +72,7 @@ class BedrockRequest(BaseModel):
         validate_model_name: Ensures that the chosen model_name is one of the allowed models.
         validate_parameters_based_on_model_name: Ensures that the parameters class belong to the model selected.
     """
+
     api_key: str
     api_secret: str
     api_region: str
@@ -117,7 +120,7 @@ class BedrockRequest(BaseModel):
             return TitanParameters(**parameters)
         if model_name in CLAUDE_MODELS:
             return ClaudeParameters(**parameters)
-        
+
         raise ValueError(f"Invalid model_name: {model_name}")
 
 
@@ -163,20 +166,21 @@ def generate_body_and_response(data: BedrockRequest) -> Tuple[dict, dict]:
         }
     else:
         raise ValueError(f"Invalid model_name: {data.model_name}")
-    
+
 
 def get_cost(input_tokens: int, output_tokens: int) -> float:
     """
     Calculate the cost based on input and output tokens.
-    
+
     Args:
         input_tokens (int): Number of tokens in the input.
         output_tokens (int): Number of tokens in the output.
-    
+
     Returns:
         float: Cost.
     """
     return None
+
 
 def generate_stream_response(response, response_keys):
     """
@@ -193,9 +197,7 @@ def generate_stream_response(response, response_keys):
     for event in response:
         chunk = event.get("chunk")
         if chunk:
-            chunk_content = json.loads(chunk.get("bytes").decode())[
-                response_keys["output_key"]
-            ]
+            chunk_content = json.loads(chunk.get("bytes").decode())[response_keys["output_key"]]
             chat_output += chunk_content
             yield chunk_content
 
@@ -216,9 +218,7 @@ async def get_bedrock_chat(data: BedrockRequest):
     Returns:
         Union[StreamingResponse, dict]: Streaming response if is_stream is True, otherwise a dict with chat and token data.
     """
-    session = boto3.Session(
-        aws_access_key_id=data.api_key, aws_secret_access_key=data.api_secret
-    )
+    session = boto3.Session(aws_access_key_id=data.api_key, aws_secret_access_key=data.api_secret)
     bedrock = session.client(service_name="bedrock", region_name=data.api_region)
 
     body, response_keys = generate_body_and_response(data)
@@ -231,7 +231,7 @@ async def get_bedrock_chat(data: BedrockRequest):
             contentType="application/json",
         ).get("body")
         return StreamingResponse(generate_stream_response(response, response_keys))
-    
+
     response = json.loads(
         bedrock.invoke_model(
             body=json.dumps(body),
@@ -245,7 +245,8 @@ async def get_bedrock_chat(data: BedrockRequest):
 
     response = response["results"][0] if response_keys["use_results"] else response
 
-    import random, time # delete
+    import random  # delete
+    import time
 
     data = {
         "id": random.randint(0, 1000),

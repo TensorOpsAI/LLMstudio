@@ -1,5 +1,5 @@
-from .models import LLMModel, LLMClient
 from ..validators import VertexAIParameters
+from .models import LLMClient, LLMModel
 
 
 class VertexAIClient(LLMClient):
@@ -39,9 +39,7 @@ class VertexAIClient(LLMClient):
             super().__init__(model_name, api_key or self._raise_api_key_error())
             self._check_api_access()
 
-        def validate_parameters(
-            self, parameters: VertexAIParameters = None
-        ) -> VertexAIParameters:
+        def validate_parameters(self, parameters: VertexAIParameters = None) -> VertexAIParameters:
             """
             Validate and possibly adjust the provided parameters for Vertex AI models.
 

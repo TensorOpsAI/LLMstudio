@@ -1,14 +1,13 @@
+from endpoints.chat.bedrock import router as chat_bedrock_router
+from endpoints.chat.openai import router as chat_openai_router
+from endpoints.chat.vertexai import router as chat_vertexai_router
+from endpoints.export import router as export_router
+from endpoints.test.bedrock import router as test_bedrock_router
+from endpoints.test.openai import router as test_openai_router
+from endpoints.test.vertexai import router as test_vertexai_router
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-
-from endpoints.chat.openai import router as chat_openai_router
-from endpoints.test.openai import router as test_openai_router
-from endpoints.chat.vertexai import router as chat_vertexai_router
-from endpoints.test.vertexai import router as test_vertexai_router
-from endpoints.chat.bedrock import router as chat_bedrock_router
-from endpoints.test.bedrock import router as test_bedrock_router
-from endpoints.export import router as export_router
 
 from api.worker.config import pubsub
 
@@ -20,6 +19,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get("/logs")
 def read_logs():

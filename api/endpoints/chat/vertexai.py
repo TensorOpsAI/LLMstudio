@@ -1,19 +1,25 @@
-from typing import Optional
 import json
+from typing import Optional
 
+import vertexai
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from google.oauth2 import service_account
-from pydantic import BaseModel, Field, validator, ValidationError
-import vertexai
-from vertexai.language_models import TextGenerationModel, ChatModel, CodeGenerationModel, CodeChatModel
+from pydantic import BaseModel, Field, ValidationError, validator
+from vertexai.language_models import (
+    ChatModel,
+    CodeChatModel,
+    CodeGenerationModel,
+    TextGenerationModel,
+)
 
-from api.worker.config import celery_app
 from api.utils import append_log
+from api.worker.config import celery_app
 
 end_token = "<END_TOKEN>"
 
 router = APIRouter()
+
 
 class VertexAIParameters(BaseModel):
     """
@@ -25,6 +31,7 @@ class VertexAIParameters(BaseModel):
         top_p (Optional[float]): Influences the diversity of output by controlling token sampling.
         top_k (Optional[float]): Sets the number of the most likely next tokens to filter for.
     """
+
     temperature: Optional[float] = Field(1, ge=0, le=1)
     max_tokens: Optional[int] = Field(256, ge=1, le=1024)
     top_p: Optional[float] = Field(1, ge=0, le=1)
@@ -45,6 +52,7 @@ class VertexAIRequest(BaseModel):
         parse_api_key: Ensures that api_key is a dict and validates its JSON structure.
         validate_model_name: Validates that the model_name is one of the allowed options.
     """
+
     api_key: dict
     model_name: str
     chat_input: str
@@ -55,13 +63,13 @@ class VertexAIRequest(BaseModel):
     def parse_api_key(cls, value):
         """
         Parse the API key, ensuring it is in a proper dictionary format.
-        
+
         Args:
             value (Union[dict, str]): API key either as a JSON-formatted string or dictionary.
-        
+
         Returns:
             dict: API key in dictionary format.
-        
+
         Raises:
             ValueError: If the provided string is not valid JSON.
         """
@@ -76,13 +84,13 @@ class VertexAIRequest(BaseModel):
     def validate_model_name(cls, value):
         """
         Validate that the model name adheres to the allowed options.
-        
+
         Args:
             value (str): The model name to validate.
-        
+
         Returns:
             str: The validated model name.
-        
+
         Raises:
             ValueError: If the model name is not an allowed value.
         """
@@ -90,7 +98,7 @@ class VertexAIRequest(BaseModel):
         if value not in allowed_values:
             raise ValueError(f"model_name should be one of {allowed_values}")
         return value
-    
+
 
 def get_cost(input_tokens: int, output_tokens: int) -> float:
     """
@@ -105,14 +113,15 @@ def get_cost(input_tokens: int, output_tokens: int) -> float:
     """
     return 0.0000005 * (input_tokens + output_tokens)
 
+
 def generate_stream_response(response: dict, data: VertexAIRequest):
     """
     Generate stream responses, yielding chat output or tokens and cost information at stream end.
-    
+
     Args:
         response (dict): Dictionary containing chunks of responses from the Vertex AI API.
         data (VertexAIRequest): Object containing necessary parameters for the API call.
-    
+
     Yields:
         str: A chunk of chat output or, at stream end, tokens counts and cost information.
     """
@@ -134,10 +143,10 @@ def generate_stream_response(response: dict, data: VertexAIRequest):
 async def get_vertexai_chat(data: VertexAIRequest):
     """
     FastAPI endpoint to interact with the VertexAI API for text generation or chat completions.
-    
+
     Args:
         data (VertexAIRequest): Object containing necessary parameters for the API call.
-    
+
     Returns:
         dict: A dictionary containing the chat input, chat output, tokens data, cost, and other metadata.
     """
@@ -190,25 +199,21 @@ async def get_vertexai_chat(data: VertexAIRequest):
             )
     if data.model_name == "code-bison":
         if data.is_stream:
-            response = (
-                CodeGenerationModel.from_pretrained(data.model_name).predict_streaming(
-                    prefix=data.chat_input,
-                    temperature=data.parameters.temperature,
-                    max_output_tokens=data.parameters.max_tokens,
-                    # top_p=data.parameters.top_p,
-                    # top_k=data.parameters.top_k,
-                )
+            response = CodeGenerationModel.from_pretrained(data.model_name).predict_streaming(
+                prefix=data.chat_input,
+                temperature=data.parameters.temperature,
+                max_output_tokens=data.parameters.max_tokens,
+                # top_p=data.parameters.top_p,
+                # top_k=data.parameters.top_k,
             )
             return StreamingResponse(generate_stream_response(response, data))
         else:
-            response = (
-                CodeGenerationModel.from_pretrained(data.model_name).predict(
-                    prefix=data.chat_input,
-                    temperature=data.parameters.temperature,
-                    max_output_tokens=data.parameters.max_tokens,
-                    # top_p=data.parameters.top_p,
-                    # top_k=data.parameters.top_k,
-                )
+            response = CodeGenerationModel.from_pretrained(data.model_name).predict(
+                prefix=data.chat_input,
+                temperature=data.parameters.temperature,
+                max_output_tokens=data.parameters.max_tokens,
+                # top_p=data.parameters.top_p,
+                # top_k=data.parameters.top_k,
             )
     if data.model_name == "codechat-bison":
         if data.is_stream:
@@ -237,7 +242,8 @@ async def get_vertexai_chat(data: VertexAIRequest):
                 )
             )
 
-    import random, time # delete
+    import random  # delete
+    import time
 
     data = {
         "id": random.randint(0, 1000),
