@@ -1,11 +1,11 @@
-from LLMEngine.config import Provider
-from LLMEngine.providers.base_provider import BaseProvider
+from llm_engine.config import Provider
+from llm_engine.providers.base_provider import BaseProvider
 
 
 def get_provider(provider: Provider) -> BaseProvider:
-    from LLMEngine.providers.openai import OpenAIProvider
-    from LLMEngine.providers.vertexai import VertexAIProvider
-    from LLMEngine.providers.bedrock import BedrockProvider
+    from llm_engine.providers.openai import OpenAIProvider
+    from llm_engine.providers.vertexai import VertexAIProvider
+    from llm_engine.providers.bedrock import BedrockProvider
 
     provider_to_class = {
         Provider.OPENAI: OpenAIProvider,
