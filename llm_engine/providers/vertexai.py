@@ -1,5 +1,5 @@
 
-from LLMEngine.config import VertexAIConfig, RouteConfig
+from llm_engine.config import VertexAIConfig, RouteConfig
 from pydantic import BaseModel, Field, validator
 from typing import Optional
 import tiktoken
@@ -8,9 +8,9 @@ import random
 import time
 from google.oauth2 import service_account
 import vertexai
-from LLMEngine.providers.base_provider import BaseProvider
-from LLMEngine.utils import validate_provider_config
-from LLMEngine.constants import END_TOKEN, VERTEXAI_TOKEN_PRICE
+from llm_engine.providers.base_provider import BaseProvider
+from llm_engine.utils import validate_provider_config, append_log
+from llm_engine.constants import END_TOKEN, VERTEXAI_TOKEN_PRICE
 from vertexai.language_models import TextGenerationModel, CodeGenerationModel, ChatModel, CodeChatModel
 
 VERTEXAI_MODEL_MAP = {
@@ -19,6 +19,20 @@ VERTEXAI_MODEL_MAP = {
             "code-bison": CodeGenerationModel,
             "codechat-bison": CodeChatModel
         }
+"""
+VERTEXAI_MODEL_MAP: A dictionary that maps model names to their respective classes.
+    Keys:
+        - 'text-bison': Refers to TextGenerationModel
+        - 'chat-bison': Refers to ChatModel
+        - 'code-bison': Refers to CodeGenerationModel
+        - 'codechat-bison': Refers to CodeChatModel
+
+    Values:
+        - TextGenerationModel: A class for text generation models
+        - ChatModel: A class for chat models
+        - CodeGenerationModel: A class for code generation models
+        - CodeChatModel: A class for models that handle code and chat
+"""
 
 VERTEXAI_INPUT_MAP = {
             TextGenerationModel: 'prompt',
@@ -26,6 +40,19 @@ VERTEXAI_INPUT_MAP = {
             ChatModel: 'message',
             CodeChatModel: 'message'
         }
+"""
+VERTEXAI_INPUT_MAP: A dictionary that maps model classes to their input type.
+    Keys:
+        - TextGenerationModel: The class for text generation models
+        - CodeGenerationModel: The class for code generation models
+        - ChatModel: The class for chat models
+        - CodeChatModel: The class for models that handle code and chat
+    
+    Values:
+        - 'prompt': The input type for TextGenerationModel
+        - 'prefix': The input type for CodeGenerationModel
+        - 'message': The input type for ChatModel and CodeChatModel
+"""
 
 
 class VertexAIParameters(BaseModel):
@@ -45,6 +72,16 @@ class VertexAIParameters(BaseModel):
 
 
 class VertexAIRequest(BaseModel):
+    """
+    A Pydantic model that represents a request to the Vertex AI API.
+    
+    Attributes:
+        api_key (Optional[dict]): API key for authentication, if required.
+        model_name (str): The name of the machine learning model to be used.
+        chat_input (str): The input string for the chat interaction.
+        parameters (Optional[VertexAIParameters]): Additional parameters for Vertex AI, defaults to an empty VertexAIParameters object.
+        is_stream (Optional[bool]): Whether the request should be streamed, defaults to False.
+    """
     api_key: Optional[dict]
     model_name: str
     chat_input: str
@@ -52,12 +89,31 @@ class VertexAIRequest(BaseModel):
     is_stream: Optional[bool] = False
 
 class VertexAITest(BaseModel):
+    """
+    A Pydantic model that represents a test request to the Vertex AI API.
+    
+    Attributes:
+        api_key (Optional[dict]): API key for authentication, if required.
+    """
     api_key: Optional[dict]
 
 
 class VertexAIProvider(BaseProvider):
+    """
+    A provider class to interact with VertexAI API for chat and text generation.
+    
+    Attributes:
+        vertexai_config (dict): Configurations for VertexAI API.
+    """
 
     def __init__(self, config: VertexAIConfig, api_key: dict):
+        """
+        Initializes a new VertexAIProvider instance.
+        
+        Args:
+            config (VertexAIConfig): The configuration settings for VertexAI.
+            api_key (dict): The API key for VertexAI.
+        """
         super().__init__()
         self.vertexai_config = validate_provider_config(config, api_key)
     
@@ -116,6 +172,7 @@ class VertexAIProvider(BaseProvider):
             "parameters": data.parameters,
         }
 
+        append_log(data)
         return data
     
     async def test(self, data: VertexAITest) -> bool:

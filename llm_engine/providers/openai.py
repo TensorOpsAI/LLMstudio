@@ -1,14 +1,14 @@
 
-from LLMEngine.config import OpenAIConfig
+from llm_engine.config import OpenAIConfig
 from pydantic import BaseModel, Field
 from typing import Optional
 import openai
 import tiktoken
 from fastapi.responses import StreamingResponse
 import random, time
-from LLMEngine.providers.base_provider import BaseProvider
-from LLMEngine.utils import validate_provider_config
-from LLMEngine.constants import OPENAI_PRICING_DICT, END_TOKEN
+from llm_engine.providers.base_provider import BaseProvider
+from llm_engine.utils import validate_provider_config, append_log
+from llm_engine.constants import OPENAI_PRICING_DICT, END_TOKEN
 
 
 class OpenAIParameters(BaseModel):
@@ -29,6 +29,17 @@ class OpenAIParameters(BaseModel):
     presence_penalty: Optional[float] = Field(default=0, ge=0, le=1)
 
 class OpenAIRequest(BaseModel):
+    """
+    A Pydantic model that represents a request to an OpenAI API.
+
+    Attributes:
+        api_key (Optional[str]): The API key to use for authenticating the request.
+        model_name (str): The name of the language model to query.
+        chat_input (str): The input text to send to the model.
+        parameters (Optional[OpenAIParameters]): An optional instance of OpenAIParameters to further configure the request.
+        is_stream (Optional[bool]): Indicates if the request should be a streaming request; default is False.
+
+    """
     api_key: Optional[str]
     model_name: str
     chat_input: str
@@ -51,8 +62,21 @@ class OpenAITest(BaseModel):
     model_name: str
 
 class OpenAIProvider(BaseProvider):
+    """
+    A provider class to handle interactions with the OpenAI GPT models.
+    
+    Attributes:
+        openai_config (OpenAIConfig): Configuration settings for OpenAI API.
+    """
 
     def __init__(self, config: OpenAIConfig, api_key: str):
+        """
+        Initialize the OpenAIProvider with given config and API key.
+        
+        Args:
+            config (OpenAIConfig): Configuration settings for OpenAI API.
+            api_key (str): API key for authentication.
+        """
         super().__init__()
         if isinstance(config, OpenAIConfig):
             self.openai_config = config
@@ -60,6 +84,19 @@ class OpenAIProvider(BaseProvider):
             self.openai_config = OpenAIConfig(**validate_provider_config(config, api_key))
 
     async def chat(self, data: OpenAIRequest) -> dict:
+        """
+        Generate chat-based model completions using OpenAI API.
+        
+        Args:
+            data (OpenAIRequest): A model instance containing chat input, model name, and additional parameters.
+            
+        Returns:
+            dict: A dictionary containing chat input, chat output, tokens information, cost, and other metadata.
+        
+        Raises:
+            ValueError: If the specified model field is invalid.
+        """
+        
         data = OpenAIRequest(**data)
 
         self.validate_model_field(data, OPENAI_PRICING_DICT.keys())
@@ -101,6 +138,7 @@ class OpenAIProvider(BaseProvider):
             "modelName": data.model_name,
             "parameters": data.parameters.dict(),
         }
+        append_log(data)
         return data
 
     async def test(self, data: OpenAITest) -> bool:
