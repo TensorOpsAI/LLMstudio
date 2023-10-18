@@ -1,12 +1,12 @@
 from fastapi import FastAPI, HTTPException, Request
 from typing import Any, Dict, Optional, Callable
 
-from llm_engine.config import llm_engineConfig, Route, RouteType
+from llm_engine.config import LlmEngineConfig, Route, RouteType
 from llm_engine.constants import LLM_ENGINE_HEALTH_ENDPOINT, LLM_ENGINE_ROUTE_BASE, VERSION
 from llm_engine.providers import get_provider
 
 
-class llm_engineAPI(FastAPI):
+class LlmEngineAPI(FastAPI):
     """
     Extends FastAPI to provide an API engine with dynamic routes based on the given configuration.
 
@@ -14,12 +14,12 @@ class llm_engineAPI(FastAPI):
         dynamic_routes (Dict[str, Route]): A dictionary mapping from route names to Route objects.
     """
 
-    def __init__(self, config: llm_engineConfig, *args: Any, **kwargs: Any):
+    def __init__(self, config: LlmEngineConfig, *args: Any, **kwargs: Any):
         """
-        Initialize the llm_engineAPI instance.
+        Initialize the LlmEngineAPI instance.
 
         Args:
-            config (llm_engineConfig): The configuration object containing routes and other settings.
+            config (LlmEngineConfig): The configuration object containing routes and other settings.
             *args (Any): Additional positional arguments.
             **kwargs (Any): Additional keyword arguments.
         """
@@ -27,12 +27,12 @@ class llm_engineAPI(FastAPI):
         self.dynamic_routes: Dict[str, Route] = {}
         self.set_dynamic_routes(config)
     
-    def set_dynamic_routes(self, config: llm_engineConfig) -> None:
+    def set_dynamic_routes(self, config: LlmEngineConfig) -> None:
         """
         Clears existing dynamic routes and sets new ones based on the provided configuration.
 
         Args:
-            config (llm_engineConfig): The configuration object containing routes and other settings.
+            config (LlmEngineConfig): The configuration object containing routes and other settings.
         """
         self.dynamic_routes.clear()
         for route in config.routes:
@@ -145,17 +145,17 @@ class llm_engineAPI(FastAPI):
 
 
 
-def create_app_from_config(config: llm_engineConfig) -> llm_engineAPI:
+def create_app_from_config(config: LlmEngineConfig) -> LlmEngineAPI:
     """
-    Initializes and returns an llm_engineAPI application based on the given configuration.
+    Initializes and returns an LlmEngineAPI application based on the given configuration.
 
     Parameters:
-    config (llm_engineConfig): The configuration settings for initializing the llm_engineAPI.
+    config (LlmEngineConfig): The configuration settings for initializing the LlmEngineAPI.
 
     Returns:
-    llm_engineAPI: An initialized llm_engineAPI application.
+    LlmEngineAPI: An initialized LlmEngineAPI application.
     """
-    app = llm_engineAPI(
+    app = LlmEngineAPI(
         config=config,
         title="llm_engine API",
         description="The core API for llm_engine.",
