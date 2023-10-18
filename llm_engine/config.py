@@ -322,11 +322,11 @@ class Route(BaseModel):
         }
     
 
-class llm_engineConfig(BaseModel):
+class LlmEngineConfig(BaseModel):
     routes: List[RouteConfig]
 
 
-def _load_route_config(path: Union[str, Path]) -> llm_engineConfig:
+def _load_route_config(path: Union[str, Path]) -> LlmEngineConfig:
     """
     Reads the gateway configuration yaml file from the storage location and returns an instance
     of the configuration RouteConfig class
@@ -341,20 +341,20 @@ def _load_route_config(path: Union[str, Path]) -> llm_engineConfig:
         ) from e
     check_configuration_route_name_collisions(configuration)
     try:
-        return llm_engineConfig(**configuration)
+        return LlmEngineConfig(**configuration)
     except ValidationError as e:
         raise ValueError(
             f"The gateway configuration is invalid: {e}"
         ) from e
     
 
-def _save_route_config(config: llm_engineConfig, path: Union[str, Path]) -> None:
+def _save_route_config(config: LlmEngineConfig, path: Union[str, Path]) -> None:
     if isinstance(path, str):
         path = Path(path)
     path.write_text(yaml.safe_dump(json.loads(json.dumps(config.dict(), default=pydantic_encoder))))
 
 
-def _validate_config(config_path: str) -> llm_engineConfig:
+def _validate_config(config_path: str) -> LlmEngineConfig:
     if not os.path.exists(config_path):
         raise ValueError(f"{config_path} does not exist")
 
