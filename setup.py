@@ -1,7 +1,7 @@
 import os
 from importlib.machinery import SourceFileLoader
 from setuptools import setup, find_packages
-from llmstudio import __version__ as SDK_VERSION
+from llmstudio import __version__ as SDK_VERSION, __requirements__ as REQUIREMENTS
 
 setup(
     name="llmstudio",
@@ -21,5 +21,7 @@ setup(
         "llmstudio": "llmstudio",
         "llmstudio.models": "llmstudio/models",
     },
-    install_requires=["requests<3", "pydantic>2"],
+    install_requires=REQUIREMENTS,
+    include_package_data=True,
+    entry_points={"console_scripts": ["llmstudio = llmstudio.cli:main"]},
 )

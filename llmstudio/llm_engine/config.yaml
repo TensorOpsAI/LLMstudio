@@ -1,0 +1,19 @@
+routes:
+  - name: chat
+    route_type: api/llm/chat
+    model_providers:
+      - provider: openai
+        config:
+          api_key: $OPENAI_API_KEY
+      - provider: vertexai
+      - provider: bedrock
+  
+  - name: validation
+    route_type: api/llm/validation
+    model_providers:
+      - provider: openai
+        config:
+          api_key: $OPENAI_API_KEY
+      - provider: vertexai
+      - provider: bedrock
+    
