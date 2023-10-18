@@ -1,10 +1,9 @@
 import json
 
+import vertexai
 from fastapi import APIRouter, Request
 from google.oauth2 import service_account
 from pydantic import BaseModel, validator
-import vertexai
-
 
 router = APIRouter()
 
@@ -19,6 +18,7 @@ class VertexAITest(BaseModel):
     Methods:
         parse_api_key(cls, value): Parses the `api_key` attribute to ensure it's a dict
     """
+
     api_key: dict
 
     @validator("api_key", pre=True, always=True)
@@ -55,9 +55,7 @@ async def test_vertexai(data: VertexAITest) -> bool:
         bool: `True` if the API key is valid and initialization succeeds, otherwise `False`.
     """
     try:
-        credentials = service_account.Credentials.from_service_account_info(
-            data.api_key
-        )
+        credentials = service_account.Credentials.from_service_account_info(data.api_key)
         vertexai.init(project=data.api_key["project_id"], credentials=credentials)
         return True
     except Exception:

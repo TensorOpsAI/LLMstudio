@@ -18,6 +18,7 @@ class BedrockTest(BaseModel):
     Methods:
         validate_model_name: Ensures that `model_name` is one of the allowed values.
     """
+
     api_key: str
     api_secret: str
     api_region: str
@@ -26,7 +27,7 @@ class BedrockTest(BaseModel):
     @validator("model_name", always=True)
     def validate_model_name(cls, value: str):
         """
-        Ensures that the provided `model_name` is one of the allowed values 
+        Ensures that the provided `model_name` is one of the allowed values
         to prevent potential invalid requests to the Bedrock API.
 
         Args:

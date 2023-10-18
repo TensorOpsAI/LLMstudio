@@ -1,61 +1,62 @@
+# LLMstudio by [TensorOps](http://tensorops.ai "TensorOps")
 
-# LLMStudio by [TensorOps](http://tensorops.ai "TensorOps")
+Prompt Engineering at your fingertips
 
-Craft. 🧠 Test. 🤖 Perfect. ⚡️
-
-Your AI playground for prompt perfection.
-
-[![LLM Studio Intro Video](http://img.youtube.com/vi/I9h701fbD18/0.jpg)](http://www.youtube.com/watch?v=I9h701fbD18 "Intro to LLMStudio")
-
----
-
-## Table of Contents
-
-- [Features](#features)
-- [Installation](#installation)
-- [About LLM Studio](#about-llm-studio)
-- [Documentation](#documentation)
-
----
+![LLMstudio logo](https://imgur.com/Xqsj6V2.gif)
 
 ## 🌟 Features
 
-1. **Python Client Gateway**: Seamless integration with multiple LLMs and chaining libraries such as LangChain.
-2. **Prompt Editing UI**: An intuitive interface designed for prompt engineering.
-3. **History Management**: Track past runs and easily export your data as needed.
+![LLMstudio UI](https://imgur.com/zBnhtTN.png)
 
----
+1.  **Python Client Gateway**: Seamless integration with multiple LLMs and chaining libraries such as LangChain.
+2.  **Prompt Editing UI**: An intuitive interface designed for prompt engineering.
+3.  **History Management**: Track past runs and easily export your data as needed.
 
-## 🚀 Installation
+### 👀 Coming soon:
 
-To get started with LLM Studio, you can use our DockerHub image for a swift setup:
+- Multiple LLM comparison
+- Prompt testing and validation
+- Projects and sessions
+- API keys manager
+
+## 🚀 Quick Install
+
+Install the SDK using
 
 ```
-docker pull tensoropsai/llmstudio
-docker run --rm -p 3001:3001 tensoropsai/llmstudio
+pip install llmstudio
 ```
 
-Once installed, access LLM Studio at [http://localhost:3001/](http://localhost:3001/).
+Clone the repo and run the following command at root level
 
----
+```
+docker-compose up --build
+```
 
-## 🤔 About LLM Studio
+You can access the UI at http://localhost:3000
 
-Powered by TensorOps, LLM Studio redefines your experience with Google's PaLM and OpenAI's GPT language models. More than just a tool, it’s an evolving environment where teams can experiment, modify, and optimize their interactions with advanced language models.
+## 🤔 About LLMstudio
+
+Powered by TensorOps, LLMstudio redefines your experience with OpenAI, Vertex Ai and more language model providers. More than just a tool, it’s an evolving environment where teams can experiment, modify, and optimize their interactions with advanced language models.
 
 Benefits include:
+
 - **Streamlined Prompt Engineering**: Simplify and enhance your prompt design process.
 - **Execution History**: Keep a detailed log of past executions, track progress, and make iterative improvements effortlessly.
 - **Effortless Data Export**: Share your team's endeavors by exporting data to shareable CSV files.
 
-Step into the future of AI with LLM Studio.
-
----
+Step into the future of AI with LLMstudio, by watching our [introduction video](https://www.youtube.com/watch?v=I9h701fbD18)
 
 ## 📖 Documentation
 
-Details on how to use LLM Studio will be provided soon. Stay tuned!
+- [Visit our docs to learn how the SDK works](https://docs.llmstudio.ai) (coming soon)
+- Checkout our [notebook examples](https://github.com/TensorOpsAI/LLMstudio/tree/main/examples) to follow along with interactive tutorials
+- Checkout out [LLMStudio Architecture Roadmap](https://github.com/TensorOpsAI/LLMstudio/blob/main/docs/llmstudio-architecture/llmstudio-architecture-roadmap.md)
+
+## 👨‍💻 Contributing
+
+- Head on to our [Contribution Guide](https://github.com/TensorOpsAI/LLMstudio/tree/main/CONTRIBUTING.md) to see how you can help LLMstudio.
 
 ---
 
-Thank you for choosing LLM Studio. Your journey to perfecting AI interactions begins here.
+Thank you for choosing LLMstudio. Your journey to perfecting AI interactions begins here.

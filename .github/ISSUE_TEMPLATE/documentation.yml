@@ -5,7 +5,7 @@ labels: [03 Documentation]
 
 body:
 - type: textarea
-  attributes: 
+  attributes:
     label: "Issue with current documentation"
     description: >
       Please make sure to leave a reference to the file you're referring to.
