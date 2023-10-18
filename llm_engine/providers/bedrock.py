@@ -1,5 +1,5 @@
 
-from LLMEngine.config import BedrockConfig, RouteConfig
+from llm_engine.config import BedrockConfig, RouteConfig
 from pydantic import BaseModel, Field, validator
 from typing import Optional, Tuple
 import openai
@@ -8,9 +8,9 @@ from fastapi.responses import StreamingResponse
 import random, time
 import boto3
 import json
-from LLMEngine.providers.base_provider import BaseProvider
-from LLMEngine.constants import BEDROCK_MODELS, CLAUDE_MODELS, TITAN_MODELS, END_TOKEN
-from LLMEngine.utils import validate_provider_config
+from llm_engine.providers.base_provider import BaseProvider
+from llm_engine.constants import BEDROCK_MODELS, CLAUDE_MODELS, TITAN_MODELS, END_TOKEN
+from llm_engine.utils import validate_provider_config, append_log
 
 # TODO: Change to constants.py
 
@@ -46,6 +46,18 @@ class TitanParameters(BaseModel):
     top_p: Optional[float] = Field(0.9, ge=0.1, le=1)
 
 class BedrockRequest(BaseModel):
+    """
+    Represents a request to the Bedrock API.
+
+    Attributes:
+        api_key (Optional[str]): The API key for authenticating with the Bedrock API.
+        api_secret (Optional[str]): The API secret for authenticating with the Bedrock API.
+        api_region (Optional[str]): The region where the Bedrock API is hosted.
+        model_name (str): The name of the model to be used for the request.
+        chat_input (str): The input string for the chat.
+        parameters (Optional[BaseModel]): Additional parameters for the model, encapsulated in a BaseModel.
+        is_stream (Optional[bool]): Flag to indicate if the request is for streaming. Defaults to False.
+    """
     api_key: Optional[str]
     api_secret: Optional[str]
     api_region: Optional[str]
@@ -96,8 +108,24 @@ class BedrockTest(BaseModel):
     model_name: str
 
 class BedrockProvider(BaseProvider):
+    """
+    BedrockProvider class to interact with the Bedrock API.
+
+    Attributes:
+        bedrock_config (BedrockConfig): Configuration for the Bedrock API.
+    """
 
     def __init__(self, config: BedrockConfig, api_key: dict):
+        """
+        Initialize the BedrockProvider class.
+
+        Args:
+            config (BedrockConfig): Configuration for the Bedrock API.
+            api_key (dict): API key required for the Bedrock API.
+
+        Raises:
+            ValidationError: If the provided config and API key are invalid.
+        """
         super().__init__()
         self.bedrock_config = validate_provider_config(config, api_key)
 
@@ -158,6 +186,7 @@ class BedrockProvider(BaseProvider):
             "parameters": data.parameters.dict(),
         }
 
+        append_log(data)
         return data
     
     async def test(self, data: BedrockTest) -> bool:
