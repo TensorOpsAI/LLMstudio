@@ -20,22 +20,23 @@ IS_PYDANTIC_V2 = version.parse(pydantic.version.VERSION) >= version.parse("2.0")
 class LLMEngineConfig:
     def __init__(self, host='localhost', port=8000, localhost=True, 
                  config_path=os.path.join('llmstudio', 'llm_engine', 'config.yaml'), 
-                 health_endpoint='health', routes_endpoint='llm_engine'):
+                 health_endpoint='health', routes_endpoint='llm_engine', chat_endpoint='api/llm/chat/'):
         self.host = host
         self.port = port
         self.config_path = config_path
         self.localhost = localhost
         self.update_url()
-        self.update_endpoints(health_endpoint, routes_endpoint)
+        self.update_endpoints(health_endpoint, routes_endpoint, chat_endpoint)
 
     def update_url(self):
         """Update the URL based on the current uri, port and localhost values."""
-        self.url = f"{self.host}:{self.port}" if self.localhost else self.uri
+        self.url = f"http://{self.host}:{self.port}" if self.localhost else self.uri
 
-    def update_endpoints(self, health_endpoint, routes_endpoint):
+    def update_endpoints(self, health_endpoint, routes_endpoint, chat_endpoint):
         """Update the health and routes endpoints based on the current url."""
         self.health_endpoint = f"{self.url}/{health_endpoint}"
         self.routes_endpoint = f"{self.url}/{routes_endpoint}"
+        self.chat_endpoint = f"{self.url}/{routes_endpoint}/{chat_endpoint}"
     
 
 
