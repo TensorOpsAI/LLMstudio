@@ -1,8 +1,8 @@
 import json
 import re
-
+import os
 def append_log(data):
-    path = "/llm_engine/logs/execution_logs.jsonl"
+    path = os.path.join('llmstudio','llm_engine','logs','execution_logs.jsonl')
 
     with open(path, "a") as file:
         file.write(json.dumps(data) + "\n")
