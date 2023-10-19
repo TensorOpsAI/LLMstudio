@@ -12,7 +12,7 @@ import numpy as np
 import requests
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer, util
-from utils.rest_utils import run_apis
+from ..utils.rest_utils import run_apis
 from ..llm_engine.config import LLMEngineConfig, RouteType
 
 class LLMModel(ABC):
@@ -306,7 +306,7 @@ class LLMCompare(ABC):
         output_dict[model.model_name] = statistics
         return output_dict
 
-    async def single_prompt_compare(self, models: list[LLMClient], prompt: str):
+    async def single_prompt_compare(self, models: [LLMClient], prompt: str):
         """
         Compare multiple language models by obtaining their responses to a given prompt.
 
