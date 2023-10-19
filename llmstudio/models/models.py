@@ -7,6 +7,8 @@ import numpy as np
 import requests
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer, util
+from utils.rest_utils import run_apis
+from ..llm_engine.config import LLMEngineConfig
 
 
 class LLMModel(ABC):
@@ -51,6 +53,7 @@ class LLMModel(ABC):
         self.api_key = api_key
         self.api_secret = api_secret
         self.api_region = api_region
+
 
     @staticmethod
     def _raise_api_key_error():
@@ -147,7 +150,7 @@ class LLMClient(ABC):
 
     MODEL_MAPPING = {}
 
-    def __init__(self, api_key: str = None, api_secret: str = None, api_region: str = None):
+    def __init__(self, api_key: str = None, api_secret: str = None, api_region: str = None, llm_engine_config: LLMEngineConfig = LLMEngineConfig()):
         """
         Initialize the LLMClient instance.
 
@@ -159,6 +162,7 @@ class LLMClient(ABC):
         self.api_key = api_key
         self.api_secret = api_secret
         self.api_region = api_region
+        run_apis(llm_engine_config=llm_engine_config)
 
     def get_model(self, model_name: str):
         """
