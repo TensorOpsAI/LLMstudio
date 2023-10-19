@@ -14,8 +14,7 @@ import requests
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer, util
 from utils.rest_utils import run_apis
-from ..llm_engine.config import LLMEngineConfig
-
+from ..llm_engine.config import LLMEngineConfig, RouteType
 
 class LLMModel(ABC):
     """
