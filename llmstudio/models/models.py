@@ -8,8 +8,7 @@ import requests
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer, util
 from utils.rest_utils import run_apis
-from ..llm_engine.config import LLMEngineConfig
-
+from ..llm_engine.config import LLMEngineConfig, RouteType
 
 class LLMModel(ABC):
     """
@@ -28,9 +27,7 @@ class LLMModel(ABC):
     Methods:
         chat: To be implemented in child classes for providing chatting functionality.
     """
-
-    CHAT_URL = ""
-    TEST_URL = ""
+    PROVIDER = None
 
     @abstractmethod
     def __init__(
@@ -39,6 +36,7 @@ class LLMModel(ABC):
         api_key: str = None,
         api_secret: str = None,
         api_region: str = None,
+        llm_engine_config: LLMEngineConfig = LLMEngineConfig()
     ):
         """
         Initialize the LLMModel instance.
@@ -53,6 +51,8 @@ class LLMModel(ABC):
         self.api_key = api_key
         self.api_secret = api_secret
         self.api_region = api_region
+        self.validation_url = f"{llm_engine_config.routes_endpoint}/{RouteType.LLM_VALIDATION}/{self.PROVIDER}"
+        self.chat_url = f"{llm_engine_config.routes_endpoint}/{RouteType.LLM_CHAT}/{self.PROVIDER}"
 
 
     @staticmethod
@@ -62,8 +62,9 @@ class LLMModel(ABC):
         )
 
     def _check_api_access(self):
+
         response = requests.post(
-            self.TEST_URL,
+            self.validation_url,
             json={
                 "model_name": self.model_name,
                 "api_key": self.api_key,
@@ -113,7 +114,7 @@ class LLMModel(ABC):
         validated_params = self.validate_parameters(parameters)
 
         response = requests.post(
-            self.CHAT_URL,
+            self.chat_url,
             json={
                 "model_name": self.model_name,
                 "api_key": self.api_key,
@@ -162,7 +163,8 @@ class LLMClient(ABC):
         self.api_key = api_key
         self.api_secret = api_secret
         self.api_region = api_region
-        run_apis(llm_engine_config=llm_engine_config)
+        self.llm_engine_config = llm_engine_config
+        run_apis(llm_engine_config=self.llm_engine_config)
 
     def get_model(self, model_name: str):
         """
@@ -189,6 +191,7 @@ class LLMClient(ABC):
             api_key=self.api_key,
             api_secret=self.api_secret,
             api_region=self.api_region,
+            llm_engine_config=self.llm_engine_config
         )
 
 
