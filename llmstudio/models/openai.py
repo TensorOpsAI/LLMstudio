@@ -41,16 +41,16 @@ class OpenAIClient(LLMClient):
             TEST_URL (str): Endpoint URL for API access testing.
             EVALUATE_URL (str): Endpoint URL for evaluate functionality.
         """
+        PROVIDER = 'openai'
 
 
-        CHAT_URL = "http://localhost:8000/api/chat/openai"
-        TEST_URL = "http://localhost:8000/api/test/openai"
         EVALUATE_URL = "http://localhost:8000/api/evaluate/openai"
 
-        def __init__(self, model_name, api_key):
+        def __init__(self, model_name: str, api_key: str, llm_engine_config: LLMEngineConfig):
             super().__init__(
                 model_name,
                 api_key or os.environ.get("OPENAI_API_KEY") or self._raise_api_key_error(),
+                llm_engine_config=llm_engine_config
             )
             self._check_api_access()
 
@@ -75,8 +75,8 @@ class OpenAIClient(LLMClient):
         'GPT-3.5-turbo' OpenAI LLM.
         """
 
-        def __init__(self, model_name, api_key, **kwargs):
-            super().__init__(model_name=model_name, api_key=api_key)
+        def __init__(self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs):
+            super().__init__(model_name=model_name, api_key=api_key,llm_engine_config=llm_engine_config)
 
     class GPT4(OpenAIModel):
         """
@@ -86,5 +86,5 @@ class OpenAIClient(LLMClient):
         with the 'GPT-4' OpenAI LLM.
         """
 
-        def __init__(self, model_name, api_key, **kwargs):
-            super().__init__(model_name=model_name, api_key=api_key)
+        def __init__(self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs):
+            super().__init__(model_name=model_name, api_key=api_key, llm_engine_config=llm_engine_config)

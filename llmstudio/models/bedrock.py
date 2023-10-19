@@ -42,11 +42,10 @@ class BedrockClient(LLMClient):
             TEST_URL (str): Endpoint URL for testing API access.
         """
 
-        CHAT_URL = "http://localhost:8000/api/chat/bedrock"
-        TEST_URL = "http://localhost:8000/api/test/bedrock"
+        PROVIDER = 'bedrock'
 
-        def __init__(self, model_name: str, api_key: str, api_secret: str, api_region: str):
-            super().__init__(model_name, api_key, api_secret, api_region)
+        def __init__(self, model_name: str, api_key: str, api_secret: str, api_region: str, llm_engine_config: LLMEngineConfig):
+            super().__init__(model_name, api_key, api_secret, api_region, llm_engine_config)
             self._check_api_access()
 
     class Claude(BedrockModel):
@@ -57,12 +56,13 @@ class BedrockClient(LLMClient):
         of the 'Claude' Bedrock LLM.
         """
 
-        def __init__(self, model_name: str, api_key: str, api_secret: str, api_region: str):
+        def __init__(self, model_name: str, api_key: str, api_secret: str, api_region: str, llm_engine_config: LLMEngineConfig):
             super().__init__(
                 model_name=model_name,
                 api_key=api_key,
                 api_secret=api_secret,
                 api_region=api_region,
+                llm_engine_config=llm_engine_config
             )
 
         def validate_parameters(self, parameters: ClaudeParameters = None) -> ClaudeParameters:
@@ -86,12 +86,13 @@ class BedrockClient(LLMClient):
         Bedrock LLM model, leveraging predefined chat and testing URLs.
         """
 
-        def __init__(self, model_name: str, api_key: str, api_secret: str, api_region: str):
+        def __init__(self, model_name: str, api_key: str, api_secret: str, api_region: str, llm_engine_config: LLMEngineConfig):
             super().__init__(
                 model_name=model_name,
                 api_key=api_key,
                 api_secret=api_secret,
                 api_region=api_region,
+                llm_engine_config=llm_engine_config
             )
 
         def validate_parameters(self, parameters: TitanParameters = None) -> TitanParameters:

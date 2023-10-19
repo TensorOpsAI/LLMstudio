@@ -13,8 +13,7 @@ import requests
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer, util
 from utils.rest_utils import run_apis
-from ..llm_engine.config import LLMEngineConfig
-
+from ..llm_engine.config import LLMEngineConfig, RouteType
 
 class LLMModel(ABC):
     """
@@ -59,7 +58,6 @@ class LLMModel(ABC):
         self.api_region = api_region
         self.validation_url = f"{str(llm_engine_config.routes_endpoint)}/{RouteType.LLM_VALIDATION.value}/{self.PROVIDER}"
         self.chat_url = f"{str(llm_engine_config.routes_endpoint)}/{RouteType.LLM_CHAT.value}/{self.PROVIDER}"
-
 
 
     @staticmethod
