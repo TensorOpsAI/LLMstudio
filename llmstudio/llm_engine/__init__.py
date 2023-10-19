@@ -53,7 +53,7 @@ class LlmEngineAPI(FastAPI):
         """
         provider_name = provider.provider
         provider_config = provider.config or {}
-        route_type_name = f"{route.route_type}/{provider_name}"
+        route_type_name = f"{route.route_type.value}/{provider_name}"
         path = f"{LLM_ENGINE_ROUTE_BASE}{route_type_name}"
 
         self.add_api_route(
