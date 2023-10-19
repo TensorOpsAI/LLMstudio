@@ -7,7 +7,7 @@ import numpy as np
 import requests
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer, util
-from utils.rest_utils import run_apis
+from ..utils.rest_utils import run_apis
 from ..llm_engine.config import LLMEngineConfig, RouteType
 
 class LLMModel(ABC):
@@ -51,8 +51,8 @@ class LLMModel(ABC):
         self.api_key = api_key
         self.api_secret = api_secret
         self.api_region = api_region
-        self.validation_url = f"{llm_engine_config.routes_endpoint}/{RouteType.LLM_VALIDATION}/{self.PROVIDER}"
-        self.chat_url = f"{llm_engine_config.routes_endpoint}/{RouteType.LLM_CHAT}/{self.PROVIDER}"
+        self.validation_url = f"{str(llm_engine_config.routes_endpoint)}/{RouteType.LLM_VALIDATION}/{self.PROVIDER}"
+        self.chat_url = f"{str(llm_engine_config.routes_endpoint)}/{RouteType.LLM_CHAT}/{self.PROVIDER}"
 
 
     @staticmethod
@@ -112,7 +112,6 @@ class LLMModel(ABC):
             ValueError: If the API response cannot be parsed or contains error information.
         """
         validated_params = self.validate_parameters(parameters)
-
         response = requests.post(
             self.chat_url,
             json={
@@ -281,7 +280,7 @@ class LLMCompare(ABC):
         output_dict[model.model_name] = statistics
         return output_dict
 
-    async def single_prompt_compare(self, models: list[LLMClient], prompt: str):
+    async def single_prompt_compare(self, models: [LLMClient], prompt: str):
         """
         Compare multiple language models by obtaining their responses to a given prompt.
 

@@ -1,6 +1,6 @@
 from ..validators import ClaudeParameters, TitanParameters
 from .models import LLMClient, LLMModel
-from utils.rest_utils import run_apis
+from ..utils.rest_utils import run_apis
 from ..llm_engine.config import LLMEngineConfig
 
 
