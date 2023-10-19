@@ -53,8 +53,8 @@ class LlmEngineAPI(FastAPI):
         """
         provider_name = provider.provider
         provider_config = provider.config or {}
-        route_and_provider_name = f"{provider_name}-{route.name}"
-        path = f"{LLM_ENGINE_ROUTE_BASE}{route_and_provider_name}"
+        route_type_name = f"{route.route_type}/{provider_name}"
+        path = f"{LLM_ENGINE_ROUTE_BASE}{route_type_name}"
 
         self.add_api_route(
             path=path,
@@ -63,7 +63,7 @@ class LlmEngineAPI(FastAPI):
             ),
             methods=["POST"],
         )
-        self.dynamic_routes[route_and_provider_name] = route.to_route(
+        self.dynamic_routes[route_type_name] = route.to_route(
             provider_name, path
         )
 

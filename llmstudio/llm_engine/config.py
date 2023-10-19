@@ -29,8 +29,8 @@ class LLMEngineConfig:
         self.update_endpoints(health_endpoint, routes_endpoint, chat_endpoint)
 
     def update_url(self):
-        """Update the URL based on the current uri, port and localhost values."""
-        self.url = f"http://{self.host}:{self.port}" if self.localhost else self.uri
+        """Update the URL based on the current host, port and localhost values."""
+        self.url = f"http://{self.host}:{self.port}" if self.localhost else self.host
 
     def update_endpoints(self, health_endpoint, routes_endpoint, chat_endpoint):
         """Update the health and routes endpoints based on the current url."""
@@ -45,8 +45,8 @@ class RouteType(str, Enum):
     Used for specifying various types of routes in an API.
     """
 
-    LLM_CHAT = "api/llm/chat"
-    LLM_VALIDATION = "api/llm/validation"
+    LLM_CHAT = "chat"
+    LLM_VALIDATION = "validation"
 
 
 class Provider(str, Enum):
