@@ -2,6 +2,7 @@ import os
 
 from ..validators import OpenAIParameters
 from .models import LLMClient, LLMModel
+from ..llm_engine.config import LLMEngineConfig
 
 
 class OpenAIClient(LLMClient):
@@ -17,6 +18,17 @@ class OpenAIClient(LLMClient):
 
     MODEL_MAPPING = {"gpt-3.5-turbo": "GPT3_5", "gpt-4": "GPT4"}
 
+
+    
+    def __init__(self, api_key: str = None, api_secret: str = None, api_region: str = None, llm_engine_config: LLMEngineConfig = LLMEngineConfig()):
+        """
+        Initialize the OpenAIClient instance.
+
+        Args:
+            llm_engine_config (LLMEngineConfig): The configuration object containing routes and other settings.
+        """
+        super().__init__(api_key=api_key, api_secret=api_secret, api_region=api_region, llm_engine_config=llm_engine_config)
+
     class OpenAIModel(LLMModel):
         """
         Model class for interfacing with a generic OpenAI LLM.
@@ -29,6 +41,7 @@ class OpenAIClient(LLMClient):
             TEST_URL (str): Endpoint URL for API access testing.
             EVALUATE_URL (str): Endpoint URL for evaluate functionality.
         """
+
 
         CHAT_URL = "http://localhost:8000/api/chat/openai"
         TEST_URL = "http://localhost:8000/api/test/openai"

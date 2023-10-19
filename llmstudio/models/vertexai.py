@@ -1,5 +1,6 @@
 from ..validators import VertexAIParameters
 from .models import LLMClient, LLMModel
+from ..llm_engine.config import LLMEngineConfig
 
 
 class VertexAIClient(LLMClient):
@@ -19,6 +20,16 @@ class VertexAIClient(LLMClient):
         "code-bison": "CodeBison",
         "codechat-bison": "CodeChatBison",
     }
+
+    
+    def __init__(self, api_key: str = None, api_secret: str = None, api_region: str = None, llm_engine_config: LLMEngineConfig = LLMEngineConfig()):
+        """
+        Initialize the VertexAI Client instance.
+
+        Args:
+            llm_engine_config (LLMEngineConfig): The configuration object containing routes and other settings.
+        """
+        super().__init__(api_key=api_key, api_secret=api_secret, api_region=api_region, llm_engine_config=llm_engine_config)
 
     class VertexAIModel(LLMModel):
         """

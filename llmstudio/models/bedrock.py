@@ -1,5 +1,7 @@
 from ..validators import ClaudeParameters, TitanParameters
 from .models import LLMClient, LLMModel
+from utils.rest_utils import run_apis
+from ..llm_engine.config import LLMEngineConfig
 
 
 class BedrockClient(LLMClient):
@@ -19,6 +21,14 @@ class BedrockClient(LLMClient):
         "anthropic.claude-instant-v1": "Claude",
         "anthropic.claude-v2": "Claude",
     }
+    def __init__(self, api_key: str = None, api_secret: str = None, api_region: str = None, llm_engine_config: LLMEngineConfig = LLMEngineConfig()):
+        """
+        Initialize the BedrockClient instance.
+
+        Args:
+            llm_engine_config (LLMEngineConfig): The configuration object containing routes and other settings.
+        """
+        super().__init__(api_key=api_key, api_secret=api_secret, api_region=api_region, llm_engine_config=llm_engine_config)
 
     class BedrockModel(LLMModel):
         """
