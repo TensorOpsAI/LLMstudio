@@ -183,7 +183,7 @@ class VertexAIProvider(BaseProvider):
             "cost": get_cost(len(data.chat_input), len(response.text)),
             "timestamp": time.time(),
             "modelName": data.model_name,
-            "parameters": data.parameters,
+            "parameters": dict(data.parameters),
         }
 
         append_log(data)
