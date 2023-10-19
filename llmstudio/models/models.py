@@ -51,8 +51,8 @@ class LLMModel(ABC):
         self.api_key = api_key
         self.api_secret = api_secret
         self.api_region = api_region
-        self.validation_url = f"{str(llm_engine_config.routes_endpoint)}/{RouteType.LLM_VALIDATION}/{self.PROVIDER}"
-        self.chat_url = f"{str(llm_engine_config.routes_endpoint)}/{RouteType.LLM_CHAT}/{self.PROVIDER}"
+        self.validation_url = f"{str(llm_engine_config.routes_endpoint)}/{RouteType.LLM_VALIDATION.value}/{self.PROVIDER}"
+        self.chat_url = f"{str(llm_engine_config.routes_endpoint)}/{RouteType.LLM_CHAT.value}/{self.PROVIDER}"
 
 
     @staticmethod
