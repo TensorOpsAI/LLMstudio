@@ -1,8 +1,8 @@
 import click
-import uvicorn
 
-from llmstudio.llm_engine import LlmEngineAPI, create_app_from_config
-from llmstudio.llm_engine.config import _load_route_config
+from .llm_engine.config import LLMEngineConfig
+from .utils.rest_utils import run_apis
+
 
 
 @click.group()
@@ -11,10 +11,5 @@ def main():
 
 
 @main.command()
-def server():
-    # verficar server is up
-    config = _load_route_config(
-        "/Users/claudiolemos/Documents/GitHub/LLMStudio/llmstudio/llm_engine/config.yaml"
-    )
-    llm_engine = create_app_from_config(config)
-    uvicorn.run(llm_engine)
+def server(llm_engine_config = LLMEngineConfig()):
+    run_apis(llm_engine_config=llm_engine_config)
