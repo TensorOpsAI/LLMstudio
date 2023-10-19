@@ -18,9 +18,10 @@ from packaging import version
 IS_PYDANTIC_V2 = version.parse(pydantic.version.VERSION) >= version.parse("2.0")
 
 class LLMEngineConfig:
-    def __init__(self, host='localhost', port=8000, localhost=True, 
+    def __init__(self, api_name = 'LlmEngineAPI', host='localhost', port=8000, localhost=True, 
                  config_path=os.path.join('llmstudio', 'llm_engine', 'config.yaml'), 
                  health_endpoint='health', routes_endpoint='api/engine'):
+        self.api_name = api_name
         self.host = host
         self.port = port
         self.config_path = config_path
