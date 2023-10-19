@@ -45,7 +45,7 @@ class VertexAIClient(LLMClient):
         PROVIDER = 'vertexai'
 
         def __init__(self, model_name, api_key, llm_engine_config: LLMEngineConfig):
-            super().__init__(model_name, api_key or self._raise_api_key_error(), llm_engine_config)
+            super().__init__(model_name, api_key or self._raise_api_key_error(), llm_engine_config=llm_engine_config)
             self._check_api_access()
 
         def validate_parameters(self, parameters: VertexAIParameters = None) -> VertexAIParameters:
