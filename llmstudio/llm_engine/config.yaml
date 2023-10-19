@@ -1,6 +1,6 @@
 routes:
   - name: chat
-    route_type: api/llm/chat
+    route_type: chat
     model_providers:
       - provider: openai
         config:
@@ -9,7 +9,7 @@ routes:
       - provider: bedrock
   
   - name: validation
-    route_type: api/llm/validation
+    route_type: validation
     model_providers:
       - provider: openai
         config:
