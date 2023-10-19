@@ -4,10 +4,11 @@ from ..llm_engine import create_app_from_config
 import uvicorn
 from threading import Thread
 
-def is_api_running(url) -> bool:
+def is_api_running(url, name) -> bool:
     try:
         response = requests.get(url, timeout=5)
         if response.status_code == 200:
+            print(f"API {name} is already running")
             return True
     except requests.RequestException as e:
         return False
@@ -21,10 +22,11 @@ def run_llmengine_app(llm_engine_config = LLMEngineConfig()):
 
 def run_apis(llm_engine_config = LLMEngineConfig()):
     threads = []
-    if llm_engine_config.localhost and not is_api_running(llm_engine_config.health_endpoint):
+    if llm_engine_config.localhost and not is_api_running(llm_engine_config.health_endpoint, "LLMEngineAPI"):
         thread = Thread(target = run_llmengine_app, args = (llm_engine_config,))
         thread.start()
         threads.append(thread)
+    
 
     for thread in threads:
         thread.join()
