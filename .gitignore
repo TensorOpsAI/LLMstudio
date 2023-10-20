@@ -63,6 +63,7 @@ ENV/
 env.bak/
 venv.bak/
 .python-version
+llmstudio-env
 
 # Jupyter Notebook
 .ipynb_checkpoints
