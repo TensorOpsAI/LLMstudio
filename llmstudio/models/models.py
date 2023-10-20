@@ -20,6 +20,7 @@ class LLMModel(ABC):
     Methods:
         chat: To be implemented in child classes for providing chatting functionality.
     """
+
     CHAT_URL = ""
     TEST_URL = ""
     EVALUATE_URL = ""
@@ -63,13 +64,11 @@ class LLMModel(ABC):
                 "api_key": self.api_key,
             },
             headers={"Content-Type": "application/json"},
-            timeout=10
+            timeout=10,
         )
         if not response.json():
-            raise ValueError(
-                f"The API key doesn't have access to {self.model_name}"
-            )
-    
+            raise ValueError(f"The API key doesn't have access to {self.model_name}")
+
     @abstractmethod
     def validate_parameters(self, parameters: BaseModel) -> BaseModel:
         """
@@ -82,21 +81,23 @@ class LLMModel(ABC):
             BaseModel: Validated/adjusted parameters encapsulated in a Pydantic model.
         """
 
-    def chat(self, chat_input: str, parameters: BaseModel = None, is_stream: bool = False):
+    def chat(
+        self, chat_input: str, parameters: BaseModel = None, is_stream: bool = False
+    ):
         """
         Initiate a chat interaction with the language model.
 
-        This method sends a request to the language model API, providing an input string and 
-        optionally some parameters to influence the model's responses. It then returns the 
+        This method sends a request to the language model API, providing an input string and
+        optionally some parameters to influence the model's responses. It then returns the
         model's output as received from the API.
 
         Args:
-            chat_input (str): The input string to send to the model. This is typically a prompt 
+            chat_input (str): The input string to send to the model. This is typically a prompt
                           that you want the model to respond to.
-            parameters (BaseModel, optional): A Pydantic model containing parameters that affect 
-                                          the model's responses, such as "temperature" or 
+            parameters (BaseModel, optional): A Pydantic model containing parameters that affect
+                                          the model's responses, such as "temperature" or
                                           "max tokens". Defaults to None.
-            is_stream (bool, optional): A boolean flag that indicates whether the request should 
+            is_stream (bool, optional): A boolean flag that indicates whether the request should
                                     be handled as a stream. Defaults to False.
 
         Returns:
@@ -120,7 +121,7 @@ class LLMModel(ABC):
                 "is_stream": is_stream,
             },
             headers={"Content-Type": "application/json"},
-            timeout=10
+            timeout=10,
         )
 
         return response.json()
@@ -156,8 +157,8 @@ class LLMClient(ABC):
     """
     Abstract base class for Large Language Model Vendor Client.
 
-    This class represents an abstract client to interact with various LLMs. Concrete 
-    implementations should realize the `get_model` method and utilize the `MODEL_MAPPING` 
+    This class represents an abstract client to interact with various LLMs. Concrete
+    implementations should realize the `get_model` method and utilize the `MODEL_MAPPING`
     to facilitate the retrieval of model instances.
 
     Attributes:
@@ -169,6 +170,7 @@ class LLMClient(ABC):
     Methods:
         get_model: Retrieve an instance of an LLM model by name.
     """
+
     MODEL_MAPPING = {}
 
     def __init__(
