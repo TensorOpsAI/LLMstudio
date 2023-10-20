@@ -129,7 +129,7 @@ class LLMModel(ABC):
     def set_tests(self, tests: dict = {}):
         self.tests = tests
 
-    def evaluate(self, tests: dict = {}, parameters: dict = {}, is_stream: bool = False):
+    def run_tests(self, tests: dict = {}, parameters: dict = {}, is_stream: bool = False):
 
         if not tests:
             tests = self.tests

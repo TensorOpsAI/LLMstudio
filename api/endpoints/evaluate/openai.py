@@ -2,10 +2,8 @@ from typing import Optional
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, validator
-import openai
-import requests
 
-from ..chat.openai import openai_chat_endpoint
+from ..chat.openai import openai_chat_endpoint, OpenAIRequest
 
 
 router = APIRouter()
@@ -115,14 +113,8 @@ async def openai_evaluate_endpoint(data: OpenAIEvaluator):
         test, answer = data.tests[key].values()
         print(f"Key: {key} / Test: {test} / Answer: {answer}")
 
-        chat_data= {
-            "model_name": data.model_name,
-            "api_key": data.api_key,
-            "chat_input": test,
-            "parameters": data.parameters,
-            "is_stream": data.is_stream
-        }
-        response = await openai_chat_endpoint(chat_data)
+        request_data = OpenAIRequest(api_key=data.api_key,model_name=data.model_name,chat_input=test,parameters=data.parameters,is_stream=data.is_stream)
+        response = await openai_chat_endpoint(request_data)
         """response = requests.post(
             "http://localhost:8000/api/chat/openai",
             json={
@@ -135,6 +127,6 @@ async def openai_evaluate_endpoint(data: OpenAIEvaluator):
             headers={"Content-Type": "application/json"},
             timeout=10
         )"""
-        test_responses[key] = response["chatOutput"]
+        test_responses[key] = response
 
     return test_responses

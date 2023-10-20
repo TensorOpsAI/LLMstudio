@@ -127,7 +127,7 @@ def generate_stream_response(response: dict, data: VertexAIRequest):
     input_tokens = len(data.chat_input)
     output_tokens = len(chat_output)
     cost = get_cost(input_tokens, output_tokens)
-    yield f"{end_token},{input_tokens},{output_tokens},{cost}"  # json
+    #yield f"{end_token},{input_tokens},{output_tokens},{cost}"  # json
 
 
 @router.post("/vertexai")

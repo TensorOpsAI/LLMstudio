@@ -130,7 +130,7 @@ def generate_stream_response(response: dict, data: OpenAIRequest):
             input_tokens = get_tokens(data.chat_input, data.model_name)
             output_tokens = get_tokens(chat_output, data.model_name)
             cost = get_cost(input_tokens, output_tokens, data.model_name)
-            yield f"{end_token},{input_tokens},{output_tokens},{cost}"  # json
+            #yield f"{end_token},{input_tokens},{output_tokens},{cost}"  # json
 
 
 @router.post("/openai")
@@ -144,87 +144,46 @@ async def openai_chat_endpoint(data: OpenAIRequest):
     Returns:
         Union[StreamingResponse, dict]: Streaming response if is_stream is True, otherwise a dict with chat and token data.
     """
-    try:
-        openai.api_key = data.api_key
-        response = openai.ChatCompletion.create(
-            model=data.model_name,
-            messages=[
-                {
-                    "role": "user",
-                    "content": data.chat_input,
-                }
-            ],
-            temperature=data.parameters.temperature,
-            max_tokens=data.parameters.max_tokens,
-            top_p=data.parameters.top_p,
-            frequency_penalty=data.parameters.frequency_penalty,
-            presence_penalty=data.parameters.presence_penalty,
-            stream=data.is_stream,
-        )
+    
+    openai.api_key = data.api_key
+    response = openai.ChatCompletion.create(
+        model=data.model_name,
+        messages=[
+            {
+                "role": "user",
+                "content": data.chat_input,
+            }
+        ],
+        temperature=data.parameters.temperature,
+        max_tokens=data.parameters.max_tokens,
+        top_p=data.parameters.top_p,
+        frequency_penalty=data.parameters.frequency_penalty,
+        presence_penalty=data.parameters.presence_penalty,
+        stream=data.is_stream,
+    )
 
-        if data.is_stream:
-            return StreamingResponse(generate_stream_response(response, data))
-        
-        input_tokens = get_tokens(data.chat_input, data.model_name)
-        output_tokens = get_tokens(
-            response["choices"][0]["message"]["content"], data.model_name
-        )
+    if data.is_stream:
+        return StreamingResponse(generate_stream_response(response, data))
+    
+    input_tokens = get_tokens(data.chat_input, data.model_name)
+    output_tokens = get_tokens(
+        response["choices"][0]["message"]["content"], data.model_name
+    )
 
-        import random, time # delete
+    import random, time # delete
 
-        data = {
-            "id": random.randint(0, 1000),
-            "chatInput": data.chat_input,
-            "chatOutput": response["choices"][0]["message"]["content"],
-            "inputTokens": input_tokens,
-            "outputTokens": output_tokens,
-            "totalTokens": input_tokens + output_tokens,
-            "cost": get_cost(input_tokens, output_tokens, data.model_name),
-            "timestamp": time.time(),
-            "modelName": data.model_name,
-            "parameters": data.parameters.dict(),
-        }
-    except:
-        openai.api_key = data["api_key"]
+    data = {
+        "id": random.randint(0, 1000),
+        "chatInput": data.chat_input,
+        "chatOutput": response["choices"][0]["message"]["content"],
+        "inputTokens": input_tokens,
+        "outputTokens": output_tokens,
+        "totalTokens": input_tokens + output_tokens,
+        "cost": get_cost(input_tokens, output_tokens, data.model_name),
+        "timestamp": time.time(),
+        "modelName": data.model_name,
+        "parameters": data.parameters.dict(),
+    }
 
-        response = openai.ChatCompletion.create(
-            model=data["model_name"],
-            messages=[
-                {
-                    "role": "user",
-                    "content": data["chat_input"],
-                }
-            ],
-            temperature=data["parameters"].temperature,
-            max_tokens=data["parameters"].max_tokens,
-            top_p=data["parameters"].top_p,
-            frequency_penalty=data["parameters"].frequency_penalty,
-            presence_penalty=data["parameters"].presence_penalty,
-            stream=data["is_stream"],
-        )
-
-        if data["is_stream"]:
-            return StreamingResponse(generate_stream_response(response, data))
-        
-        input_tokens = get_tokens(data["chat_input"], data["model_name"])
-        output_tokens = get_tokens(
-            response["choices"][0]["message"]["content"], data["model_name"]
-        )
-
-        import random, time # delete
-
-        data = {
-            "id": random.randint(0, 1000),
-            "chatInput": data["chat_input"],
-            "chatOutput": response["choices"][0]["message"]["content"],
-            "inputTokens": input_tokens,
-            "outputTokens": output_tokens,
-            "totalTokens": input_tokens + output_tokens,
-            "cost": get_cost(input_tokens, output_tokens, data["model_name"]),
-            "timestamp": time.time(),
-            "modelName": data["model_name"],
-            "parameters": data["parameters"].dict(),
-        }
-
-        append_log(data)
-        return data
+    append_log(data)
+    return data
