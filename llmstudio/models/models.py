@@ -1,11 +1,5 @@
 import asyncio
 import threading
-import numpy as np
-import requests
-from pydantic import BaseModel
-from sentence_transformers import SentenceTransformer, util
-from ..utils.rest_utils import run_apis
-from ..llm_engine.config import LLMEngineConfig, RouteType
 from abc import ABC, abstractmethod
 from statistics import mean
 
@@ -233,21 +227,6 @@ class LLMCompare(ABC):
         # initiate an embedding model
         model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
 
-    def _compute_entrywise_average_similarity(self, list1, list2):
-        """
-        Computes cosine average_similarity for each pair of sentences at the same position in two lists.
-
-        Parameters:
-        - list1: List of sentences [s1, s2, ...]
-        - list2: List of sentences [s1, s2, ...]
-
-        Returns:
-        - average_similarity_vector: 1D numpy array with the average_similarity for each respective entry.
-        """
-
-        # initiate an embedding model
-        model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
-
         # Ensure the two lists are of the same length
         assert len(list1) == len(list2), "The two lists must be of the same length"
 
@@ -280,29 +259,6 @@ class LLMCompare(ABC):
             latency_list.append(model_response["latency"])
             cost_list.append(model_response["cost"])
             out_tokens_list.append(model_response["outputTokens"])
-        average_similarity_vector = [util.pytorch_cos_sim(emb1, emb2).item() for emb1, emb2 in zip(embeddings1, embeddings2)]
-
-
-        return np.array(average_similarity_vector)
-
-    async def _get_llm_performance(self, model, prompt_list, expected_output_list, output_dict):
-
-        latency_list = []
-        cost_list = []
-        out_tokens_list = []
-        chat_output_list = []
-
-        assert len(prompt_list) == len(
-            expected_output_list
-        ), "Prompt List and Expected List are not the same size"
-
-        for prompt in prompt_list:
-            model_response = model.chat(prompt)  # assuming the chat method is asynchronous
-
-            chat_output_list.append(model_response["chatOutput"])
-            latency_list.append(model_response["latency"])
-            cost_list.append(model_response["cost"])
-            out_tokens_list.append(model_response["outputTokens"])
 
         # now compute some metrics
         average_latency = mean(latency_list)
@@ -314,11 +270,6 @@ class LLMCompare(ABC):
             self._compute_entrywise_average_similarity(chat_output_list, expected_output_list)
         )
 
-    async def single_prompt_compare(self, models: [LLMClient], prompt: str):
-        # average_similarity performance
-        average_similarity = mean(
-            self._compute_entrywise_average_similarity(chat_output_list, expected_output_list)
-        )
         statistics = {
             "average_latency": average_latency,
             "average_cost": average_cost,
@@ -359,14 +310,4 @@ class LLMCompare(ABC):
 
         await asyncio.gather(*tasks)
 
-    async def dataset_prompt_compare(self, models, prompt_list, expected_output_list):
-
-        output_dict = {}
-
-        tasks = [
-            self._get_llm_performance(model, prompt_list, expected_output_list, output_dict)
-            for model in models
-        ]
-
-        await asyncio.gather(*tasks)
         return output_dict

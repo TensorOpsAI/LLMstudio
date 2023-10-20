@@ -45,7 +45,7 @@ class BedrockClient(LLMClient):
         PROVIDER = 'bedrock'
 
         def __init__(self, model_name: str, api_key: str, api_secret: str, api_region: str, llm_engine_config: LLMEngineConfig):
-            super().__init__(model_name, api_key, api_secret, api_region, llm_engine_config=llm_engine_config)
+            super().__init__(model_name, api_key, api_secret, api_region, llm_engine_config)
             self._check_api_access()
 
     class Claude(BedrockModel):

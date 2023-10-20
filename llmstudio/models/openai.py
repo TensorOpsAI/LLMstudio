@@ -43,9 +43,6 @@ class OpenAIClient(LLMClient):
         """
         PROVIDER = 'openai'
 
-
-        EVALUATE_URL = "http://localhost:8000/api/evaluate/openai"
-
         def __init__(self, model_name: str, api_key: str, llm_engine_config: LLMEngineConfig):
             super().__init__(
                 model_name,

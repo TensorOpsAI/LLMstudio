@@ -56,6 +56,5 @@ Step into the future of AI with LLMstudio, by watching our [introduction video](
 
 - Head on to our [Contribution Guide](https://github.com/TensorOpsAI/LLMstudio/tree/main/CONTRIBUTING.md) to see how you can help LLMstudio.
 
----
 
 Thank you for choosing LLMstudio. Your journey to perfecting AI interactions begins here.
