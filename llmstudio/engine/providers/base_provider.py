@@ -3,10 +3,10 @@ from abc import ABC
 
 class BaseProvider(ABC):
     """
-    Abstract base class for LLMStudio llm_engine providers.
+    Abstract base class for LLMStudio engine providers.
 
     This class defines the core interface for providers that integrate
-    with LLMStudio's llm_engine. It is intended to be subclassed by specific
+    with LLMStudio's engine. It is intended to be subclassed by specific
     provider implementations.
     """
 

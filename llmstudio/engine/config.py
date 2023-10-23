@@ -19,14 +19,14 @@ from llmstudio.engine.utils import (
 IS_PYDANTIC_V2 = version.parse(pydantic.version.VERSION) >= version.parse("2.0")
 
 
-class LLMEngineConfig:
+class EngineConfig:
     def __init__(
         self,
-        api_name="LlmEngineAPI",
+        api_name="Engine",
         host="localhost",
         port=8000,
         localhost=True,
-        config_path=os.path.join("llmstudio", "engine", "config.yaml"),
+        config_path=os.path.join(os.path.dirname(__file__), "config.yaml"),
         health_endpoint="health",
         routes_endpoint="api/engine",
     ):
@@ -360,16 +360,16 @@ class Route(BaseModel):
             "example": {
                 "name": "openai",
                 "route_type": "llm/v1/completions",
-                "route_url": "/llm_engine/openai",
+                "route_url": "/engine/openai",
             }
         }
 
 
-class LlmEngineConfig(BaseModel):
+class EngineRouteConfig(BaseModel):
     routes: List[RouteConfig]
 
 
-def _load_route_config(path: Union[str, Path]) -> LlmEngineConfig:
+def _load_route_config(path: Union[str, Path]) -> EngineRouteConfig:
     """
     Reads the gateway configuration yaml file from the storage location and returns an instance
     of the configuration RouteConfig class
@@ -382,12 +382,12 @@ def _load_route_config(path: Union[str, Path]) -> LlmEngineConfig:
         raise ValueError(f"The file at {path} is not a valid yaml file") from e
     check_configuration_route_name_collisions(configuration)
     try:
-        return LlmEngineConfig(**configuration)
+        return EngineRouteConfig(**configuration)
     except ValidationError as e:
         raise ValueError(f"The gateway configuration is invalid: {e}") from e
 
 
-def _save_route_config(config: LlmEngineConfig, path: Union[str, Path]) -> None:
+def _save_route_config(config: EngineRouteConfig, path: Union[str, Path]) -> None:
     if isinstance(path, str):
         path = Path(path)
     path.write_text(
@@ -395,7 +395,7 @@ def _save_route_config(config: LlmEngineConfig, path: Union[str, Path]) -> None:
     )
 
 
-def _validate_config(config_path: str) -> LlmEngineConfig:
+def _validate_config(config_path: str) -> EngineRouteConfig:
     if not os.path.exists(config_path):
         raise ValueError(f"{config_path} does not exist")
 

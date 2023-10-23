@@ -12,7 +12,7 @@ __requirements__ = [
     "fastapi",
     "uvicorn",
     "PyYaml",
-    # llm_engine
+    # engine
     "openai",
     "tiktoken",
     "google-auth",

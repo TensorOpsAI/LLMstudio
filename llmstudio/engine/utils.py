@@ -1,13 +1,4 @@
-import json
-import os
 import re
-
-
-def append_log(data):
-    path = os.path.join("llmstudio", "llm_engine", "logs", "execution_logs.jsonl")
-
-    with open(path, "a") as file:
-        file.write(json.dumps(data) + "\n")
 
 
 def is_valid_endpoint_name(name: str) -> bool:

@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from llmstudio.engine.config import OpenAIConfig
 from llmstudio.engine.constants import END_TOKEN, OPENAI_PRICING_DICT
 from llmstudio.engine.providers.base_provider import BaseProvider
-from llmstudio.engine.utils import append_log, validate_provider_config
+from llmstudio.engine.utils import validate_provider_config
 
 
 class OpenAIParameters(BaseModel):
@@ -144,7 +144,6 @@ class OpenAIProvider(BaseProvider):
             "modelName": data.model_name,
             "parameters": data.parameters.dict(),
         }
-        append_log(data)
         return data
 
     async def test(self, data: OpenAITest) -> bool:

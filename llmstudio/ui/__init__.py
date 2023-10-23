@@ -9,12 +9,12 @@ def create_ui_app():
 
     app.mount(
         "/static",
-        StaticFiles(directory=os.path.join("llmstudio", "ui", "build", "static")),
+        StaticFiles(directory=os.path.join(os.path.dirname(__file__), "build", "static")),
         name="static",
     )
     app.mount(
         "/",
-        StaticFiles(directory=os.path.join("llmstudio", "ui", "build"), html=True),
+        StaticFiles(directory=os.path.join(os.path.dirname(__file__), "build"), html=True),
         name="app",
     )
 

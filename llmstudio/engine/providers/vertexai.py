@@ -17,7 +17,7 @@ from vertexai.language_models import (
 from llmstudio.engine.config import VertexAIConfig
 from llmstudio.engine.constants import END_TOKEN, VERTEXAI_TOKEN_PRICE
 from llmstudio.engine.providers.base_provider import BaseProvider
-from llmstudio.engine.utils import append_log, validate_provider_config
+from llmstudio.engine.utils import validate_provider_config
 
 VERTEXAI_MODEL_MAP = {
     "text-bison": TextGenerationModel,
@@ -186,7 +186,6 @@ class VertexAIProvider(BaseProvider):
             "parameters": dict(data.parameters),
         }
 
-        append_log(data)
         return data
 
     async def test(self, data: VertexAITest) -> bool:
