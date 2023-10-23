@@ -1,5 +1,5 @@
 from abc import ABC
-
+from concurrent.futures import ThreadPoolExecutor
 
 class BaseProvider(ABC):
     """
@@ -9,8 +9,11 @@ class BaseProvider(ABC):
     with LLMStudio's llm_engine. It is intended to be subclassed by specific 
     provider implementations.
     """
+    
+
     def __init__(self):
         super().__init__()
+        self.executor = ThreadPoolExecutor(max_workers=10)
 
     async def chat(self, data) -> dict:
         """

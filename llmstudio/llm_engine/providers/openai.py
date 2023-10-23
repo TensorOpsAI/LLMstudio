@@ -8,6 +8,7 @@ import random, time
 from llmstudio.llm_engine.providers.base_provider import BaseProvider
 from llmstudio.llm_engine.utils import validate_provider_config, append_log
 from llmstudio.llm_engine.constants import OPENAI_PRICING_DICT, END_TOKEN
+import asyncio
 
 
 class OpenAIParameters(BaseModel):
@@ -109,21 +110,22 @@ class OpenAIProvider(BaseProvider):
         self.validate_model_field(data, OPENAI_PRICING_DICT.keys())
         openai.api_key = self.openai_config.api_key
 
-        response = openai.ChatCompletion.create(
-            model=data.model_name,
-            messages=[
-                {
+        # Asynchronous call, for parallelism
+        loop = asyncio.get_event_loop()
+
+        response = await loop.run_in_executor(self.executor, lambda: openai.ChatCompletion.create(
+                model=data.model_name,
+                messages=[{
                     "role": "user",
                     "content": data.chat_input,
-                }
-            ],
-            temperature=data.parameters.temperature,
-            max_tokens=data.parameters.max_tokens,
-            top_p=data.parameters.top_p,
-            frequency_penalty=data.parameters.frequency_penalty,
-            presence_penalty=data.parameters.presence_penalty,
-            stream=data.is_stream,
-        )
+                }],
+                temperature=data.parameters.temperature,
+                max_tokens=data.parameters.max_tokens,
+                top_p=data.parameters.top_p,
+                frequency_penalty=data.parameters.frequency_penalty,
+                presence_penalty=data.parameters.presence_penalty,
+                stream=data.is_stream,
+            ))
 
         if data.is_stream:
             return StreamingResponse(generate_stream_response(response, data))

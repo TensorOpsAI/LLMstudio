@@ -15,8 +15,8 @@ from llmstudio.llm_engine.constants import (
     END_TOKEN,
 )
 from llmstudio.llm_engine.utils import validate_provider_config, append_log
+import asyncio
 
-# TODO: Change to constants.py
 
 
 class ClaudeParameters(BaseModel):
@@ -151,6 +151,7 @@ class BedrockProvider(BaseProvider):
         """
         data = BedrockRequest(**data)
         self.validate_model_field(data, BEDROCK_MODELS)
+        loop = asyncio.get_event_loop()
         session = boto3.Session(
             aws_access_key_id=self.bedrock_config["api_key"],
             aws_secret_access_key=self.bedrock_config["api_secret"],
@@ -162,24 +163,24 @@ class BedrockProvider(BaseProvider):
         body, response_keys = generate_body_and_response(data)
 
         if data.is_stream:
-            response = bedrock.invoke_model_with_response_stream(
+            response = await loop.run_in_executor(None, lambda: bedrock.invoke_model_with_response_stream(
                 body=json.dumps(body),
                 modelId=data.model_name,
                 accept="application/json",
                 contentType="application/json",
-            ).get("body")
+            ).get("body"))
             return StreamingResponse(generate_stream_response(response, response_keys))
-
-        response = json.loads(
-            bedrock.invoke_model(
-                body=json.dumps(body),
-                modelId=data.model_name,
-                accept="application/json",
-                contentType="application/json",
-            )
-            .get("body")
-            .read()
-        )
+        else:
+            response = await loop.run_in_executor(None, lambda: json.loads(
+                bedrock.invoke_model(
+                    body=json.dumps(body),
+                    modelId=data.model_name,
+                    accept="application/json",
+                    contentType="application/json",
+                )
+                .get("body")
+                .read()
+            ))
 
         response = response["results"][0] if response_keys["use_results"] else response
 
