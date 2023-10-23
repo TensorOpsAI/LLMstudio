@@ -1,6 +1,6 @@
-from llmstudio.validators import VertexAIParameters
-from llmstudio.models import LLMClient, LLMModel
 from llmstudio.engine.config import LLMEngineConfig
+from llmstudio.models import LLMClient, LLMModel
+from llmstudio.validators import VertexAIParameters
 
 
 class VertexAIClient(LLMClient):
@@ -63,9 +63,7 @@ class VertexAIClient(LLMClient):
             )
             self._check_api_access()
 
-        def validate_parameters(
-            self, parameters: VertexAIParameters = None
-        ) -> VertexAIParameters:
+        def validate_parameters(self, parameters: VertexAIParameters = None) -> VertexAIParameters:
             """
             Validate and possibly adjust the provided parameters for Vertex AI models.
 
@@ -86,9 +84,7 @@ class VertexAIClient(LLMClient):
         'TextBison' Vertex AI LLM.
         """
 
-        def __init__(
-            self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs
-        ):
+        def __init__(self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs):
             super().__init__(
                 model_name=model_name,
                 api_key=api_key,
@@ -103,9 +99,7 @@ class VertexAIClient(LLMClient):
         with the 'ChatBison' Vertex AI LLM.
         """
 
-        def __init__(
-            self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs
-        ):
+        def __init__(self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs):
             super().__init__(
                 model_name=model_name,
                 api_key=api_key,
@@ -120,9 +114,7 @@ class VertexAIClient(LLMClient):
         with the 'ChatBison' Vertex AI LLM.
         """
 
-        def __init__(
-            self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs
-        ):
+        def __init__(self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs):
             super().__init__(
                 model_name=model_name,
                 api_key=api_key,
@@ -137,9 +129,7 @@ class VertexAIClient(LLMClient):
         with the 'ChatBison' Vertex AI LLM.
         """
 
-        def __init__(
-            self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs
-        ):
+        def __init__(self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs):
             super().__init__(
                 model_name=model_name,
                 api_key=api_key,

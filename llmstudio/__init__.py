@@ -18,7 +18,5 @@ __requirements__ = [
     "google-auth",
     "google-cloud-aiplatform",
     "fastapi",
-    "boto3"
+    "boto3",
 ]
-
-from .client import LLMStudio

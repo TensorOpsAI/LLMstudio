@@ -1,13 +1,10 @@
+from typing import Any, Callable, Dict, Optional
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Any, Dict, Optional, Callable
 
 from llmstudio.engine.config import LlmEngineConfig, Route, RouteType
-from llmstudio.engine.constants import (
-    LLM_ENGINE_HEALTH_ENDPOINT,
-    LLM_ENGINE_ROUTE_BASE,
-    VERSION,
-)
+from llmstudio.engine.constants import LLM_ENGINE_HEALTH_ENDPOINT, LLM_ENGINE_ROUTE_BASE, VERSION
 from llmstudio.engine.providers import get_provider
 
 
@@ -90,9 +87,7 @@ class LlmEngineAPI(FastAPI):
 
         factory = provider_to_factory.get(route_type)
         if factory:
-            return self._create_generic_endpoint(
-                factory, provider_name, provider_config
-            )
+            return self._create_generic_endpoint(factory, provider_name, provider_config)
 
         raise HTTPException(
             status_code=404,

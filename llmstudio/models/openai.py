@@ -1,8 +1,8 @@
 import os
 
-from llmstudio.validators import OpenAIParameters
-from llmstudio.models import LLMClient, LLMModel
 from llmstudio.engine.config import LLMEngineConfig
+from llmstudio.models import LLMClient, LLMModel
+from llmstudio.validators import OpenAIParameters
 
 
 class OpenAIClient(LLMClient):
@@ -52,21 +52,15 @@ class OpenAIClient(LLMClient):
 
         PROVIDER = "openai"
 
-        def __init__(
-            self, model_name: str, api_key: str, llm_engine_config: LLMEngineConfig
-        ):
+        def __init__(self, model_name: str, api_key: str, llm_engine_config: LLMEngineConfig):
             super().__init__(
                 model_name,
-                api_key
-                or os.environ.get("OPENAI_API_KEY")
-                or self._raise_api_key_error(),
+                api_key or os.environ.get("OPENAI_API_KEY") or self._raise_api_key_error(),
                 llm_engine_config=llm_engine_config,
             )
             self._check_api_access()
 
-        def validate_parameters(
-            self, parameters: OpenAIParameters = None
-        ) -> OpenAIParameters:
+        def validate_parameters(self, parameters: OpenAIParameters = None) -> OpenAIParameters:
             """
             Validate and possibly adjust the provided parameters for OpenAI models.
 
@@ -87,9 +81,7 @@ class OpenAIClient(LLMClient):
         'GPT-3.5-turbo' OpenAI LLM.
         """
 
-        def __init__(
-            self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs
-        ):
+        def __init__(self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs):
             super().__init__(
                 model_name=model_name,
                 api_key=api_key,
@@ -104,9 +96,7 @@ class OpenAIClient(LLMClient):
         with the 'GPT-4' OpenAI LLM.
         """
 
-        def __init__(
-            self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs
-        ):
+        def __init__(self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs):
             super().__init__(
                 model_name=model_name,
                 api_key=api_key,

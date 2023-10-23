@@ -1,5 +1,4 @@
 import asyncio
-import threading
 from abc import ABC, abstractmethod
 from statistics import mean
 
@@ -7,8 +6,9 @@ import numpy as np
 import requests
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer, util
-from llmstudio.utils.rest_utils import run_apis
+
 from llmstudio.engine.config import LLMEngineConfig, RouteType
+from llmstudio.utils.rest_utils import run_apis
 
 
 class LLMModel(ABC):
@@ -54,7 +54,9 @@ class LLMModel(ABC):
         self.api_secret = api_secret
         self.api_region = api_region
         self.validation_url = f"{str(llm_engine_config.routes_endpoint)}/{RouteType.LLM_VALIDATION.value}/{self.PROVIDER}"
-        self.chat_url = f"{str(llm_engine_config.routes_endpoint)}/{RouteType.LLM_CHAT.value}/{self.PROVIDER}"
+        self.chat_url = (
+            f"{str(llm_engine_config.routes_endpoint)}/{RouteType.LLM_CHAT.value}/{self.PROVIDER}"
+        )
 
     @staticmethod
     def _raise_api_key_error():
@@ -87,9 +89,7 @@ class LLMModel(ABC):
             BaseModel: Validated/adjusted parameters encapsulated in a Pydantic model.
         """
 
-    def chat(
-        self, chat_input: str, parameters: BaseModel = None, is_stream: bool = False
-    ):
+    def chat(self, chat_input: str, parameters: BaseModel = None, is_stream: bool = False):
         """
         Initiate a chat interaction with the language model.
 
@@ -206,9 +206,7 @@ class LLMCompare(ABC):
     def __int__(self):
         pass
 
-    async def _get_response_from_model(
-        self, model: LLMModel, prompt: str, output_dict: dict
-    ):
+    async def _get_response_from_model(self, model: LLMModel, prompt: str, output_dict: dict):
         """
         Helper method to get response from a given model and store it in the output dictionary.
 
@@ -247,15 +245,12 @@ class LLMCompare(ABC):
 
         # Compute average_similarity for respective entries
         average_similarity_vector = [
-            util.pytorch_cos_sim(emb1, emb2).item()
-            for emb1, emb2 in zip(embeddings1, embeddings2)
+            util.pytorch_cos_sim(emb1, emb2).item() for emb1, emb2 in zip(embeddings1, embeddings2)
         ]
 
         return np.array(average_similarity_vector)
 
-    async def _get_llm_performance(
-        self, model, prompt_list, expected_output_list, output_dict
-    ):
+    async def _get_llm_performance(self, model, prompt_list, expected_output_list, output_dict):
         latency_list = []
         cost_list = []
         out_tokens_list = []
@@ -266,9 +261,7 @@ class LLMCompare(ABC):
         ), "Prompt List and Expected List are not the same size"
 
         for prompt in prompt_list:
-            model_response = model.chat(
-                prompt
-            )  # assuming the chat method is asynchronous
+            model_response = model.chat(prompt)  # assuming the chat method is asynchronous
 
             chat_output_list.append(model_response["chatOutput"])
             latency_list.append(model_response["latency"])
@@ -282,9 +275,7 @@ class LLMCompare(ABC):
 
         # average_similarity performance
         average_similarity = mean(
-            self._compute_entrywise_average_similarity(
-                chat_output_list, expected_output_list
-            )
+            self._compute_entrywise_average_similarity(chat_output_list, expected_output_list)
         )
 
         statistics = {
@@ -310,10 +301,7 @@ class LLMCompare(ABC):
 
         output_dict = {}
 
-        tasks = [
-            self._get_response_from_model(model, prompt, output_dict)
-            for model in models
-        ]
+        tasks = [self._get_response_from_model(model, prompt, output_dict) for model in models]
 
         await asyncio.gather(*tasks)
 
@@ -323,9 +311,7 @@ class LLMCompare(ABC):
         output_dict = {}
 
         tasks = [
-            self._get_llm_performance(
-                model, prompt_list, expected_output_list, output_dict
-            )
+            self._get_llm_performance(model, prompt_list, expected_output_list, output_dict)
             for model in models
         ]
 

@@ -1,7 +1,7 @@
-from llmstudio.validators import ClaudeParameters, TitanParameters
 from llmstudoi.models import LLMClient, LLMModel
-from llmstudio.utils.rest_utils import run_apis
+
 from llmstudio.engine.config import LLMEngineConfig
+from llmstudio.validators import ClaudeParameters, TitanParameters
 
 
 class BedrockClient(LLMClient):
@@ -64,9 +64,7 @@ class BedrockClient(LLMClient):
             api_region: str,
             llm_engine_config: LLMEngineConfig,
         ):
-            super().__init__(
-                model_name, api_key, api_secret, api_region, llm_engine_config
-            )
+            super().__init__(model_name, api_key, api_secret, api_region, llm_engine_config)
             self._check_api_access()
 
     class Claude(BedrockModel):
@@ -93,9 +91,7 @@ class BedrockClient(LLMClient):
                 llm_engine_config=llm_engine_config,
             )
 
-        def validate_parameters(
-            self, parameters: ClaudeParameters = None
-        ) -> ClaudeParameters:
+        def validate_parameters(self, parameters: ClaudeParameters = None) -> ClaudeParameters:
             """
             Validate and possibly adjust the provided parameters for Claude model.
 
@@ -132,9 +128,7 @@ class BedrockClient(LLMClient):
                 llm_engine_config=llm_engine_config,
             )
 
-        def validate_parameters(
-            self, parameters: TitanParameters = None
-        ) -> TitanParameters:
+        def validate_parameters(self, parameters: TitanParameters = None) -> TitanParameters:
             """
             Validate and possibly adjust the provided parameters for Titan model.
 

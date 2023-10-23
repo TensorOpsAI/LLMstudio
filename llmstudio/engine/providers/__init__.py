@@ -3,9 +3,9 @@ from llmstudio.engine.providers.base_provider import BaseProvider
 
 
 def get_provider(provider: Provider) -> BaseProvider:
+    from llmstudio.engine.providers.bedrock import BedrockProvider
     from llmstudio.engine.providers.openai import OpenAIProvider
     from llmstudio.engine.providers.vertexai import VertexAIProvider
-    from llmstudio.engine.providers.bedrock import BedrockProvider
 
     provider_to_class = {
         Provider.OPENAI: OpenAIProvider,

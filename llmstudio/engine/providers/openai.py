@@ -1,13 +1,16 @@
-from llmstudio.engine.config import OpenAIConfig
-from pydantic import BaseModel, Field
+import random
+import time
 from typing import Optional
+
 import openai
 import tiktoken
 from fastapi.responses import StreamingResponse
-import random, time
+from pydantic import BaseModel, Field
+
+from llmstudio.engine.config import OpenAIConfig
+from llmstudio.engine.constants import END_TOKEN, OPENAI_PRICING_DICT
 from llmstudio.engine.providers.base_provider import BaseProvider
-from llmstudio.engine.utils import validate_provider_config, append_log
-from llmstudio.engine.constants import OPENAI_PRICING_DICT, END_TOKEN
+from llmstudio.engine.utils import append_log, validate_provider_config
 
 
 class OpenAIParameters(BaseModel):
@@ -86,9 +89,7 @@ class OpenAIProvider(BaseProvider):
         if isinstance(config, OpenAIConfig):
             self.openai_config = config
         else:
-            self.openai_config = OpenAIConfig(
-                **validate_provider_config(config, api_key)
-            )
+            self.openai_config = OpenAIConfig(**validate_provider_config(config, api_key))
 
     async def chat(self, data: OpenAIRequest) -> dict:
         """
@@ -129,9 +130,7 @@ class OpenAIProvider(BaseProvider):
             return StreamingResponse(generate_stream_response(response, data))
 
         input_tokens = get_tokens(data.chat_input, data.model_name)
-        output_tokens = get_tokens(
-            response["choices"][0]["message"]["content"], data.model_name
-        )
+        output_tokens = get_tokens(response["choices"][0]["message"]["content"], data.model_name)
 
         data = {
             "id": random.randint(0, 1000),

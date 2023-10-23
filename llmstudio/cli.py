@@ -1,8 +1,8 @@
 import click
 
 from llmstudio.engine.config import LLMEngineConfig
-from llmstudio.utils.rest_utils import run_apis
 from llmstudio.ui import create_ui_app
+from llmstudio.utils.rest_utils import run_apis
 
 
 @click.group()
