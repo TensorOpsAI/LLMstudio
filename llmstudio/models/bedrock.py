@@ -1,5 +1,7 @@
-from ..validators import ClaudeParameters, TitanParameters
-from .models import LLMClient, LLMModel
+from llmstudoi.models import LLMClient, LLMModel
+
+from llmstudio.engine.config import EngineConfig
+from llmstudio.validators import ClaudeParameters, TitanParameters
 
 
 class BedrockClient(LLMClient):
@@ -20,6 +22,26 @@ class BedrockClient(LLMClient):
         "anthropic.claude-v2": "Claude",
     }
 
+    def __init__(
+        self,
+        api_key: str = None,
+        api_secret: str = None,
+        api_region: str = None,
+        engine_config: EngineConfig = EngineConfig(),
+    ):
+        """
+        Initialize the BedrockClient instance.
+
+        Args:
+            engine_config (EngineConfig): The configuration object containing routes and other settings.
+        """
+        super().__init__(
+            api_key=api_key,
+            api_secret=api_secret,
+            api_region=api_region,
+            engine_config=engine_config,
+        )
+
     class BedrockModel(LLMModel):
         """
         Model class for interfacing with a generic Bedrock LLM.
@@ -32,11 +54,17 @@ class BedrockClient(LLMClient):
             TEST_URL (str): Endpoint URL for testing API access.
         """
 
-        CHAT_URL = "http://localhost:8000/api/chat/bedrock"
-        TEST_URL = "http://localhost:8000/api/test/bedrock"
+        PROVIDER = "bedrock"
 
-        def __init__(self, model_name: str, api_key: str, api_secret: str, api_region: str):
-            super().__init__(model_name, api_key, api_secret, api_region)
+        def __init__(
+            self,
+            model_name: str,
+            api_key: str,
+            api_secret: str,
+            api_region: str,
+            engine_config: EngineConfig,
+        ):
+            super().__init__(model_name, api_key, api_secret, api_region, engine_config)
             self._check_api_access()
 
     class Claude(BedrockModel):
@@ -47,12 +75,20 @@ class BedrockClient(LLMClient):
         of the 'Claude' Bedrock LLM.
         """
 
-        def __init__(self, model_name: str, api_key: str, api_secret: str, api_region: str):
+        def __init__(
+            self,
+            model_name: str,
+            api_key: str,
+            api_secret: str,
+            api_region: str,
+            engine_config: EngineConfig,
+        ):
             super().__init__(
                 model_name=model_name,
                 api_key=api_key,
                 api_secret=api_secret,
                 api_region=api_region,
+                engine_config=engine_config,
             )
 
         def validate_parameters(self, parameters: ClaudeParameters = None) -> ClaudeParameters:
@@ -76,12 +112,20 @@ class BedrockClient(LLMClient):
         Bedrock LLM model, leveraging predefined chat and testing URLs.
         """
 
-        def __init__(self, model_name: str, api_key: str, api_secret: str, api_region: str):
+        def __init__(
+            self,
+            model_name: str,
+            api_key: str,
+            api_secret: str,
+            api_region: str,
+            engine_config: EngineConfig,
+        ):
             super().__init__(
                 model_name=model_name,
                 api_key=api_key,
                 api_secret=api_secret,
                 api_region=api_region,
+                engine_config=engine_config,
             )
 
         def validate_parameters(self, parameters: TitanParameters = None) -> TitanParameters:

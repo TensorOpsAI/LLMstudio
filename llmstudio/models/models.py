@@ -1,5 +1,4 @@
 import asyncio
-import threading
 from abc import ABC, abstractmethod
 from statistics import mean
 
@@ -7,6 +6,9 @@ import numpy as np
 import requests
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer, util
+
+from llmstudio.engine.config import EngineConfig, RouteType
+from llmstudio.utils.rest_utils import run_apis
 
 
 class LLMModel(ABC):
@@ -27,8 +29,7 @@ class LLMModel(ABC):
         chat: To be implemented in child classes for providing chatting functionality.
     """
 
-    CHAT_URL = ""
-    TEST_URL = ""
+    PROVIDER = None
 
     @abstractmethod
     def __init__(
@@ -37,6 +38,7 @@ class LLMModel(ABC):
         api_key: str = None,
         api_secret: str = None,
         api_region: str = None,
+        engine_config: EngineConfig = EngineConfig(),
     ):
         """
         Initialize the LLMModel instance.
@@ -51,6 +53,10 @@ class LLMModel(ABC):
         self.api_key = api_key
         self.api_secret = api_secret
         self.api_region = api_region
+        self.validation_url = f"{str(engine_config.routes_endpoint)}/{RouteType.LLM_VALIDATION.value}/{self.PROVIDER}"
+        self.chat_url = (
+            f"{str(engine_config.routes_endpoint)}/{RouteType.LLM_CHAT.value}/{self.PROVIDER}"
+        )
 
     @staticmethod
     def _raise_api_key_error():
@@ -60,7 +66,7 @@ class LLMModel(ABC):
 
     def _check_api_access(self):
         response = requests.post(
-            self.TEST_URL,
+            self.validation_url,
             json={
                 "model_name": self.model_name,
                 "api_key": self.api_key,
@@ -108,9 +114,8 @@ class LLMModel(ABC):
             ValueError: If the API response cannot be parsed or contains error information.
         """
         validated_params = self.validate_parameters(parameters)
-
         response = requests.post(
-            self.CHAT_URL,
+            self.chat_url,
             json={
                 "model_name": self.model_name,
                 "api_key": self.api_key,
@@ -147,7 +152,13 @@ class LLMClient(ABC):
 
     MODEL_MAPPING = {}
 
-    def __init__(self, api_key: str = None, api_secret: str = None, api_region: str = None):
+    def __init__(
+        self,
+        api_key: str = None,
+        api_secret: str = None,
+        api_region: str = None,
+        engine_config: EngineConfig = EngineConfig(),
+    ):
         """
         Initialize the LLMClient instance.
 
@@ -159,6 +170,8 @@ class LLMClient(ABC):
         self.api_key = api_key
         self.api_secret = api_secret
         self.api_region = api_region
+        self.engine_config = engine_config
+        run_apis(engine_config=self.engine_config)
 
     def get_model(self, model_name: str):
         """
@@ -185,6 +198,7 @@ class LLMClient(ABC):
             api_key=self.api_key,
             api_secret=self.api_secret,
             api_region=self.api_region,
+            engine_config=self.engine_config,
         )
 
 
@@ -237,7 +251,6 @@ class LLMCompare(ABC):
         return np.array(average_similarity_vector)
 
     async def _get_llm_performance(self, model, prompt_list, expected_output_list, output_dict):
-
         latency_list = []
         cost_list = []
         out_tokens_list = []
@@ -274,7 +287,7 @@ class LLMCompare(ABC):
         output_dict[model.model_name] = statistics
         return output_dict
 
-    async def single_prompt_compare(self, models: list[LLMClient], prompt: str):
+    async def single_prompt_compare(self, models: [LLMClient], prompt: str):
         """
         Compare multiple language models by obtaining their responses to a given prompt.
 
@@ -295,7 +308,6 @@ class LLMCompare(ABC):
         return output_dict
 
     async def dataset_prompt_compare(self, models, prompt_list, expected_output_list):
-
         output_dict = {}
 
         tasks = [

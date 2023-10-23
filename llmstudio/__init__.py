@@ -1,4 +1,22 @@
 name = "version"
-__version__ = "0.1.6"
+__version__ = "0.2.0"
 
-from .client import LLMStudio
+__requirements__ = [
+    # core
+    "pydantic",
+    "requests",
+    "pydantic",
+    "numpy",
+    "torch",
+    "sentence-transformers",
+    "fastapi",
+    "uvicorn",
+    "PyYaml",
+    # engine
+    "openai",
+    "tiktoken",
+    "google-auth",
+    "google-cloud-aiplatform",
+    "fastapi",
+    "boto3",
+]
