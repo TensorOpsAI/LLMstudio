@@ -1,6 +1,6 @@
-from ..validators import VertexAIParameters
-from .models import LLMClient, LLMModel
-from ..llm_engine.config import LLMEngineConfig
+from llmstudio.validators import VertexAIParameters
+from llmstudio.models import LLMClient, LLMModel
+from llmstudio.engine.config import LLMEngineConfig
 
 
 class VertexAIClient(LLMClient):
@@ -21,15 +21,25 @@ class VertexAIClient(LLMClient):
         "codechat-bison": "CodeChatBison",
     }
 
-    
-    def __init__(self, api_key: str = None, api_secret: str = None, api_region: str = None, llm_engine_config: LLMEngineConfig = LLMEngineConfig()):
+    def __init__(
+        self,
+        api_key: str = None,
+        api_secret: str = None,
+        api_region: str = None,
+        llm_engine_config: LLMEngineConfig = LLMEngineConfig(),
+    ):
         """
         Initialize the VertexAI Client instance.
 
         Args:
             llm_engine_config (LLMEngineConfig): The configuration object containing routes and other settings.
         """
-        super().__init__(api_key=api_key, api_secret=api_secret, api_region=api_region, llm_engine_config=llm_engine_config)
+        super().__init__(
+            api_key=api_key,
+            api_secret=api_secret,
+            api_region=api_region,
+            llm_engine_config=llm_engine_config,
+        )
 
     class VertexAIModel(LLMModel):
         """
@@ -42,13 +52,20 @@ class VertexAIClient(LLMClient):
             CHAT_URL (str): API endpoint URL for chat functionality.
             TEST_URL (str): API endpoint URL for testing API access.
         """
-        PROVIDER = 'vertexai'
+
+        PROVIDER = "vertexai"
 
         def __init__(self, model_name, api_key, llm_engine_config: LLMEngineConfig):
-            super().__init__(model_name, api_key or self._raise_api_key_error(), llm_engine_config=llm_engine_config)
+            super().__init__(
+                model_name,
+                api_key or self._raise_api_key_error(),
+                llm_engine_config=llm_engine_config,
+            )
             self._check_api_access()
 
-        def validate_parameters(self, parameters: VertexAIParameters = None) -> VertexAIParameters:
+        def validate_parameters(
+            self, parameters: VertexAIParameters = None
+        ) -> VertexAIParameters:
             """
             Validate and possibly adjust the provided parameters for Vertex AI models.
 
@@ -69,8 +86,14 @@ class VertexAIClient(LLMClient):
         'TextBison' Vertex AI LLM.
         """
 
-        def __init__(self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs):
-            super().__init__(model_name=model_name, api_key=api_key, llm_engine_config=llm_engine_config)
+        def __init__(
+            self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs
+        ):
+            super().__init__(
+                model_name=model_name,
+                api_key=api_key,
+                llm_engine_config=llm_engine_config,
+            )
 
     class ChatBison(VertexAIModel):
         """
@@ -80,8 +103,14 @@ class VertexAIClient(LLMClient):
         with the 'ChatBison' Vertex AI LLM.
         """
 
-        def __init__(self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs):
-            super().__init__(model_name=model_name, api_key=api_key, llm_engine_config=llm_engine_config)
+        def __init__(
+            self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs
+        ):
+            super().__init__(
+                model_name=model_name,
+                api_key=api_key,
+                llm_engine_config=llm_engine_config,
+            )
 
     class CodeBison(VertexAIModel):
         """
@@ -91,8 +120,14 @@ class VertexAIClient(LLMClient):
         with the 'ChatBison' Vertex AI LLM.
         """
 
-        def __init__(self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs):
-            super().__init__(model_name=model_name, api_key=api_key, llm_engine_config=llm_engine_config)
+        def __init__(
+            self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs
+        ):
+            super().__init__(
+                model_name=model_name,
+                api_key=api_key,
+                llm_engine_config=llm_engine_config,
+            )
 
     class CodeChatBison(VertexAIModel):
         """
@@ -102,5 +137,11 @@ class VertexAIClient(LLMClient):
         with the 'ChatBison' Vertex AI LLM.
         """
 
-        def __init__(self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs):
-            super().__init__(model_name=model_name, api_key=api_key, llm_engine_config=llm_engine_config)
+        def __init__(
+            self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs
+        ):
+            super().__init__(
+                model_name=model_name,
+                api_key=api_key,
+                llm_engine_config=llm_engine_config,
+            )

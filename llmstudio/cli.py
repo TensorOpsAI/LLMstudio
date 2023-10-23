@@ -1,8 +1,8 @@
 import click
 
-from .llm_engine.config import LLMEngineConfig
-from .utils.rest_utils import run_apis
-
+from llmstudio.engine.config import LLMEngineConfig
+from llmstudio.utils.rest_utils import run_apis
+from llmstudio.ui import create_ui_app
 
 
 @click.group()
@@ -11,5 +11,9 @@ def main():
 
 
 @main.command()
-def server(llm_engine_config = LLMEngineConfig()):
-    run_apis(llm_engine_config=llm_engine_config)
+def server(llm_engine_config=LLMEngineConfig()):
+    run_apis(
+        llm_engine_config=llm_engine_config,
+        ui_server_app=create_ui_app(),
+        serverless=True,
+    )

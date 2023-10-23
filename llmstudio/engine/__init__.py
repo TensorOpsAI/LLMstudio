@@ -1,13 +1,14 @@
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from typing import Any, Dict, Optional, Callable
 
-from llmstudio.llm_engine.config import LlmEngineConfig, Route, RouteType
-from llmstudio.llm_engine.constants import (
+from llmstudio.engine.config import LlmEngineConfig, Route, RouteType
+from llmstudio.engine.constants import (
     LLM_ENGINE_HEALTH_ENDPOINT,
     LLM_ENGINE_ROUTE_BASE,
     VERSION,
 )
-from llmstudio.llm_engine.providers import get_provider
+from llmstudio.engine.providers import get_provider
 
 
 class LlmEngineAPI(FastAPI):
@@ -63,9 +64,7 @@ class LlmEngineAPI(FastAPI):
             ),
             methods=["POST"],
         )
-        self.dynamic_routes[route_type_name] = route.to_route(
-            provider_name, path
-        )
+        self.dynamic_routes[route_type_name] = route.to_route(provider_name, path)
 
     def _route_type_to_endpoint(
         self, provider_name: str, provider_config: dict, route_type: RouteType
@@ -171,6 +170,14 @@ def create_app_from_config(config: LlmEngineConfig) -> LlmEngineAPI:
         title="llm_engine API",
         description="The core API for llm_engine",
         version=VERSION,
+    )
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:3000"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     @app.get(LLM_ENGINE_HEALTH_ENDPOINT)

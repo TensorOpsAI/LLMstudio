@@ -1,4 +1,4 @@
-from llmstudio.llm_engine.config import BedrockConfig, RouteConfig
+from llmstudio.engine.config import BedrockConfig, RouteConfig
 from pydantic import BaseModel, Field, validator
 from typing import Optional, Tuple
 import openai
@@ -7,14 +7,14 @@ from fastapi.responses import StreamingResponse
 import random, time
 import boto3
 import json
-from llmstudio.llm_engine.providers.base_provider import BaseProvider
-from llmstudio.llm_engine.constants import (
+from llmstudio.engine.providers.base_provider import BaseProvider
+from llmstudio.engine.constants import (
     BEDROCK_MODELS,
     CLAUDE_MODELS,
     TITAN_MODELS,
     END_TOKEN,
 )
-from llmstudio.llm_engine.utils import validate_provider_config, append_log
+from llmstudio.engine.utils import validate_provider_config, append_log
 
 # TODO: Change to constants.py
 

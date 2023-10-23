@@ -1,4 +1,4 @@
-from llmstudio.llm_engine.config import VertexAIConfig, RouteConfig
+from llmstudio.engine.config import VertexAIConfig, RouteConfig
 from pydantic import BaseModel, Field, validator
 from typing import Optional
 import tiktoken
@@ -7,9 +7,9 @@ import random
 import time
 from google.oauth2 import service_account
 import vertexai
-from llmstudio.llm_engine.providers.base_provider import BaseProvider
-from llmstudio.llm_engine.utils import validate_provider_config, append_log
-from llmstudio.llm_engine.constants import END_TOKEN, VERTEXAI_TOKEN_PRICE
+from llmstudio.engine.providers.base_provider import BaseProvider
+from llmstudio.engine.utils import validate_provider_config, append_log
+from llmstudio.engine.constants import END_TOKEN, VERTEXAI_TOKEN_PRICE
 from vertexai.language_models import (
     TextGenerationModel,
     CodeGenerationModel,

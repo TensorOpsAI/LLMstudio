@@ -94,7 +94,7 @@ export const useChat = () => {
   const submitChat = useCallback(async () => {
     setResponseStatus("waiting");
     const chatProvider = getChatProvider(modelName);
-    const promise = fetch(`http://localhost:8000/api/chat/${chatProvider}`, {
+    const promise = fetch(`http://localhost:8000/api/engine/chat/${chatProvider}`, {
       method: "post",
       headers: {
         "Content-Type": "application/json;charset=UTF-8",

@@ -1,13 +1,13 @@
-from llmstudio.llm_engine.config import OpenAIConfig
+from llmstudio.engine.config import OpenAIConfig
 from pydantic import BaseModel, Field
 from typing import Optional
 import openai
 import tiktoken
 from fastapi.responses import StreamingResponse
 import random, time
-from llmstudio.llm_engine.providers.base_provider import BaseProvider
-from llmstudio.llm_engine.utils import validate_provider_config, append_log
-from llmstudio.llm_engine.constants import OPENAI_PRICING_DICT, END_TOKEN
+from llmstudio.engine.providers.base_provider import BaseProvider
+from llmstudio.engine.utils import validate_provider_config, append_log
+from llmstudio.engine.constants import OPENAI_PRICING_DICT, END_TOKEN
 
 
 class OpenAIParameters(BaseModel):

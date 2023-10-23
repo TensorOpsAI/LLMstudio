@@ -8,7 +8,7 @@ from typing import Union, List, Optional
 from pydantic.json import pydantic_encoder
 from pydantic import BaseModel
 from pydantic import ValidationError, validator
-from llmstudio.llm_engine.utils import (
+from llmstudio.engine.utils import (
     is_valid_endpoint_name,
     check_configuration_route_name_collisions,
 )
@@ -17,10 +17,18 @@ from packaging import version
 
 IS_PYDANTIC_V2 = version.parse(pydantic.version.VERSION) >= version.parse("2.0")
 
+
 class LLMEngineConfig:
-    def __init__(self, api_name = 'LlmEngineAPI', host='localhost', port=8000, localhost=True, 
-                 config_path=os.path.join('llmstudio', 'llm_engine', 'config.yaml'), 
-                 health_endpoint='health', routes_endpoint='api/engine'):
+    def __init__(
+        self,
+        api_name="LlmEngineAPI",
+        host="localhost",
+        port=8000,
+        localhost=True,
+        config_path=os.path.join("llmstudio", "engine", "config.yaml"),
+        health_endpoint="health",
+        routes_endpoint="api/engine",
+    ):
         self.api_name = api_name
         self.host = host
         self.port = port
@@ -37,7 +45,6 @@ class LLMEngineConfig:
         """Update the health and routes endpoints based on the current url."""
         self.health_endpoint = f"{self.url}/{health_endpoint}"
         self.routes_endpoint = f"{self.url}/{routes_endpoint}"
-    
 
 
 class RouteType(str, Enum):
