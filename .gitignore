@@ -31,6 +31,7 @@ __pycache__
 
 # random files
 /playground.ipynb
+/playground.py
 
 # Distribution / packaging
 .Python
@@ -70,3 +71,6 @@ venv.bak/
 
 # Mac
 .DS_Store
+
+# Logs
+llmstudio/llm_engine/logs/execution_logs.jsonl
