@@ -1,5 +1,4 @@
 import os
-from importlib.machinery import SourceFileLoader
 from setuptools import setup, find_packages
 from llmstudio import __version__ as SDK_VERSION, __requirements__ as REQUIREMENTS
 
@@ -16,24 +15,13 @@ setup(
     description="Prompt Perfection at Your Fingertips",
     keywords="ml ai llm llmops openai langchain chatgpt llmstudio tensorops",
     version=SDK_VERSION,
-    packages=[
-        "llmstudio",
-        "llmstudio.engine",
-        "llmstudio.models",
-        "llmstudio.ui",
-        "llmstudio.utils",
-        "llmstudio.validators",
-    ],
-    package_dir={
-        "llmstudio": "llmstudio",
-        "llmstudio.engine": "llmstudio/engine",
-        "llmstudio.models": "llmstudio/models",
-        "llmstudio.ui": "llmstudio/ui",
-        "llmstudio.utils": "llmstudio/utils",
-        "llmstudio.validators": "llmstudio/validators",
-    },
+    packages=find_packages(include=["llmstudio", "llmstudio.*"]),
     install_requires=REQUIREMENTS,
-    include_package_data=True,
+    package_data={
+        "llmstudio.ui": [
+            "build/**/*",
+        ],
+    },
     entry_points={"console_scripts": ["llmstudio = llmstudio.cli:main"]},
     python_requires="~=3.9",
 )

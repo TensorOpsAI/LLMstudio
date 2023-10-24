@@ -1,11 +1,11 @@
 import asyncio
-import nest_asyncio
-from aiohttp import ClientSession
 from abc import ABC, abstractmethod
 from statistics import mean
 
+import nest_asyncio
 import numpy as np
 import requests
+from aiohttp import ClientSession
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer, util
 
@@ -59,7 +59,9 @@ class LLMModel(ABC):
         self.api_region = api_region
         self.tests = tests
         self.validation_url = f"{str(llm_engine_config.routes_endpoint)}/{RouteType.LLM_VALIDATION.value}/{self.PROVIDER}"
-        self.chat_url = f"{str(llm_engine_config.routes_endpoint)}/{RouteType.LLM_CHAT.value}/{self.PROVIDER}"
+        self.chat_url = (
+            f"{str(llm_engine_config.routes_endpoint)}/{RouteType.LLM_CHAT.value}/{self.PROVIDER}"
+        )
 
     @staticmethod
     def _raise_api_key_error():
@@ -133,9 +135,11 @@ class LLMModel(ABC):
         )
 
         return response.json()
-    
+
     # Async (wannabe parallel) run tests
-    async def chat_async(self, chat_input: str, parameters: BaseModel = None, is_stream: bool = False):
+    async def chat_async(
+        self, chat_input: str, parameters: BaseModel = None, is_stream: bool = False
+    ):
         async with ClientSession() as session:
             async with session.post(
                 self.chat_url,
@@ -151,7 +155,9 @@ class LLMModel(ABC):
             ) as response:
                 return await response.json()
 
-    async def run_tests_async(self, tests: dict = {}, parameters: dict = {}, is_stream: bool = False):
+    async def run_tests_async(
+        self, tests: dict = {}, parameters: dict = {}, is_stream: bool = False
+    ):
         if not tests:
             tests = self.tests
         tests = self.validate_tests(tests)
@@ -166,7 +172,7 @@ class LLMModel(ABC):
         tasks = [run_single_test(key) for key in tests]
         test_responses = await asyncio.gather(*tasks)
         return {k: v for k, v in test_responses}
-    
+
     def run_tests(self, tests: dict = {}, parameters: dict = {}, is_stream: bool = False):
         loop = asyncio.get_event_loop()
         if loop.is_running():
@@ -176,43 +182,47 @@ class LLMModel(ABC):
         else:
             # Standalone script; standard approach
             return asyncio.run(self.run_tests_async(tests, parameters, is_stream))
-        
 
     def set_tests(self, tests: dict = {}):
-            self.tests = tests
-    
-    
+        self.tests = tests
+
     def validate_tests(self, tests):
         """
         Validate that the tests are not empty
-        
+
         Args:
             tests: The tests to validate.
-        
+
         Returns:
             str: The validated tests.
-        
+
         Raises:
             ValueError: If the tests are empty.
         """
         if not tests:
             raise ValueError(f"tests should not be empty")
-        
-        correct_format = """'test_1': {'question': 'What is the capital of Portugal', 'answer': 'Lisbon'}"""
-    
+
+        correct_format = (
+            """'test_1': {'question': 'What is the capital of Portugal', 'answer': 'Lisbon'}"""
+        )
+
         if not isinstance(tests, dict):
             raise ValueError(f"tests is not a dict")
         for key, value in tests.items():
             if not isinstance(key, str):
-                raise ValueError(f"key of tests is not a string. Example of correct format: {correct_format}")
+                raise ValueError(
+                    f"key of tests is not a string. Example of correct format: {correct_format}"
+                )
             if not isinstance(value, dict):
-                raise ValueError(f"value of each test is not a Dictionary. Example of correct format: {correct_format}")
-            if 'question' not in value or 'answer' not in value:
+                raise ValueError(
+                    f"value of each test is not a Dictionary. Example of correct format: {correct_format}"
+                )
+            if "question" not in value or "answer" not in value:
                 raise ValueError(f"tests value should be in format: {correct_format}")
-            if not (isinstance(value['question'], str) and isinstance(value['answer'], str)):
+            if not (isinstance(value["question"], str) and isinstance(value["answer"], str)):
                 raise ValueError(f"question and answer should be strings")
         return tests
-    
+
     # Sequential code for running tests
     """
     def run_tests(self, tests: dict = {}, parameters: dict = {}, is_stream: bool = False):
@@ -231,6 +241,7 @@ class LLMModel(ABC):
 
         return test_responses
     """
+
 
 class LLMClient(ABC):
     """

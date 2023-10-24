@@ -1,3 +1,4 @@
+import asyncio
 import random
 import time
 from typing import Optional
@@ -11,7 +12,6 @@ from llmstudio.engine.config import OpenAIConfig
 from llmstudio.engine.constants import END_TOKEN, OPENAI_PRICING_DICT
 from llmstudio.engine.providers.base_provider import BaseProvider
 from llmstudio.engine.utils import validate_provider_config
-import asyncio
 
 
 class OpenAIParameters(BaseModel):
@@ -114,19 +114,24 @@ class OpenAIProvider(BaseProvider):
         # Asynchronous call, for parallelism
         loop = asyncio.get_event_loop()
 
-        response = await loop.run_in_executor(self.executor, lambda: openai.ChatCompletion.create(
+        response = await loop.run_in_executor(
+            self.executor,
+            lambda: openai.ChatCompletion.create(
                 model=data.model_name,
-                messages=[{
-                    "role": "user",
-                    "content": data.chat_input,
-                }],
+                messages=[
+                    {
+                        "role": "user",
+                        "content": data.chat_input,
+                    }
+                ],
                 temperature=data.parameters.temperature,
                 max_tokens=data.parameters.max_tokens,
                 top_p=data.parameters.top_p,
                 frequency_penalty=data.parameters.frequency_penalty,
                 presence_penalty=data.parameters.presence_penalty,
                 stream=data.is_stream,
-            ))
+            ),
+        )
 
         if data.is_stream:
             return StreamingResponse(generate_stream_response(response, data))

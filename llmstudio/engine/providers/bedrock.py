@@ -1,5 +1,5 @@
-import json
 import asyncio
+import json
 import random
 import time
 from typing import Optional, Tuple
@@ -12,7 +12,6 @@ from llmstudio.engine.config import BedrockConfig
 from llmstudio.engine.constants import BEDROCK_MODELS, CLAUDE_MODELS, END_TOKEN, TITAN_MODELS
 from llmstudio.engine.providers.base_provider import BaseProvider
 from llmstudio.engine.utils import validate_provider_config
-
 
 
 class ClaudeParameters(BaseModel):
@@ -159,24 +158,30 @@ class BedrockProvider(BaseProvider):
         body, response_keys = generate_body_and_response(data)
 
         if data.is_stream:
-            response = await loop.run_in_executor(None, lambda: bedrock.invoke_model_with_response_stream(
-                body=json.dumps(body),
-                modelId=data.model_name,
-                accept="application/json",
-                contentType="application/json",
-            ).get("body"))
-            return StreamingResponse(generate_stream_response(response, response_keys))
-        else:
-            response = await loop.run_in_executor(None, lambda: json.loads(
-                bedrock.invoke_model(
+            response = await loop.run_in_executor(
+                None,
+                lambda: bedrock.invoke_model_with_response_stream(
                     body=json.dumps(body),
                     modelId=data.model_name,
                     accept="application/json",
                     contentType="application/json",
-                )
-                .get("body")
-                .read()
-            ))
+                ).get("body"),
+            )
+            return StreamingResponse(generate_stream_response(response, response_keys))
+        else:
+            response = await loop.run_in_executor(
+                None,
+                lambda: json.loads(
+                    bedrock.invoke_model(
+                        body=json.dumps(body),
+                        modelId=data.model_name,
+                        accept="application/json",
+                        contentType="application/json",
+                    )
+                    .get("body")
+                    .read()
+                ),
+            )
 
         response = response["results"][0] if response_keys["use_results"] else response
 

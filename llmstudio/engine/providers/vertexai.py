@@ -1,3 +1,4 @@
+import asyncio
 import random
 import time
 from typing import Optional
@@ -13,7 +14,7 @@ from vertexai.language_models import (
     CodeGenerationModel,
     TextGenerationModel,
 )
-import asyncio
+
 from llmstudio.engine.config import VertexAIConfig
 from llmstudio.engine.constants import END_TOKEN, VERTEXAI_TOKEN_PRICE
 from llmstudio.engine.providers.base_provider import BaseProvider
@@ -212,8 +213,9 @@ class VertexAIProvider(BaseProvider):
         except Exception:
             return False
 
-
-    async def predict(self, model, input_str: str, chat_input: str, is_stream: bool,loop, **kwargs):
+    async def predict(
+        self, model, input_str: str, chat_input: str, is_stream: bool, loop, **kwargs
+    ):
         """
         Makes a prediction using the specified model.
         Args:
@@ -227,11 +229,14 @@ class VertexAIProvider(BaseProvider):
         """
         args = {input_str: chat_input, **kwargs}
         if is_stream:
-            return await loop.run_in_executor(self.executor, lambda: model.predict_streaming(**args))
+            return await loop.run_in_executor(
+                self.executor, lambda: model.predict_streaming(**args)
+            )
         return await loop.run_in_executor(self.executor, lambda: model.predict(**args))
 
-
-    async def chat_predict(self, model, input_str: str, chat_input: str, is_stream: bool,loop, **kwargs):
+    async def chat_predict(
+        self, model, input_str: str, chat_input: str, is_stream: bool, loop, **kwargs
+    ):
         """
         Makes a prediction using the specified chat model.
         Args:
@@ -246,7 +251,9 @@ class VertexAIProvider(BaseProvider):
         args = {input_str: chat_input, **kwargs}
         chat = model.start_chat()
         if is_stream:
-            return await loop.run_in_executor(self.executor, lambda: chat.send_message_streaming(**args))
+            return await loop.run_in_executor(
+                self.executor, lambda: chat.send_message_streaming(**args)
+            )
         return await loop.run_in_executor(self.executor, lambda: chat.send_message(**args))
 
 

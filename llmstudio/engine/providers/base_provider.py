@@ -1,6 +1,7 @@
 from abc import ABC
 from concurrent.futures import ThreadPoolExecutor
 
+
 class BaseProvider(ABC):
     """
     Abstract base class for LLMStudio engine providers.
