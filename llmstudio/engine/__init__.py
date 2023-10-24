@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from llmstudio.engine.config import EngineRouteConfig, Route, RouteType
-from llmstudio.engine.constants import LLM_ENGINE_HEALTH_ENDPOINT, LLM_ENGINE_ROUTE_BASE, VERSION
+from llmstudio.engine.constants import ENGINE_HEALTH_ENDPOINT, ENGINE_ROUTE_BASE, VERSION
 from llmstudio.engine.providers import get_provider
 
 
@@ -52,7 +52,7 @@ class EngineAPI(FastAPI):
         provider_name = provider.provider
         provider_config = provider.config or {}
         route_type_name = f"{route.route_type.value}/{provider_name}"
-        path = f"{LLM_ENGINE_ROUTE_BASE}{route_type_name}"
+        path = f"{ENGINE_ROUTE_BASE}{route_type_name}"
 
         self.add_api_route(
             path=path,
@@ -175,11 +175,11 @@ def create_app_from_config(config: EngineRouteConfig) -> EngineAPI:
         allow_headers=["*"],
     )
 
-    @app.get(LLM_ENGINE_HEALTH_ENDPOINT)
+    @app.get(ENGINE_HEALTH_ENDPOINT)
     async def health():
         return {"status": "OK"}
 
-    @app.get(LLM_ENGINE_ROUTE_BASE + "{route_name}")
+    @app.get(ENGINE_ROUTE_BASE + "{route_name}")
     async def get_route(route_name: str) -> Route:
         if matched := app.get_dynamic_route(route_name):
             return matched
@@ -190,7 +190,7 @@ def create_app_from_config(config: EngineRouteConfig) -> EngineAPI:
             "verify the route name.",
         )
 
-    @app.get(LLM_ENGINE_ROUTE_BASE)
+    @app.get(ENGINE_ROUTE_BASE)
     async def search_routes(page_token: Optional[str] = None):
         # TODO: Implement better function
         routes = app.get_dynamic_routes()

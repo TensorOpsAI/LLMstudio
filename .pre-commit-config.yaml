@@ -14,6 +14,7 @@ repos:
       - id: check-added-large-files
         files: llmstudio/
         exclude: ^llmstudio/ui/
+
   - repo: https://github.com/psf/black
     rev: 22.12.0
     hooks:
@@ -22,6 +23,7 @@ repos:
         exclude: ^llmstudio/ui/
         args:
           - "--line-length=99"
+
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
@@ -31,17 +33,16 @@ repos:
         args:
           - "--line-length=99"
           - "--profile=black"
+
   - repo: https://github.com/myint/autoflake
     rev: v1.4
     hooks:
       - id: autoflake
-        exclude: ^llmstudio/ui/|__init__.py$
         files: llmstudio/
+        exclude: ^llmstudio/ui/|__init__.py$
         args:
-          [
-            --remove-all-unused-imports,
-            --recursive,
-            --remove-unused-variables,
-            --in-place,
-          ]
+          - --remove-all-unused-imports
+          - --recursive
+          - --remove-unused-variables
+          - --in-place
         additional_dependencies: [flake8]
