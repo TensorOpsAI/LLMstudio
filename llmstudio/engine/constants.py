@@ -1,5 +1,5 @@
-LLM_ENGINE_ROUTE_BASE = "/api/engine/"
-LLM_ENGINE_HEALTH_ENDPOINT = "/health"
+ENGINE_ROUTE_BASE = "/api/engine/"
+ENGINE_HEALTH_ENDPOINT = "/health"
 
 
 # Change to llmstudio version

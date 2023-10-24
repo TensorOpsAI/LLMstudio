@@ -1,7 +1,7 @@
-from llmstudoi.models import LLMClient, LLMModel
-
 from llmstudio.engine.config import EngineConfig
-from llmstudio.validators import ClaudeParameters, TitanParameters
+
+from ..validators import ClaudeParameters, TitanParameters
+from .models import LLMClient, LLMModel
 
 
 class BedrockClient(LLMClient):

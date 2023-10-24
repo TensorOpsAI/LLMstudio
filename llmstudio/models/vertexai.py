@@ -1,6 +1,7 @@
 from llmstudio.engine.config import EngineConfig
-from llmstudio.models import LLMClient, LLMModel
-from llmstudio.validators import VertexAIParameters
+
+from ..validators import VertexAIParameters
+from .models import LLMClient, LLMModel
 
 
 class VertexAIClient(LLMClient):

@@ -1,8 +1,7 @@
 name = "version"
-__version__ = "0.2.0"
+__version__ = "0.2.2"
 
 __requirements__ = [
-    # core
     "pydantic",
     "requests",
     "pydantic",
@@ -12,7 +11,6 @@ __requirements__ = [
     "fastapi",
     "uvicorn",
     "PyYaml",
-    # engine
     "openai",
     "tiktoken",
     "google-auth",
