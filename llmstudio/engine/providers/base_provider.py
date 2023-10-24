@@ -3,13 +3,12 @@ from concurrent.futures import ThreadPoolExecutor
 
 class BaseProvider(ABC):
     """
-    Abstract base class for LLMStudio llm_engine providers.
-    
+    Abstract base class for LLMStudio engine providers.
+
     This class defines the core interface for providers that integrate
-    with LLMStudio's llm_engine. It is intended to be subclassed by specific 
+    with LLMStudio's engine. It is intended to be subclassed by specific
     provider implementations.
     """
-    
 
     def __init__(self):
         super().__init__()
@@ -18,28 +17,28 @@ class BaseProvider(ABC):
     async def chat(self, data) -> dict:
         """
         Asynchronously handle a chat request.
-        
+
         Parameters:
             data: The data payload for the chat operation.
-        
+
         Returns:
             dict: A dictionary containing the chat response.
-        
+
         Raises:
             NotImplementedError: This method is intended to be overridden by subclasses.
         """
         raise NotImplementedError
-    
+
     async def test(test, data) -> dict:
         """
         Asynchronously handle a test request.
-        
+
         Parameters:
             data: The data payload for the test operation.
-        
+
         Returns:
             dict: A dictionary containing the test response.
-        
+
         Raises:
             NotImplementedError: This method is intended to be overridden by subclasses.
         """
@@ -48,15 +47,16 @@ class BaseProvider(ABC):
     def validate_model_field(self, data, model_list):
         """
         Validate the 'model_name' field in the request data.
-        
+
         Parameters:
             data: The data payload containing the 'model_name'.
             model_list: List of valid model names.
-        
+
         Raises:
             HTTPException: If the 'model_name' is not provided or is not in the list of valid models.
         """
         from fastapi import HTTPException
+
         if not data.model_name:
             raise HTTPException(
                 status_code=422,

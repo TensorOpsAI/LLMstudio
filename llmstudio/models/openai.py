@@ -1,8 +1,8 @@
 import os
 
-from ..validators import OpenAIParameters
-from .models import LLMClient, LLMModel
-from ..llm_engine.config import LLMEngineConfig
+from llmstudio.engine.config import EngineConfig
+from llmstudio.models import LLMClient, LLMModel
+from llmstudio.validators import OpenAIParameters
 
 
 class OpenAIClient(LLMClient):
@@ -18,16 +18,25 @@ class OpenAIClient(LLMClient):
 
     MODEL_MAPPING = {"gpt-3.5-turbo": "GPT3_5", "gpt-4": "GPT4"}
 
-
-    
-    def __init__(self, api_key: str = None, api_secret: str = None, api_region: str = None, llm_engine_config: LLMEngineConfig = LLMEngineConfig()):
+    def __init__(
+        self,
+        api_key: str = None,
+        api_secret: str = None,
+        api_region: str = None,
+        engine_config: EngineConfig = EngineConfig(),
+    ):
         """
         Initialize the OpenAIClient instance.
 
         Args:
-            llm_engine_config (LLMEngineConfig): The configuration object containing routes and other settings.
+            engine_config (EngineConfig): The configuration object containing routes and other settings.
         """
-        super().__init__(api_key=api_key, api_secret=api_secret, api_region=api_region, llm_engine_config=llm_engine_config)
+        super().__init__(
+            api_key=api_key,
+            api_secret=api_secret,
+            api_region=api_region,
+            engine_config=engine_config,
+        )
 
     class OpenAIModel(LLMModel):
         """
@@ -40,13 +49,14 @@ class OpenAIClient(LLMClient):
             CHAT_URL (str): Endpoint URL for chat functionality.
             TEST_URL (str): Endpoint URL for API access testing.
         """
-        PROVIDER = 'openai'
 
-        def __init__(self, model_name: str, api_key: str, llm_engine_config: LLMEngineConfig):
+        PROVIDER = "openai"
+
+        def __init__(self, model_name: str, api_key: str, engine_config: EngineConfig):
             super().__init__(
                 model_name,
                 api_key or os.environ.get("OPENAI_API_KEY") or self._raise_api_key_error(),
-                llm_engine_config=llm_engine_config
+                engine_config=engine_config,
             )
             self._check_api_access()
 
@@ -71,8 +81,12 @@ class OpenAIClient(LLMClient):
         'GPT-3.5-turbo' OpenAI LLM.
         """
 
-        def __init__(self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs):
-            super().__init__(model_name=model_name, api_key=api_key,llm_engine_config=llm_engine_config)
+        def __init__(self, model_name, api_key, engine_config: EngineConfig, **kwargs):
+            super().__init__(
+                model_name=model_name,
+                api_key=api_key,
+                engine_config=engine_config,
+            )
 
     class GPT4(OpenAIModel):
         """
@@ -82,5 +96,9 @@ class OpenAIClient(LLMClient):
         with the 'GPT-4' OpenAI LLM.
         """
 
-        def __init__(self, model_name, api_key, llm_engine_config: LLMEngineConfig, **kwargs):
-            super().__init__(model_name=model_name, api_key=api_key, llm_engine_config=llm_engine_config)
+        def __init__(self, model_name, api_key, engine_config: EngineConfig, **kwargs):
+            super().__init__(
+                model_name=model_name,
+                api_key=api_key,
+                engine_config=engine_config,
+            )

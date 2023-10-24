@@ -1,21 +1,17 @@
-from llmstudio.llm_engine.config import BedrockConfig, RouteConfig
-from pydantic import BaseModel, Field, validator
-from typing import Optional, Tuple
-import openai
-import tiktoken
-from fastapi.responses import StreamingResponse
-import random, time
-import boto3
 import json
-from llmstudio.llm_engine.providers.base_provider import BaseProvider
-from llmstudio.llm_engine.constants import (
-    BEDROCK_MODELS,
-    CLAUDE_MODELS,
-    TITAN_MODELS,
-    END_TOKEN,
-)
-from llmstudio.llm_engine.utils import validate_provider_config, append_log
 import asyncio
+import random
+import time
+from typing import Optional, Tuple
+
+import boto3
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field, validator
+
+from llmstudio.engine.config import BedrockConfig
+from llmstudio.engine.constants import BEDROCK_MODELS, CLAUDE_MODELS, END_TOKEN, TITAN_MODELS
+from llmstudio.engine.providers.base_provider import BaseProvider
+from llmstudio.engine.utils import validate_provider_config
 
 
 
@@ -197,8 +193,6 @@ class BedrockProvider(BaseProvider):
             "modelName": data.model_name,
             "parameters": data.parameters.dict(),
         }
-
-        append_log(data)
         return data
 
     async def test(self, data: BedrockTest) -> bool:
@@ -304,9 +298,7 @@ def generate_stream_response(response, response_keys):
     for event in response:
         chunk = event.get("chunk")
         if chunk:
-            chunk_content = json.loads(chunk.get("bytes").decode())[
-                response_keys["output_key"]
-            ]
+            chunk_content = json.loads(chunk.get("bytes").decode())[response_keys["output_key"]]
             chat_output += chunk_content
             yield chunk_content
 

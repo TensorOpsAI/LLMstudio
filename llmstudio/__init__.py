@@ -12,13 +12,11 @@ __requirements__ = [
     "fastapi",
     "uvicorn",
     "PyYaml",
-    # llm_engine
+    # engine
     "openai",
     "tiktoken",
     "google-auth",
     "google-cloud-aiplatform",
     "fastapi",
-    "boto3"
+    "boto3",
 ]
-
-from .client import LLMStudio
