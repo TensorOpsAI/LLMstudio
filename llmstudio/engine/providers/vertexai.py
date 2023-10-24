@@ -13,7 +13,7 @@ from vertexai.language_models import (
     CodeGenerationModel,
     TextGenerationModel,
 )
-
+import asyncio
 from llmstudio.engine.config import VertexAIConfig
 from llmstudio.engine.constants import END_TOKEN, VERTEXAI_TOKEN_PRICE
 from llmstudio.engine.providers.base_provider import BaseProvider
@@ -128,6 +128,7 @@ class VertexAIProvider(BaseProvider):
         self.vertexai_config = validate_provider_config(config, api_key)
 
     async def chat(self, data: VertexAIRequest) -> dict:
+        loop = asyncio.get_event_loop()
         """
         FastAPI endpoint to interact with the VertexAI API for text generation or chat completions.
         Args:
@@ -163,11 +164,13 @@ class VertexAIProvider(BaseProvider):
 
         if model_class in {TextGenerationModel, CodeGenerationModel}:
             model = model_class.from_pretrained(data.model_name)
-            response = predict(model, input_arg_name, data.chat_input, data.is_stream, **kwargs)
+            response = await self.predict(
+                model, input_arg_name, data.chat_input, data.is_stream, loop, **kwargs
+            )
         else:
             model = model_class.from_pretrained(data.model_name)
-            response = chat_predict(
-                model, input_arg_name, data.chat_input, data.is_stream, **kwargs
+            response = await self.chat_predict(
+                model, input_arg_name, data.chat_input, data.is_stream, loop, **kwargs
             )
 
         if data.is_stream:
@@ -210,41 +213,41 @@ class VertexAIProvider(BaseProvider):
             return False
 
 
-def predict(model, input_str: str, chat_input: str, is_stream: bool, **kwargs):
-    """
-    Makes a prediction using the specified model.
-    Args:
-        model: The model to use for making predictions.
-        arg_name (str): The name of the argument to pass the chat input as.
-        chat_input (str): The input string for the chat.
-        is_stream (bool): Whether to stream the response.
-        **kwargs: Additional parameters for the prediction function.
-    Returns:
-        The prediction response.
-    """
-    args = {input_str: chat_input, **kwargs}
-    if is_stream:
-        return model.predict_streaming(**args)
-    return model.predict(**args)
+    async def predict(self, model, input_str: str, chat_input: str, is_stream: bool,loop, **kwargs):
+        """
+        Makes a prediction using the specified model.
+        Args:
+            model: The model to use for making predictions.
+            arg_name (str): The name of the argument to pass the chat input as.
+            chat_input (str): The input string for the chat.
+            is_stream (bool): Whether to stream the response.
+            **kwargs: Additional parameters for the prediction function.
+        Returns:
+            The prediction response.
+        """
+        args = {input_str: chat_input, **kwargs}
+        if is_stream:
+            return await loop.run_in_executor(self.executor, lambda: model.predict_streaming(**args))
+        return await loop.run_in_executor(self.executor, lambda: model.predict(**args))
 
 
-def chat_predict(model, input_str: str, chat_input: str, is_stream: bool, **kwargs):
-    """
-    Makes a prediction using the specified chat model.
-    Args:
-        model: The chat model to use for making predictions.
-        arg_name (str): The name of the argument to pass the chat input as.
-        chat_input (str): The input string for the chat.
-        is_stream (bool): Whether to stream the response.
-        **kwargs: Additional parameters for the chat prediction function.
-    Returns:
-        The chat prediction response.
-    """
-    args = {input_str: chat_input, **kwargs}
-    chat = model.start_chat()
-    if is_stream:
-        return chat.send_message_streaming(**args)
-    return chat.send_message(**args)
+    async def chat_predict(self, model, input_str: str, chat_input: str, is_stream: bool,loop, **kwargs):
+        """
+        Makes a prediction using the specified chat model.
+        Args:
+            model: The chat model to use for making predictions.
+            arg_name (str): The name of the argument to pass the chat input as.
+            chat_input (str): The input string for the chat.
+            is_stream (bool): Whether to stream the response.
+            **kwargs: Additional parameters for the chat prediction function.
+        Returns:
+            The chat prediction response.
+        """
+        args = {input_str: chat_input, **kwargs}
+        chat = model.start_chat()
+        if is_stream:
+            return await loop.run_in_executor(self.executor, lambda: chat.send_message_streaming(**args))
+        return await loop.run_in_executor(self.executor, lambda: chat.send_message(**args))
 
 
 def get_cost(input_tokens: int, output_tokens: int) -> float:
