@@ -3,8 +3,8 @@ routes:
     route_type: chat
     model_providers:
       - provider: openai
-        config:
-          api_key: $OPENAI_API_KEY
+        # config:
+        # api_key: $OPENAI_API_KEY
       - provider: vertexai
       - provider: bedrock
 
@@ -12,7 +12,7 @@ routes:
     route_type: validation
     model_providers:
       - provider: openai
-        config:
-          api_key: $OPENAI_API_KEY
+        # config:
+        # api_key: $OPENAI_API_KEY
       - provider: vertexai
       - provider: bedrock

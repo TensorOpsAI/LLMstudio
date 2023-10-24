@@ -1,8 +1,9 @@
 import os
 
 from llmstudio.engine.config import EngineConfig
-from llmstudio.models import LLMClient, LLMModel
-from llmstudio.validators import OpenAIParameters
+
+from ..validators import OpenAIParameters
+from .models import LLMClient, LLMModel
 
 
 class OpenAIClient(LLMClient):
