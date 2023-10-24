@@ -1,5 +1,5 @@
 from abc import ABC
-
+from concurrent.futures import ThreadPoolExecutor
 
 class BaseProvider(ABC):
     """
@@ -12,6 +12,7 @@ class BaseProvider(ABC):
 
     def __init__(self):
         super().__init__()
+        self.executor = ThreadPoolExecutor(max_workers=10)
 
     async def chat(self, data) -> dict:
         """
