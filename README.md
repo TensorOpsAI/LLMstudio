@@ -27,13 +27,13 @@ Install the SDK using
 pip install llmstudio
 ```
 
-Clone the repo and run the following command at root level
+Run the startup command
 
 ```
-docker-compose up --build
+llmstudio server
 ```
 
-You can access the UI at http://localhost:3000
+You can access the UI at http://localhost:3000 and send requests to the API at http://localhost:8000
 
 ## 🤔 About LLMstudio
 
