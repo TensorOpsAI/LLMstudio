@@ -1,10 +1,12 @@
 import asyncio
 from abc import ABC, abstractmethod
 from statistics import mean
+import time
 
 import nest_asyncio
 import numpy as np
 import requests
+from requests.exceptions import RequestException
 from aiohttp import ClientSession
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer, util
@@ -58,9 +60,9 @@ class LLMModel(ABC):
         self.api_secret = api_secret
         self.api_region = api_region
         self.tests = tests
-        self.validation_url = f"{str(llm_engine_config.routes_endpoint)}/{RouteType.LLM_VALIDATION.value}/{self.PROVIDER}"
+        self.validation_url = f"{str(engine_config.routes_endpoint)}/{RouteType.LLM_VALIDATION.value}/{self.PROVIDER}"
         self.chat_url = (
-            f"{str(llm_engine_config.routes_endpoint)}/{RouteType.LLM_CHAT.value}/{self.PROVIDER}"
+            f"{str(engine_config.routes_endpoint)}/{RouteType.LLM_CHAT.value}/{self.PROVIDER}"
         )
 
     @staticmethod
@@ -69,18 +71,27 @@ class LLMModel(ABC):
             "Please provide api_key parameter or set the specific environment variable."
         )
 
-    def _check_api_access(self):
-        response = requests.post(
-            self.validation_url,
-            json={
-                "model_name": self.model_name,
-                "api_key": self.api_key,
-            },
-            headers={"Content-Type": "application/json"},
-            timeout=10,
-        )
-        if not response.json():
-            raise ValueError(f"The API key doesn't have access to {self.model_name}")
+    def _check_api_access(self, max_retries=3, delay=0.5):
+        retries = 0
+        while retries < max_retries:
+            try:
+                response = requests.post(
+                    self.validation_url,
+                    json={
+                        "model_name": self.model_name,
+                        "api_key": self.api_key,
+                    },
+                    headers={"Content-Type": "application/json"},
+                    timeout=10,
+                )
+                if not response.json():
+                    raise ValueError(f"The API key doesn't have access to {self.model_name}")
+                return  # Successful API check
+            except RequestException as e:
+                retries += 1
+                time.sleep(delay)  # Wait before retrying
+                
+        raise ValueError("Max retries reached. The API key doesn't have access to {self.model_name}")
 
     @abstractmethod
     def validate_parameters(self, parameters: BaseModel) -> BaseModel:
