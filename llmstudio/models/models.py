@@ -8,8 +8,10 @@ import numpy as np
 import requests
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer, util
-from ..utils.rest_utils import run_apis
-from ..llm_engine.config import LLMEngineConfig, RouteType
+
+from llmstudio.engine.config import EngineConfig, RouteType
+from llmstudio.utils.rest_utils import run_apis
+
 
 class LLMModel(ABC):
     """
@@ -28,6 +30,7 @@ class LLMModel(ABC):
     Methods:
         chat: To be implemented in child classes for providing chatting functionality.
     """
+
     PROVIDER = None
 
     @abstractmethod
@@ -38,7 +41,7 @@ class LLMModel(ABC):
         api_secret: str = None,
         api_region: str = None,
         tests: dict = {},
-        llm_engine_config: LLMEngineConfig = LLMEngineConfig()
+        engine_config: EngineConfig = EngineConfig(),
     ):
         """
         Initialize the LLMModel instance.
@@ -58,7 +61,6 @@ class LLMModel(ABC):
         self.validation_url = f"{str(llm_engine_config.routes_endpoint)}/{RouteType.LLM_VALIDATION.value}/{self.PROVIDER}"
         self.chat_url = f"{str(llm_engine_config.routes_endpoint)}/{RouteType.LLM_CHAT.value}/{self.PROVIDER}"
 
-
     @staticmethod
     def _raise_api_key_error():
         raise ValueError(
@@ -66,7 +68,6 @@ class LLMModel(ABC):
         )
 
     def _check_api_access(self):
-
         response = requests.post(
             self.validation_url,
             json={
@@ -251,7 +252,13 @@ class LLMClient(ABC):
 
     MODEL_MAPPING = {}
 
-    def __init__(self, api_key: str = None, api_secret: str = None, api_region: str = None, llm_engine_config: LLMEngineConfig = LLMEngineConfig()):
+    def __init__(
+        self,
+        api_key: str = None,
+        api_secret: str = None,
+        api_region: str = None,
+        engine_config: EngineConfig = EngineConfig(),
+    ):
         """
         Initialize the LLMClient instance.
 
@@ -263,8 +270,8 @@ class LLMClient(ABC):
         self.api_key = api_key
         self.api_secret = api_secret
         self.api_region = api_region
-        self.llm_engine_config = llm_engine_config
-        run_apis(llm_engine_config=self.llm_engine_config)
+        self.engine_config = engine_config
+        run_apis(engine_config=self.engine_config)
 
     def get_model(self, model_name: str):
         """
@@ -291,7 +298,7 @@ class LLMClient(ABC):
             api_key=self.api_key,
             api_secret=self.api_secret,
             api_region=self.api_region,
-            llm_engine_config=self.llm_engine_config
+            engine_config=self.engine_config,
         )
 
 
@@ -344,7 +351,6 @@ class LLMCompare(ABC):
         return np.array(average_similarity_vector)
 
     async def _get_llm_performance(self, model, prompt_list, expected_output_list, output_dict):
-
         latency_list = []
         cost_list = []
         out_tokens_list = []
@@ -402,7 +408,6 @@ class LLMCompare(ABC):
         return output_dict
 
     async def dataset_prompt_compare(self, models, prompt_list, expected_output_list):
-
         output_dict = {}
 
         tasks = [

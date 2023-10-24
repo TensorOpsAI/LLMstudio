@@ -7,7 +7,7 @@ routes:
           api_key: $OPENAI_API_KEY
       - provider: vertexai
       - provider: bedrock
-  
+
   - name: validation
     route_type: validation
     model_providers:
@@ -16,4 +16,3 @@ routes:
           api_key: $OPENAI_API_KEY
       - provider: vertexai
       - provider: bedrock
-    

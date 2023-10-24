@@ -1,16 +1,14 @@
+from typing import Any, Callable, Dict, Optional
+
 from fastapi import FastAPI, HTTPException, Request
-from typing import Any, Dict, Optional, Callable
+from fastapi.middleware.cors import CORSMiddleware
 
-from llmstudio.llm_engine.config import LlmEngineConfig, Route, RouteType
-from llmstudio.llm_engine.constants import (
-    LLM_ENGINE_HEALTH_ENDPOINT,
-    LLM_ENGINE_ROUTE_BASE,
-    VERSION,
-)
-from llmstudio.llm_engine.providers import get_provider
+from llmstudio.engine.config import EngineRouteConfig, Route, RouteType
+from llmstudio.engine.constants import LLM_ENGINE_HEALTH_ENDPOINT, LLM_ENGINE_ROUTE_BASE, VERSION
+from llmstudio.engine.providers import get_provider
 
 
-class LlmEngineAPI(FastAPI):
+class EngineAPI(FastAPI):
     """
     Extends FastAPI to provide an API engine with dynamic routes based on the given configuration.
 
@@ -18,12 +16,12 @@ class LlmEngineAPI(FastAPI):
         dynamic_routes (Dict[str, Route]): A dictionary mapping from route names to Route objects.
     """
 
-    def __init__(self, config: LlmEngineConfig, *args: Any, **kwargs: Any):
+    def __init__(self, config: EngineRouteConfig, *args: Any, **kwargs: Any):
         """
-        Initialize the LlmEngineAPI instance.
+        Initialize the EngineAPI instance.
 
         Args:
-            config (LlmEngineConfig): The configuration object containing routes and other settings.
+            config (EngineRouteConfig): The configuration object containing routes and other settings.
             *args (Any): Additional positional arguments.
             **kwargs (Any): Additional keyword arguments.
         """
@@ -31,12 +29,12 @@ class LlmEngineAPI(FastAPI):
         self.dynamic_routes: Dict[str, Route] = {}
         self.set_dynamic_routes(config)
 
-    def set_dynamic_routes(self, config: LlmEngineConfig) -> None:
+    def set_dynamic_routes(self, config: EngineRouteConfig) -> None:
         """
         Clears existing dynamic routes and sets new ones based on the provided configuration.
 
         Args:
-            config (LlmEngineConfig): The configuration object containing routes and other settings.
+            config (EngineRouteConfig): The configuration object containing routes and other settings.
         """
         self.dynamic_routes.clear()
         for route in config.routes:
@@ -63,9 +61,7 @@ class LlmEngineAPI(FastAPI):
             ),
             methods=["POST"],
         )
-        self.dynamic_routes[route_type_name] = route.to_route(
-            provider_name, path
-        )
+        self.dynamic_routes[route_type_name] = route.to_route(provider_name, path)
 
     def _route_type_to_endpoint(
         self, provider_name: str, provider_config: dict, route_type: RouteType
@@ -91,9 +87,7 @@ class LlmEngineAPI(FastAPI):
 
         factory = provider_to_factory.get(route_type)
         if factory:
-            return self._create_generic_endpoint(
-                factory, provider_name, provider_config
-            )
+            return self._create_generic_endpoint(factory, provider_name, provider_config)
 
         raise HTTPException(
             status_code=404,
@@ -156,21 +150,29 @@ class LlmEngineAPI(FastAPI):
         return self.dynamic_routes
 
 
-def create_app_from_config(config: LlmEngineConfig) -> LlmEngineAPI:
+def create_app_from_config(config: EngineRouteConfig) -> EngineAPI:
     """
-    Initializes and returns an LlmEngineAPI application based on the given configuration.
+    Initializes and returns an EngineAPI application based on the given configuration.
 
     Parameters:
-    config (LlmEngineConfig): The configuration settings for initializing the LlmEngineAPI.
+    config (EngineRouteConfig): The configuration settings for initializing the EngineAPI.
 
     Returns:
-    LlmEngineAPI: An initialized LlmEngineAPI application.
+    EngineAPI: An initialized EngineAPI application.
     """
-    app = LlmEngineAPI(
+    app = EngineAPI(
         config=config,
-        title="llm_engine API",
-        description="The core API for llm_engine",
+        title="engine API",
+        description="The core API for engine",
         version=VERSION,
+    )
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:3000"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     @app.get(LLM_ENGINE_HEALTH_ENDPOINT)

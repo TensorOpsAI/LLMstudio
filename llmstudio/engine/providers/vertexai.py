@@ -1,23 +1,23 @@
-from llmstudio.llm_engine.config import VertexAIConfig, RouteConfig
-from pydantic import BaseModel, Field, validator
-from typing import Optional
-import tiktoken
-from fastapi.responses import StreamingResponse
 import random
 import time
-from google.oauth2 import service_account
+from typing import Optional
+
+import tiktoken
 import vertexai
-from llmstudio.llm_engine.providers.base_provider import BaseProvider
-from llmstudio.llm_engine.utils import validate_provider_config, append_log
-from llmstudio.llm_engine.constants import END_TOKEN, VERTEXAI_TOKEN_PRICE
+from fastapi.responses import StreamingResponse
+from google.oauth2 import service_account
+from pydantic import BaseModel, Field
 from vertexai.language_models import (
-    TextGenerationModel,
-    CodeGenerationModel,
     ChatModel,
     CodeChatModel,
+    CodeGenerationModel,
+    TextGenerationModel,
 )
 import asyncio
-
+from llmstudio.engine.config import VertexAIConfig
+from llmstudio.engine.constants import END_TOKEN, VERTEXAI_TOKEN_PRICE
+from llmstudio.engine.providers.base_provider import BaseProvider
+from llmstudio.engine.utils import validate_provider_config
 
 VERTEXAI_MODEL_MAP = {
     "text-bison": TextGenerationModel,
@@ -53,7 +53,7 @@ VERTEXAI_INPUT_MAP: A dictionary that maps model classes to their input type.
         - CodeGenerationModel: The class for code generation models
         - ChatModel: The class for chat models
         - CodeChatModel: The class for models that handle code and chat
-    
+
     Values:
         - 'prompt': The input type for TextGenerationModel
         - 'prefix': The input type for CodeGenerationModel
@@ -189,7 +189,6 @@ class VertexAIProvider(BaseProvider):
             "parameters": dict(data.parameters),
         }
 
-        append_log(data)
         return data
 
     async def test(self, data: VertexAITest) -> bool:
@@ -210,7 +209,7 @@ class VertexAIProvider(BaseProvider):
                 credentials=credentials,
             )
             return True
-        except Exception as exception:
+        except Exception:
             return False
 
 

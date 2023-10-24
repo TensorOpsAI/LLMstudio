@@ -1,7 +1,7 @@
-from ..validators import ClaudeParameters, TitanParameters
-from .models import LLMClient, LLMModel
-from ..utils.rest_utils import run_apis
-from ..llm_engine.config import LLMEngineConfig
+from llmstudoi.models import LLMClient, LLMModel
+
+from llmstudio.engine.config import EngineConfig
+from llmstudio.validators import ClaudeParameters, TitanParameters
 
 
 class BedrockClient(LLMClient):
@@ -21,14 +21,26 @@ class BedrockClient(LLMClient):
         "anthropic.claude-instant-v1": "Claude",
         "anthropic.claude-v2": "Claude",
     }
-    def __init__(self, api_key: str = None, api_secret: str = None, api_region: str = None, llm_engine_config: LLMEngineConfig = LLMEngineConfig()):
+
+    def __init__(
+        self,
+        api_key: str = None,
+        api_secret: str = None,
+        api_region: str = None,
+        engine_config: EngineConfig = EngineConfig(),
+    ):
         """
         Initialize the BedrockClient instance.
 
         Args:
-            llm_engine_config (LLMEngineConfig): The configuration object containing routes and other settings.
+            engine_config (EngineConfig): The configuration object containing routes and other settings.
         """
-        super().__init__(api_key=api_key, api_secret=api_secret, api_region=api_region, llm_engine_config=llm_engine_config)
+        super().__init__(
+            api_key=api_key,
+            api_secret=api_secret,
+            api_region=api_region,
+            engine_config=engine_config,
+        )
 
     class BedrockModel(LLMModel):
         """
@@ -42,10 +54,17 @@ class BedrockClient(LLMClient):
             TEST_URL (str): Endpoint URL for testing API access.
         """
 
-        PROVIDER = 'bedrock'
+        PROVIDER = "bedrock"
 
-        def __init__(self, model_name: str, api_key: str, api_secret: str, api_region: str, llm_engine_config: LLMEngineConfig):
-            super().__init__(model_name, api_key, api_secret, api_region, llm_engine_config)
+        def __init__(
+            self,
+            model_name: str,
+            api_key: str,
+            api_secret: str,
+            api_region: str,
+            engine_config: EngineConfig,
+        ):
+            super().__init__(model_name, api_key, api_secret, api_region, engine_config)
             self._check_api_access()
 
     class Claude(BedrockModel):
@@ -56,13 +75,20 @@ class BedrockClient(LLMClient):
         of the 'Claude' Bedrock LLM.
         """
 
-        def __init__(self, model_name: str, api_key: str, api_secret: str, api_region: str, llm_engine_config: LLMEngineConfig):
+        def __init__(
+            self,
+            model_name: str,
+            api_key: str,
+            api_secret: str,
+            api_region: str,
+            engine_config: EngineConfig,
+        ):
             super().__init__(
                 model_name=model_name,
                 api_key=api_key,
                 api_secret=api_secret,
                 api_region=api_region,
-                llm_engine_config=llm_engine_config
+                engine_config=engine_config,
             )
 
         def validate_parameters(self, parameters: ClaudeParameters = None) -> ClaudeParameters:
@@ -86,13 +112,20 @@ class BedrockClient(LLMClient):
         Bedrock LLM model, leveraging predefined chat and testing URLs.
         """
 
-        def __init__(self, model_name: str, api_key: str, api_secret: str, api_region: str, llm_engine_config: LLMEngineConfig):
+        def __init__(
+            self,
+            model_name: str,
+            api_key: str,
+            api_secret: str,
+            api_region: str,
+            engine_config: EngineConfig,
+        ):
             super().__init__(
                 model_name=model_name,
                 api_key=api_key,
                 api_secret=api_secret,
                 api_region=api_region,
-                llm_engine_config=llm_engine_config
+                engine_config=engine_config,
             )
 
         def validate_parameters(self, parameters: TitanParameters = None) -> TitanParameters:
