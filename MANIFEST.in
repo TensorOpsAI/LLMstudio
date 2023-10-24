@@ -1,1 +1,5 @@
+recursive-include llmstudio *
+recursive-exclude llmstudio/ui *
 recursive-include llmstudio/ui/build *
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]

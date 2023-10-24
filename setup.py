@@ -17,11 +17,11 @@ setup(
     version=SDK_VERSION,
     packages=find_packages(include=["llmstudio", "llmstudio.*"]),
     install_requires=REQUIREMENTS,
-    package_data={
-        "llmstudio.ui": [
-            "build/**/*",
-        ],
-    },
+    # package_data={
+    #     "llmstudio.ui": [
+    #         "build/**/*",
+    #     ],
+    # },
     entry_points={"console_scripts": ["llmstudio = llmstudio.cli:main"]},
     python_requires="~=3.9",
 )
