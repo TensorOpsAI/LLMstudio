@@ -1,3 +1,4 @@
+import webbrowser
 from threading import Thread
 
 import requests
@@ -29,11 +30,13 @@ def run_engine_app(engine_config=EngineConfig()):
     )
 
 
-def run_ui_app(ui_server_app):
+def run_ui_app(ui_server_app, api_name="UI", host="localhost", port=3000):
+    print(f"Running {api_name} on {host}:{port}")
+    webbrowser.open(f"http://{host}:{port}")
     uvicorn.run(
         ui_server_app,
-        host="localhost",
-        port=3000,
+        host=host,
+        port=port,
         log_level="critical",
     )
 
