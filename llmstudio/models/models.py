@@ -107,7 +107,7 @@ class LLMModel(ABC):
             BaseModel: Validated/adjusted parameters encapsulated in a Pydantic model.
         """
 
-    def chat(self, chat_input: str, parameters: BaseModel = None, is_stream: bool = False):
+    def chat(self, chat_input: str, parameters: BaseModel = None, is_stream: bool = False,safety_margin = None, custom_max_tokens = None):
         """
         Initiate a chat interaction with the language model.
 
@@ -142,9 +142,11 @@ class LLMModel(ABC):
                 "chat_input": chat_input,
                 "parameters": validated_params,
                 "is_stream": is_stream,
+                "safety_margin": safety_margin,
+                "custom_max_token": custom_max_tokens
             },
             headers={"Content-Type": "application/json"},
-            timeout=10,
+            timeout=30,
         )
 
         return response.json()
