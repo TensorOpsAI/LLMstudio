@@ -9,7 +9,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from llmstudio.engine.config import OpenAIConfig
-from llmstudio.engine.constants import END_TOKEN, OPENAI_PRICING_DICT
+from llmstudio.engine.constants import END_TOKEN, OPENAI_PRICING_DICT, GPT_35_TURBO_16K, OPENAI_MAX_RETRIES, GPT_35_MAX_TOKENS, GPT_4_MAX_TOKENS, DEFAULT_OUTPUT_MARGIN
 from llmstudio.engine.providers.base_provider import BaseProvider
 from llmstudio.engine.utils import validate_provider_config
 
@@ -51,6 +51,8 @@ class OpenAIRequest(BaseModel):
     chat_input: str
     parameters: Optional[OpenAIParameters] = OpenAIParameters()
     is_stream: Optional[bool] = False
+    safety_margin: Optional[float] = float(DEFAULT_OUTPUT_MARGIN)
+    custom_max_tokens: Optional[int] = None
 
 
 class OpenAITest(BaseModel):
@@ -105,54 +107,20 @@ class OpenAIProvider(BaseProvider):
         Raises:
             ValueError: If the specified model field is invalid.
         """
-
+         
         data = OpenAIRequest(**data)
 
         self.validate_model_field(data, OPENAI_PRICING_DICT.keys())
-        openai.api_key = self.openai_config.api_key
 
-        # Asynchronous call, for parallelism
         loop = asyncio.get_event_loop()
 
-        response = await loop.run_in_executor(
-            self.executor,
-            lambda: openai.ChatCompletion.create(
-                model=data.model_name,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": data.chat_input,
-                    }
-                ],
-                temperature=data.parameters.temperature,
-                max_tokens=data.parameters.max_tokens,
-                top_p=data.parameters.top_p,
-                frequency_penalty=data.parameters.frequency_penalty,
-                presence_penalty=data.parameters.presence_penalty,
-                stream=data.is_stream,
-            ),
-        )
+        response = await self.execute_openai_api_call(loop, data, OPENAI_MAX_RETRIES)
 
         if data.is_stream:
             return StreamingResponse(generate_stream_response(response, data))
 
-        input_tokens = get_tokens(data.chat_input, data.model_name)
-        output_tokens = get_tokens(response["choices"][0]["message"]["content"], data.model_name)
-
-        data = {
-            "id": random.randint(0, 1000),
-            "chatInput": data.chat_input,
-            "chatOutput": response["choices"][0]["message"]["content"],
-            "inputTokens": input_tokens,
-            "outputTokens": output_tokens,
-            "totalTokens": input_tokens + output_tokens,
-            "cost": get_cost(input_tokens, output_tokens, data.model_name),
-            "timestamp": time.time(),
-            "modelName": data.model_name,
-            "parameters": data.parameters.dict(),
-        }
-        return data
-
+        return await format_response(response, data)
+    
     async def test(self, data: OpenAITest) -> bool:
         """
         Test the validity of the OpenAI API key.
@@ -171,7 +139,83 @@ class OpenAIProvider(BaseProvider):
             return True
         except Exception:
             return False
+        
+    async def execute_openai_api_call(self, loop, request: OpenAIRequest, max_retries: int) -> dict:
+        """
+        Execute an OpenAI API call asynchronously, with retry logic and model selection.
 
+        Parameters:
+        - loop: The event loop where the function should be executed.
+        - request (OpenAIRequest): The object containing parameters for the OpenAI API call.
+        - max_retries (int): The maximum number of retries for the API call.
+
+        Returns:
+        - dict: The response from the OpenAI API.
+
+        Raises:
+        - ValueError: If the maximum number of retries is reached and the API call is unsuccessful.
+
+        Notes:
+        - The function incorporates retry logic and may switch to a higher capacity model if an InvalidRequestError is encountered.
+        """
+        openai.api_key = self.openai_config.api_key
+        retry_count = 0
+        use_higher_capacity_model = False
+
+        while retry_count < max_retries:
+            try:
+                model = _select_appropriate_model(input_text=request.chat_input, 
+                                                  selected_model= request.model_name,
+                                                  safety_margin= request.safety_margin,
+                                                  custom_max_tokens=request.custom_max_tokens,
+                                                  use_higher_capacity_model=use_higher_capacity_model)
+                return await loop.run_in_executor(
+                    self.executor,
+                    lambda: openai.ChatCompletion.create(
+                        model=model,
+                        messages=[{"role": "user", "content": request.chat_input}],
+                        temperature=request.parameters.temperature,
+                        max_tokens=request.parameters.max_tokens,
+                        top_p=request.parameters.top_p,
+                        frequency_penalty=request.parameters.frequency_penalty,
+                        presence_penalty=request.parameters.presence_penalty,
+                        stream=request.is_stream,
+                    ),
+                )
+            except openai.error.InvalidRequestError as e:
+                retry_count += 1
+                use_higher_capacity_model = True
+        raise ValueError("Maximum retries reached, cannot generate output within token limits.")
+
+async def format_response(response: dict, request: OpenAIRequest) -> dict:
+    """
+    Format the OpenAI API response and include additional details.
+
+    Parameters:
+    - response (dict): The dictionary containing the raw response from the OpenAI API.
+    - request (OpenAIRequest): The object containing parameters for the original OpenAI API call.
+
+    Returns:
+    - dict: A dictionary containing the formatted response along with additional details like token counts, cost, and timestamp.
+
+    Notes:
+    - The function calculates the number of tokens used in both the input and output and includes this information in the returned dictionary.
+    """
+    input_tokens = get_tokens(request.chat_input, request.model_name)
+    output_tokens = get_tokens(response["choices"][0]["message"]["content"], request.model_name)
+
+    return {
+        "id": random.randint(0, 1000),
+        "chatInput": request.chat_input,
+        "chatOutput": response["choices"][0]["message"]["content"],
+        "inputTokens": input_tokens,
+        "outputTokens": output_tokens,
+        "totalTokens": input_tokens + output_tokens,
+        "cost": get_cost(input_tokens, output_tokens, request.model_name),
+        "timestamp": time.time(),
+        "modelName": request.model_name,
+        "parameters": request.parameters.dict(),
+    }
 
 def get_cost(input_tokens: int, output_tokens: int, model_name: str) -> float:
     """
@@ -231,3 +275,53 @@ def generate_stream_response(response: dict, data: OpenAIProvider):
             output_tokens = get_tokens(chat_output, data.model_name)
             cost = get_cost(input_tokens, output_tokens, data.model_name)
             yield f"{END_TOKEN},{input_tokens},{output_tokens},{cost}"  # json
+    
+
+def _select_appropriate_model(
+    input_text, 
+    selected_model, 
+    safety_margin=DEFAULT_OUTPUT_MARGIN, 
+    custom_max_tokens=None, 
+    use_higher_capacity_model=False
+):
+    """
+    Selects the appropriate model based on token count and other parameters.
+
+    Parameters:
+    - input_text (str): The input text that needs to be processed by the model.
+    - selected_model (str): The default model selected for text processing.
+    - safety_margin (float, optional): A margin to reserve tokens for the output. Defaults to 0.2.
+    - custom_max_tokens (int, optional): Custom maximum tokens, overrides model's maximum if provided.
+    - use_higher_capacity_model (bool, optional): If True, uses a higher capacity model as a fallback. Defaults to False.
+
+    Returns:
+    - str: The chosen model based on the input parameters and token count.
+    Notes:
+    - The safety_margin is applied to reserve space for the output. For example, a safety_margin of 0.2 reserves 20% of the model's maximum tokens 
+    for the output and allows 80% to be used for the input.
+    """
+    if safety_margin is None:
+        safety_margin = DEFAULT_OUTPUT_MARGIN
+    elif safety_margin > 1:
+        print(f"Error: safety_margin can not be greater than 1. Defaulting to {DEFAULT_OUTPUT_MARGIN}.")
+        safety_margin = DEFAULT_OUTPUT_MARGIN
+    encoder = tiktoken.encoding_for_model(selected_model)
+    token_count = len(encoder.encode(input_text))
+    
+    high_capacity_model = GPT_35_TURBO_16K
+    
+    if use_higher_capacity_model:
+        print(f'Warning: Tokens exceeded, using fallback model: {high_capacity_model}')
+        return high_capacity_model
+
+    if custom_max_tokens:
+        effective_max_tokens = custom_max_tokens
+    else:
+        model_max_tokens = GPT_35_MAX_TOKENS if "gpt-3.5-turbo" in selected_model else GPT_4_MAX_TOKENS
+        
+        effective_max_tokens = int(model_max_tokens * (1-safety_margin))
+
+    chosen_model = high_capacity_model if token_count > effective_max_tokens else selected_model
+
+    return chosen_model
+
