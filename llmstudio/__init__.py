@@ -4,7 +4,6 @@ __version__ = "0.2.7"
 __requirements__ = [
     "pydantic",
     "requests",
-    "pydantic",
     "numpy",
     "torch",
     "sentence-transformers",
