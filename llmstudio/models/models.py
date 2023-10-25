@@ -177,9 +177,7 @@ class LLMModel(ABC):
 
         async def run_single_test(key):
             test, gt_answer = tests[key].values()
-            print(f"Running test... Key: {key} / Test: {test} / GT Answer: {gt_answer}")
             answer = await self.chat_async(test, parameters=parameters, is_stream=is_stream)
-            print(f"Answer: {answer}")
             return key, answer
 
         tasks = [run_single_test(key) for key in tests]

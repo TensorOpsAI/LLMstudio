@@ -17,4 +17,5 @@ __requirements__ = [
     "google-cloud-aiplatform",
     "fastapi",
     "boto3",
+    "langchain",
 ]
