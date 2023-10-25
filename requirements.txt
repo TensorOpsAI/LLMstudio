@@ -1,0 +1,14 @@
+pydantic
+requests
+numpy
+torch
+sentence-transformers
+fastapi
+uvicorn
+PyYaml
+openai
+tiktoken
+google-auth
+google-cloud-aiplatform
+boto3
+langchain
