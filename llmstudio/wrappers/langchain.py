@@ -1,6 +1,8 @@
-from typing import List, Any, Optional, Mapping
-from langchain.llms.base import LLM
+from typing import Any, List, Mapping, Optional
+
 from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain.llms.base import LLM
+
 from ..models import LLMModel
 
 
@@ -19,13 +21,12 @@ class LangchainLLMWrapper(LLM):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
     ) -> str:
-        
+
         if stop is not None:
             raise ValueError("stop kwargs are not permitted.")
 
         response = self.model.chat(prompt, parameters=parameters)
         return response["chatOutput"]
-
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
