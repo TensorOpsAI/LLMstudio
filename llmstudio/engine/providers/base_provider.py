@@ -4,10 +4,10 @@ from concurrent.futures import ThreadPoolExecutor
 
 class BaseProvider(ABC):
     """
-    Abstract base class for LLMStudio engine providers.
+    Abstract base class for LLMstudio engine providers.
 
     This class defines the core interface for providers that integrate
-    with LLMStudio's engine. It is intended to be subclassed by specific
+    with LLMstudio's engine. It is intended to be subclassed by specific
     provider implementations.
     """
 

@@ -24,13 +24,13 @@ Prompt Engineering at your fingertips
 Install the SDK using
 
 ```
-pip install llmstudio
+pip install LLMstudio
 ```
 
 Run the startup command
 
 ```
-llmstudio server
+LLMstudio server
 ```
 
 You can access the UI at http://localhost:3000 and send requests to the API at http://localhost:8000
@@ -49,9 +49,9 @@ Step into the future of AI with LLMstudio, by watching our [introduction video](
 
 ## 📖 Documentation
 
-- [Visit our docs to learn how the SDK works](https://docs.llmstudio.ai) (coming soon)
+- [Visit our docs to learn how the SDK works](https://docs.LLMstudio.ai) (coming soon)
 - Checkout our [notebook examples](https://github.com/TensorOpsAI/LLMstudio/tree/main/examples) to follow along with interactive tutorials
-- Checkout out [LLMStudio Architecture Roadmap](https://github.com/TensorOpsAI/LLMstudio/blob/main/docs/llmstudio-architecture/llmstudio-architecture-roadmap.md)
+- Checkout out [LLMstudio Architecture Roadmap](https://github.com/TensorOpsAI/LLMstudio/blob/main/docs/LLMstudio-architecture/LLMstudio-architecture-roadmap.md)
 
 ## 👨‍💻 Contributing
 

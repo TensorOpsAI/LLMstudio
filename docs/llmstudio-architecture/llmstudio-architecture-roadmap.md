@@ -1,9 +1,8 @@
-# LLMStudio Architecture Roadmap
+# LLMstudio Architecture Roadmap
 
-LLMStudio is a versatile platform designed to be the interface between users and multiple LLM providers. The platform is engineered to simplify logging, progress tracking, and the iterative improvement of machine learning projects. This is facilitated through Python APIs.
+LLMstudio is a versatile platform designed to be the interface between users and multiple LLM providers. The platform is engineered to simplify logging, progress tracking, and the iterative improvement of machine learning projects. This is facilitated through Python APIs.
 
 > **Note**: This is a roadmap and we're open to suggestions. If you have any, please feel free to discuss them in the [relevant issue thread](https://github.com/TensorOpsAI/LLMstudio/issues/14).
-
 
 ## Table of Concepts
 
@@ -12,13 +11,13 @@ LLMStudio is a versatile platform designed to be the interface between users and
   - [LLM Tracking API](#llm-tracking-api)
   - [Logging Information](#logging-information)
 - [Where Runs are Recorded](#where-runs-are-recorded)
-- [How LLMStudio Interactions are Logged](#how-llmstudio-interactions-are-logged)
+- [How LLMstudio Interactions are Logged](#how-LLMstudio-interactions-are-logged)
 
 ## Concepts
 
 ### LLM Engine API
 
-The LLM Engine API is a critical component of LLMStudio, designed to mediate interactions between the LLMStudio client and the providers. It handles REST API requests, receives data from the providers, and forwards this information to the LLMStudio client. It is involved in all three scenarios and plays a central role in executing and logging runs.
+The LLM Engine API is a critical component of LLMstudio, designed to mediate interactions between the LLMstudio client and the providers. It handles REST API requests, receives data from the providers, and forwards this information to the LLMstudio client. It is involved in all three scenarios and plays a central role in executing and logging runs.
 
 ### LLM Tracking API
 
@@ -42,88 +41,93 @@ These parameters provide a comprehensive view of each interaction, aiding in ana
 
 ## Where Runs are Recorded
 
-LLMStudio runs can be recorded to local files, to a SQLite Database or remotely to a tracking server. By default, the LLMStudio Python API logs runs locally to files in an `./llmstudio_runs` directory wherever you run the program.
+LLMstudio runs can be recorded to local files, to a SQLite Database or remotely to a tracking server. By default, the LLMstudio Python API logs runs locally to files in an `./LLMstudio_runs` directory wherever you run the program.
 
-## How LLMStudio Interactions are Logged
+## How LLMstudio Interactions are Logged
 
-LLMStudio client can interface with a variety of APIs and storage configuration. Here are five common configuration scenarios:
+LLMstudio client can interface with a variety of APIs and storage configuration. Here are five common configuration scenarios:
 
-### Scenario 1: LLMStudio on localhost
+### Scenario 1: LLMstudio on localhost
 
-Run LLMStudio on your local machine. Both the LLM Engine API and the logging mechanisms are locally hosted. Logs are stored in a directory in the local filesystem at `./llmstudio_runs`.
+Run LLMstudio on your local machine. Both the LLM Engine API and the logging mechanisms are locally hosted. Logs are stored in a directory in the local filesystem at `./LLMstudio_runs`.
 
-![llmstudio-s1](llmstudio-s1.png)
+![LLMstudio-s1](LLMstudio-s1.png)
 
 #### Detailed Workflow
 
-In this simple scenario, The LLMStudio client interacts with the LLM Engine API server via a REST request and logs into a simple file:
+In this simple scenario, The LLMstudio client interacts with the LLM Engine API server via a REST request and logs into a simple file:
 
 - **Part 1a and 1b**:
-  1. LLMStudio client creates an instance of a provider model and initiates a REST API request to the LLM Engine API.
-  2. LLM Engine API communicates with the chosen provider, fetches the response, and forwards it to the LLMStudio client.
+
+  1. LLMstudio client creates an instance of a provider model and initiates a REST API request to the LLM Engine API.
+  2. LLM Engine API communicates with the chosen provider, fetches the response, and forwards it to the LLMstudio client.
 
 - **Part 2a**:
   - The execution details are logged in a local FileStore, allowing for easy retrieval and analysis.
 
-### Scenario 2: LLMStudio on localhost with SQLite
+### Scenario 2: LLMstudio on localhost with SQLite
 
-In this scenario, both the LLM Engine API and the logging mechanisms reside locally. However, logs are stored in an SQLite database file named `llmstudio_runs.db`.
+In this scenario, both the LLM Engine API and the logging mechanisms reside locally. However, logs are stored in an SQLite database file named `LLMstudio_runs.db`.
 
-![llmstudio-s2](llmstudio-s2.png)
+![LLMstudio-s2](LLMstudio-s2.png)
 
 #### Detailed Workflow
 
 - **Part 1a and 1b**:
-  1. LLMStudio client creates an instance of a provider model and initiates a REST API request to the LLM Engine API.
-  2. LLM Engine API communicates with the chosen provider, fetches the response, and forwards it to the LLMStudio client.
+
+  1. LLMstudio client creates an instance of a provider model and initiates a REST API request to the LLM Engine API.
+  2. LLM Engine API communicates with the chosen provider, fetches the response, and forwards it to the LLMstudio client.
 
 - **Part 2a**:
-  - The LLMStudio client logs the execution details directly into a SQLite database file, offering a more structured storage solution.
+  - The LLMstudio client logs the execution details directly into a SQLite database file, offering a more structured storage solution.
 
-### Scenario 3: LLMStudio on localhost with LLM Tracking API
+### Scenario 3: LLMstudio on localhost with LLM Tracking API
 
-In this setup, LLMStudio utilizes the LLM Tracking API for logging, offering more flexibility in storage options. Logs can either be stored in the local filesystem or in an SQLite database.
+In this setup, LLMstudio utilizes the LLM Tracking API for logging, offering more flexibility in storage options. Logs can either be stored in the local filesystem or in an SQLite database.
 
-![llmstudio-s3](llmstudio-s3.png)
-
-#### Detailed Workflow
-
-- **Part 1a and 1b**:
-  1. LLMStudio client creates an instance of a provider model and initiates a REST API request to the LLM Engine API.
-  2. LLM Engine API communicates with the chosen provider, fetches the response, and forwards it to the LLMStudio client.
-
-- **Part 2a and 2b**:
-    1. LLMStudio client uses the LLM Tracking API to log the execution based on the project and session settings.
-    2. The LLM Tracking API records the execution to either a local FileStore or an SQLite database based on the configuration.
-
-### Scenario 4: LLMStudio with Remote
-
-Run LLMStudio on your local Machine, where the LLM Engine API, LLM Tracking API are ran locally and the Logging Server resides on remote host.
-
-![llmstudio-s4](llmstudio-s4.png)
+![LLMstudio-s3](LLMstudio-s3.png)
 
 #### Detailed Workflow
 
 - **Part 1a and 1b**:
-  1. LLMStudio client creates an instance of a provider model and initiates a REST API request to the LLM Engine API.
-  2. LLM Engine API communicates with the chosen provider, fetches the response, and forwards it to the LLMStudio client.
+
+  1. LLMstudio client creates an instance of a provider model and initiates a REST API request to the LLM Engine API.
+  2. LLM Engine API communicates with the chosen provider, fetches the response, and forwards it to the LLMstudio client.
 
 - **Part 2a and 2b**:
-    1. LLMStudio interacts with the LLM Tracking API to log the execution.
-    2. The LLM Tracking API is configured to record the execution into a remote storage system, offering a hybrid storage solution.
+  1. LLMstudio client uses the LLM Tracking API to log the execution based on the project and session settings.
+  2. The LLM Tracking API records the execution to either a local FileStore or an SQLite database based on the configuration.
 
-### Scenario 5: Fully Remote LLMStudio
+### Scenario 4: LLMstudio with Remote
 
-In this scenario, only the LLMStudio client runs locally; all other components including the LLM Engine API, LLM Tracking API, and storage are remotely hosted.
+Run LLMstudio on your local Machine, where the LLM Engine API, LLM Tracking API are ran locally and the Logging Server resides on remote host.
 
-![llmstudio-s5](llmstudio-s5.png)
+![LLMstudio-s4](LLMstudio-s4.png)
 
 #### Detailed Workflow
 
 - **Part 1a and 1b**:
-  1. The LLMStudio client communicates with the remote LLM Engine API to interact with the provider services.
-  2. LLM Engine API communicates with the chosen provider, fetches the response, and forwards it to the LLMStudio client.
+
+  1. LLMstudio client creates an instance of a provider model and initiates a REST API request to the LLM Engine API.
+  2. LLM Engine API communicates with the chosen provider, fetches the response, and forwards it to the LLMstudio client.
 
 - **Part 2a and 2b**:
-  1. LLMStudio communicates with the remote LLM Tracking API for logging.
+  1. LLMstudio interacts with the LLM Tracking API to log the execution.
+  2. The LLM Tracking API is configured to record the execution into a remote storage system, offering a hybrid storage solution.
+
+### Scenario 5: Fully Remote LLMstudio
+
+In this scenario, only the LLMstudio client runs locally; all other components including the LLM Engine API, LLM Tracking API, and storage are remotely hosted.
+
+![LLMstudio-s5](LLMstudio-s5.png)
+
+#### Detailed Workflow
+
+- **Part 1a and 1b**:
+
+  1. The LLMstudio client communicates with the remote LLM Engine API to interact with the provider services.
+  2. LLM Engine API communicates with the chosen provider, fetches the response, and forwards it to the LLMstudio client.
+
+- **Part 2a and 2b**:
+  1. LLMstudio communicates with the remote LLM Tracking API for logging.
   2. The remote LLM Tracking API logs the execution into the remote storage system, providing a fully remote solution for data management.
