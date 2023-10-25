@@ -1,14 +1,14 @@
 import asyncio
+import time
 from abc import ABC, abstractmethod
 from statistics import mean
-import time
 
 import nest_asyncio
 import numpy as np
 import requests
-from requests.exceptions import RequestException
 from aiohttp import ClientSession
 from pydantic import BaseModel
+from requests.exceptions import RequestException
 from sentence_transformers import SentenceTransformer, util
 
 from llmstudio.engine.config import EngineConfig, RouteType
@@ -87,11 +87,13 @@ class LLMModel(ABC):
                 if not response.json():
                     raise ValueError(f"The API key doesn't have access to {self.model_name}")
                 return  # Successful API check
-            except RequestException as e:
+            except RequestException:
                 retries += 1
                 time.sleep(delay)  # Wait before retrying
-                
-        raise ValueError("Max retries reached. The API key doesn't have access to {self.model_name}")
+
+        raise ValueError(
+            "Max retries reached. The API key doesn't have access to {self.model_name}"
+        )
 
     @abstractmethod
     def validate_parameters(self, parameters: BaseModel) -> BaseModel:
