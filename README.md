@@ -8,16 +8,35 @@ Prompt Engineering at your fingertips
 
 ![LLMstudio UI](https://imgur.com/zBnhtTN.png)
 
-1.  **Python Client Gateway**: Seamless integration with multiple LLMs and chaining libraries such as LangChain.
-2.  **Prompt Editing UI**: An intuitive interface designed for prompt engineering.
-3.  **History Management**: Track past runs and easily export your data as needed.
+1.  **Python Client Gateway**:
+    - Access models from known providers such as OpenAI, VertexAI and Bedrock. All in one platform.
+    - Speed up development with tracking and robustness features from LLMstudio.
+    - Continue using popular libraries like LangChain through their LLMstudio-wrapped versions.
+3.  **Prompt Editing UI**:
+    - An intuitive interface designed for prompt engineering. 
+    - Quickly iterate between prompts until you reach your desired results.
+    - Access the history of your previous prompts and their results.
+5.  **History Management**:
+    - Track past runs, available for both on the UI and the Client.
+    - Log the cost, latency and output of each prompt.
+    - Export the history to a CSV.
+6.  **Context Limit Adaptability**:
+    - Automatic switch to a larger-context fallback model if the current model's context limit is exceeded.
+    - Always use the lowest context model and only use the higher context ones when necessary to save costs. 
+    - For instance, exceeding 4k tokens in gpt-3.5-turbo triggers a switch to gpt-3.5-turbo-16k.
+  
+
+
 
 ### 👀 Coming soon:
 
-- Multiple LLM comparison
-- Prompt testing and validation
-- Projects and sessions
-- API keys manager
+- Side-by-side comparison of multiple LLMs using the same prompt.
+- Automated testing and validation for your LLMs. (Create Unit-tests for your LLMs which are evaluated automatically)
+- API key administration. (Define quota limits)
+- Projects and sessions. (Organize your History and API keys by project)
+- Resilience against service provider rate limits.
+- Organized tracking of groups of related prompts (Chains, Agents)
+
 
 ## 🚀 Quick Install
 
