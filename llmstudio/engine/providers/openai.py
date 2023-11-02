@@ -114,12 +114,14 @@ class OpenAIProvider(BaseProvider):
 
         loop = asyncio.get_event_loop()
 
+        start_time = time.time()
         response = await self.execute_openai_api_call(loop, data, OPENAI_MAX_RETRIES)
+        duration = time.time() - start_time
 
         if data.is_stream:
             return StreamingResponse(generate_stream_response(response, data))
 
-        return await format_response(response, data)
+        return await format_response(response, data, duration)
     
     async def test(self, data: OpenAITest) -> bool:
         """
@@ -187,7 +189,7 @@ class OpenAIProvider(BaseProvider):
                 use_higher_capacity_model = True
         raise ValueError("Maximum retries reached, cannot generate output within token limits.")
 
-async def format_response(response: dict, request: OpenAIRequest) -> dict:
+async def format_response(response: dict, request: OpenAIRequest, duration: float) -> dict:
     """
     Format the OpenAI API response and include additional details.
 
@@ -215,6 +217,7 @@ async def format_response(response: dict, request: OpenAIRequest) -> dict:
         "timestamp": time.time(),
         "modelName": request.model_name,
         "parameters": request.parameters.dict(),
+        "latency": duration,
     }
 
 def get_cost(input_tokens: int, output_tokens: int, model_name: str) -> float:
