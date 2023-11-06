@@ -44,7 +44,7 @@ class LLMModel(ABC):
         api_region: str = None,
         tests: dict = {},
         engine_config: EngineConfig = EngineConfig(),
-        parameters: BaseModel = None
+        parameters: BaseModel = None,
     ):
         """
         Initialize the LLMModel instance.
@@ -110,7 +110,14 @@ class LLMModel(ABC):
             BaseModel: Validated/adjusted parameters encapsulated in a Pydantic model.
         """
 
-    def chat(self, chat_input: str, parameters: BaseModel = None, is_stream: bool = False,safety_margin = None, custom_max_tokens = None):
+    def chat(
+        self,
+        chat_input: str,
+        parameters: BaseModel = None,
+        is_stream: bool = False,
+        safety_margin=None,
+        custom_max_tokens=None,
+    ):
         """
         Initiate a chat interaction with the language model.
 
@@ -149,7 +156,7 @@ class LLMModel(ABC):
                 "parameters": parameters,
                 "is_stream": is_stream,
                 "safety_margin": safety_margin,
-                "custom_max_token": custom_max_tokens
+                "custom_max_token": custom_max_tokens,
             },
             headers={"Content-Type": "application/json"},
             timeout=30,
@@ -314,7 +321,7 @@ class LLMClient(ABC):
             api_secret=self.api_secret,
             api_region=self.api_region,
             engine_config=self.engine_config,
-            parameters=parameters
+            parameters=parameters,
         )
 
 
