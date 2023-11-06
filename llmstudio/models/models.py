@@ -44,6 +44,7 @@ class LLMModel(ABC):
         api_region: str = None,
         tests: dict = {},
         engine_config: EngineConfig = EngineConfig(),
+        parameters: BaseModel = None,
     ):
         """
         Initialize the LLMModel instance.
@@ -64,6 +65,8 @@ class LLMModel(ABC):
         self.chat_url = (
             f"{str(engine_config.routes_endpoint)}/{RouteType.LLM_CHAT.value}/{self.PROVIDER}"
         )
+        validated_params = self.validate_parameters(parameters)
+        self.parameters = validated_params
 
     @staticmethod
     def _raise_api_key_error():
@@ -107,7 +110,14 @@ class LLMModel(ABC):
             BaseModel: Validated/adjusted parameters encapsulated in a Pydantic model.
         """
 
-    def chat(self, chat_input: str, parameters: BaseModel = None, is_stream: bool = False,safety_margin = None, custom_max_tokens = None):
+    def chat(
+        self,
+        chat_input: str,
+        parameters: BaseModel = None,
+        is_stream: bool = False,
+        safety_margin=None,
+        custom_max_tokens=None,
+    ):
         """
         Initiate a chat interaction with the language model.
 
@@ -120,7 +130,7 @@ class LLMModel(ABC):
                           that you want the model to respond to.
             parameters (BaseModel, optional): A Pydantic model containing parameters that affect
                                           the model's responses, such as "temperature" or
-                                          "max tokens". Defaults to None.
+                                          "max tokens". Defaults to None. If no parameters are specified the ones declared when instancianting the model will be used if available.
             is_stream (bool, optional): A boolean flag that indicates whether the request should
                                     be handled as a stream. Defaults to False.
 
@@ -131,7 +141,10 @@ class LLMModel(ABC):
             RequestException: If the API request fails.
             ValueError: If the API response cannot be parsed or contains error information.
         """
-        validated_params = self.validate_parameters(parameters)
+        if not parameters:
+            parameters = self.parameters
+        else:
+            parameters = self.validate_parameters(parameters)
         response = requests.post(
             self.chat_url,
             json={
@@ -140,10 +153,10 @@ class LLMModel(ABC):
                 "api_secret": self.api_secret,
                 "api_region": self.api_region,
                 "chat_input": chat_input,
-                "parameters": validated_params,
+                "parameters": parameters,
                 "is_stream": is_stream,
                 "safety_margin": safety_margin,
-                "custom_max_token": custom_max_tokens
+                "custom_max_token": custom_max_tokens,
             },
             headers={"Content-Type": "application/json"},
             timeout=30,
@@ -156,6 +169,10 @@ class LLMModel(ABC):
         self, chat_input: str, parameters: BaseModel = None, is_stream: bool = False
     ):
         async with ClientSession() as session:
+            if not parameters:
+                parameters = self.parameters
+            else:
+                parameters = self.validate_parameters(parameters)
             async with session.post(
                 self.chat_url,
                 json={
@@ -236,25 +253,6 @@ class LLMModel(ABC):
                 raise ValueError(f"question and answer should be strings")
         return tests
 
-    # Sequential code for running tests
-    """
-    def run_tests(self, tests: dict = {}, parameters: dict = {}, is_stream: bool = False):
-
-        if not tests:
-            tests = self.tests
-
-        tests = self.validate_tests(tests)
-
-        test_responses = {}
-        for key in tests:
-            test, gt_answer = tests[key].values()
-            print(f"Key: {key} / Test: {test} / GT Answer: {gt_answer}")
-            response = self.chat(test,parameters=parameters,is_stream=is_stream)
-            test_responses[key] = response
-
-        return test_responses
-    """
-
 
 class LLMClient(ABC):
     """
@@ -297,7 +295,7 @@ class LLMClient(ABC):
         self.engine_config = engine_config
         run_apis(engine_config=self.engine_config)
 
-    def get_model(self, model_name: str):
+    def get_model(self, model_name: str, parameters: BaseModel = None):
         """
         Retrieve an instance of an LLM model by name.
 
@@ -323,6 +321,7 @@ class LLMClient(ABC):
             api_secret=self.api_secret,
             api_region=self.api_region,
             engine_config=self.engine_config,
+            parameters=parameters,
         )
 
 

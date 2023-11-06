@@ -53,11 +53,18 @@ class OpenAIClient(LLMClient):
 
         PROVIDER = "openai"
 
-        def __init__(self, model_name: str, api_key: str, engine_config: EngineConfig):
+        def __init__(
+            self,
+            model_name: str,
+            api_key: str,
+            engine_config: EngineConfig,
+            parameters: OpenAIParameters = None,
+        ):
             super().__init__(
                 model_name,
                 api_key or os.environ.get("OPENAI_API_KEY") or self._raise_api_key_error(),
                 engine_config=engine_config,
+                parameters=parameters,
             )
             self._check_api_access()
 
@@ -82,11 +89,19 @@ class OpenAIClient(LLMClient):
         'GPT-3.5-turbo' OpenAI LLM.
         """
 
-        def __init__(self, model_name, api_key, engine_config: EngineConfig, **kwargs):
+        def __init__(
+            self,
+            model_name,
+            api_key,
+            engine_config: EngineConfig,
+            parameters: OpenAIParameters,
+            **kwargs
+        ):
             super().__init__(
                 model_name=model_name,
                 api_key=api_key,
                 engine_config=engine_config,
+                parameters=parameters,
             )
 
     class GPT4(OpenAIModel):
@@ -97,9 +112,17 @@ class OpenAIClient(LLMClient):
         with the 'GPT-4' OpenAI LLM.
         """
 
-        def __init__(self, model_name, api_key, engine_config: EngineConfig, **kwargs):
+        def __init__(
+            self,
+            model_name,
+            api_key,
+            engine_config: EngineConfig,
+            parameters: OpenAIParameters,
+            **kwargs
+        ):
             super().__init__(
                 model_name=model_name,
                 api_key=api_key,
                 engine_config=engine_config,
+                parameters=parameters,
             )

@@ -9,7 +9,15 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from llmstudio.engine.config import OpenAIConfig
-from llmstudio.engine.constants import END_TOKEN, OPENAI_PRICING_DICT, GPT_35_TURBO_16K, OPENAI_MAX_RETRIES, GPT_35_MAX_TOKENS, GPT_4_MAX_TOKENS, DEFAULT_OUTPUT_MARGIN
+from llmstudio.engine.constants import (
+    DEFAULT_OUTPUT_MARGIN,
+    END_TOKEN,
+    GPT_4_MAX_TOKENS,
+    GPT_35_MAX_TOKENS,
+    GPT_35_TURBO_16K,
+    OPENAI_MAX_RETRIES,
+    OPENAI_PRICING_DICT,
+)
 from llmstudio.engine.providers.base_provider import BaseProvider
 from llmstudio.engine.utils import validate_provider_config
 
@@ -107,7 +115,7 @@ class OpenAIProvider(BaseProvider):
         Raises:
             ValueError: If the specified model field is invalid.
         """
-         
+
         data = OpenAIRequest(**data)
 
         self.validate_model_field(data, OPENAI_PRICING_DICT.keys())
@@ -122,7 +130,7 @@ class OpenAIProvider(BaseProvider):
             return StreamingResponse(generate_stream_response(response, data))
 
         return await format_response(response, data, duration)
-    
+
     async def test(self, data: OpenAITest) -> bool:
         """
         Test the validity of the OpenAI API key.
@@ -141,8 +149,10 @@ class OpenAIProvider(BaseProvider):
             return True
         except Exception:
             return False
-        
-    async def execute_openai_api_call(self, loop, request: OpenAIRequest, max_retries: int) -> dict:
+
+    async def execute_openai_api_call(
+        self, loop, request: OpenAIRequest, max_retries: int
+    ) -> dict:
         """
         Execute an OpenAI API call asynchronously, with retry logic and model selection.
 
@@ -166,11 +176,13 @@ class OpenAIProvider(BaseProvider):
 
         while retry_count < max_retries:
             try:
-                model = _select_appropriate_model(input_text=request.chat_input, 
-                                                  selected_model= request.model_name,
-                                                  safety_margin= request.safety_margin,
-                                                  custom_max_tokens=request.custom_max_tokens,
-                                                  use_higher_capacity_model=use_higher_capacity_model)
+                model = _select_appropriate_model(
+                    input_text=request.chat_input,
+                    selected_model=request.model_name,
+                    safety_margin=request.safety_margin,
+                    custom_max_tokens=request.custom_max_tokens,
+                    use_higher_capacity_model=use_higher_capacity_model,
+                )
                 return await loop.run_in_executor(
                     self.executor,
                     lambda: openai.ChatCompletion.create(
@@ -188,6 +200,7 @@ class OpenAIProvider(BaseProvider):
                 retry_count += 1
                 use_higher_capacity_model = True
         raise ValueError("Maximum retries reached, cannot generate output within token limits.")
+
 
 async def format_response(response: dict, request: OpenAIRequest, duration: float) -> dict:
     """
@@ -219,6 +232,7 @@ async def format_response(response: dict, request: OpenAIRequest, duration: floa
         "parameters": request.parameters.dict(),
         "latency": duration,
     }
+
 
 def get_cost(input_tokens: int, output_tokens: int, model_name: str) -> float:
     """
@@ -278,14 +292,14 @@ def generate_stream_response(response: dict, data: OpenAIProvider):
             output_tokens = get_tokens(chat_output, data.model_name)
             cost = get_cost(input_tokens, output_tokens, data.model_name)
             yield f"{END_TOKEN},{input_tokens},{output_tokens},{cost}"  # json
-    
+
 
 def _select_appropriate_model(
-    input_text, 
-    selected_model, 
-    safety_margin=DEFAULT_OUTPUT_MARGIN, 
-    custom_max_tokens=None, 
-    use_higher_capacity_model=False
+    input_text,
+    selected_model,
+    safety_margin=DEFAULT_OUTPUT_MARGIN,
+    custom_max_tokens=None,
+    use_higher_capacity_model=False,
 ):
     """
     Selects the appropriate model based on token count and other parameters.
@@ -300,31 +314,34 @@ def _select_appropriate_model(
     Returns:
     - str: The chosen model based on the input parameters and token count.
     Notes:
-    - The safety_margin is applied to reserve space for the output. For example, a safety_margin of 0.2 reserves 20% of the model's maximum tokens 
+    - The safety_margin is applied to reserve space for the output. For example, a safety_margin of 0.2 reserves 20% of the model's maximum tokens
     for the output and allows 80% to be used for the input.
     """
     if safety_margin is None:
         safety_margin = DEFAULT_OUTPUT_MARGIN
     elif safety_margin > 1:
-        print(f"Error: safety_margin can not be greater than 1. Defaulting to {DEFAULT_OUTPUT_MARGIN}.")
+        print(
+            f"Error: safety_margin can not be greater than 1. Defaulting to {DEFAULT_OUTPUT_MARGIN}."
+        )
         safety_margin = DEFAULT_OUTPUT_MARGIN
     encoder = tiktoken.encoding_for_model(selected_model)
     token_count = len(encoder.encode(input_text))
-    
+
     high_capacity_model = GPT_35_TURBO_16K
-    
+
     if use_higher_capacity_model:
-        print(f'Warning: Tokens exceeded, using fallback model: {high_capacity_model}')
+        print(f"Warning: Tokens exceeded, using fallback model: {high_capacity_model}")
         return high_capacity_model
 
     if custom_max_tokens:
         effective_max_tokens = custom_max_tokens
     else:
-        model_max_tokens = GPT_35_MAX_TOKENS if "gpt-3.5-turbo" in selected_model else GPT_4_MAX_TOKENS
-        
-        effective_max_tokens = int(model_max_tokens * (1-safety_margin))
+        model_max_tokens = (
+            GPT_35_MAX_TOKENS if "gpt-3.5-turbo" in selected_model else GPT_4_MAX_TOKENS
+        )
+
+        effective_max_tokens = int(model_max_tokens * (1 - safety_margin))
 
     chosen_model = high_capacity_model if token_count > effective_max_tokens else selected_model
 
     return chosen_model
-
