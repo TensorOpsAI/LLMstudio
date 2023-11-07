@@ -156,13 +156,20 @@ class LLMModel(ABC):
                 "parameters": parameters,
                 "is_stream": is_stream,
                 "safety_margin": safety_margin,
+                "end_token": False,
                 "custom_max_token": custom_max_tokens,
             },
+            stream=is_stream,
             headers={"Content-Type": "application/json"},
             timeout=30,
         )
-
-        return response.json()
+        
+        if is_stream:
+            for chunk in response.iter_content(chunk_size=None):
+                if chunk:
+                    yield chunk.decode('utf-8')
+        else:
+            return response.json()
 
     # Async (wannabe parallel) run tests
     async def chat_async(

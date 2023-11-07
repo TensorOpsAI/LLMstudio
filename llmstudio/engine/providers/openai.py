@@ -60,6 +60,7 @@ class OpenAIRequest(BaseModel):
     parameters: Optional[OpenAIParameters] = OpenAIParameters()
     is_stream: Optional[bool] = False
     safety_margin: Optional[float] = float(DEFAULT_OUTPUT_MARGIN)
+    end_token: Optional[bool] = True
     custom_max_tokens: Optional[int] = None
 
 
@@ -286,12 +287,13 @@ def generate_stream_response(response: dict, data: OpenAIProvider):
         ):
             chunk_content = chunk["choices"][0]["delta"]["content"]
             chat_output += chunk_content
-            yield chunk_content
+            yield chat_output
         else:
-            input_tokens = get_tokens(data.chat_input, data.model_name)
-            output_tokens = get_tokens(chat_output, data.model_name)
-            cost = get_cost(input_tokens, output_tokens, data.model_name)
-            yield f"{END_TOKEN},{input_tokens},{output_tokens},{cost}"  # json
+            if data.end_token:
+                input_tokens = get_tokens(data.chat_input, data.model_name)
+                output_tokens = get_tokens(chat_output, data.model_name)
+                cost = get_cost(input_tokens, output_tokens, data.model_name)
+                yield f"{END_TOKEN},{input_tokens},{output_tokens},{cost}"  # json
 
 
 def _select_appropriate_model(
