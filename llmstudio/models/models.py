@@ -110,6 +110,11 @@ class LLMModel(ABC):
             BaseModel: Validated/adjusted parameters encapsulated in a Pydantic model.
         """
 
+    def generate_chat(self, response):
+        for chunk in response.iter_content(chunk_size=None):
+            if chunk:
+                yield chunk.decode("utf-8")
+
     def chat(
         self,
         chat_input: str,
@@ -156,13 +161,18 @@ class LLMModel(ABC):
                 "parameters": parameters,
                 "is_stream": is_stream,
                 "safety_margin": safety_margin,
+                "end_token": False,
                 "custom_max_token": custom_max_tokens,
             },
+            stream=is_stream,
             headers={"Content-Type": "application/json"},
             timeout=30,
         )
 
-        return response.json()
+        if is_stream:
+            return self.generate_chat(response)
+        else:
+            return response.json()
 
     # Async (wannabe parallel) run tests
     async def chat_async(
