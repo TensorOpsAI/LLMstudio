@@ -66,5 +66,5 @@ class BaseProvider(ABC):
         if data.model_name not in model_list:
             raise HTTPException(
                 status_code=422,
-                detail=f"The model '{data['model_name']}' does not exist.",
+                detail=f"The model '{data.model_name}' does not exist.",
             )
