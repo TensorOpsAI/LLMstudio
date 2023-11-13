@@ -1,5 +1,5 @@
 name = "version"
-__version__ = "0.2.10"
+__version__ = "0.2.11"
 
 __requirements__ = [
     "pydantic",
@@ -10,7 +10,7 @@ __requirements__ = [
     "fastapi",
     "uvicorn",
     "PyYaml",
-    "openai",
+    "openai>=1.0",
     "tiktoken",
     "google-auth",
     "google-cloud-aiplatform",
