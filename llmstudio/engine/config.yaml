@@ -3,16 +3,13 @@ routes:
     route_type: chat
     model_providers:
       - provider: openai
-        # config:
-        # api_key: $OPENAI_API_KEY
       - provider: vertexai
       - provider: bedrock
+      - provider: anthropic
 
   - name: validation
     route_type: validation
     model_providers:
       - provider: openai
-        # config:
-        # api_key: $OPENAI_API_KEY
       - provider: vertexai
-      - provider: bedrock
+      - provider: anthropic

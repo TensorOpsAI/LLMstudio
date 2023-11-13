@@ -1,4 +1,4 @@
-export const types = ["OpenAI", "Vertex AI", "Bedrock"];
+export const types = ["OpenAI", "Anthropic", "Vertex AI", "Bedrock"];
 
 export const models = [
   {
@@ -19,6 +19,21 @@ export const models = [
     strengths:
       "Language translation, complex classification, sentiment, summarization",
     cost: "Complex intent, cause and effect, creative generation, search, summarization for audience",
+  },
+  {
+    id: "claude-2",
+    name: "claude-2",
+    type: "Anthropic",
+  },
+  {
+    id: "claude-instant-1",
+    name:"claude-instant-1",
+    type: "Anthropic",
+  },
+  {
+    id: "claude-instant-1.2",
+    name: "claude-instant-1.2",
+    type: "Anthropic",
   },
   {
     id: "text-bison",
@@ -96,6 +111,21 @@ export const credentials = {
     needsRegion: false,
   },
   "gpt-4": {
+    needsKey: true,
+    needsSecret: false,
+    needsRegion: false,
+  },
+  "claude-2": {
+    needsKey: true,
+    needsSecret: false,
+    needsRegion: false,
+  },
+  "claude-instant-1": {
+    needsKey: true,
+    needsSecret: false,
+    needsRegion: false,
+  },
+  "claude-instant-1.2": {
     needsKey: true,
     needsSecret: false,
     needsRegion: false,
@@ -198,6 +228,52 @@ export const parameters = {
       step: 0.1,
       description:
         "How much to penalize new tokens based on whether they appear in the text so far. Increases the model's likelihood to talk about new topics.",
+    },
+  ],
+  anthropic: [
+    {
+      id: "temperature",
+      name: "Temperature",
+      models: ["claude-2", "claude-instant-1", "claude-instant-1.2"],
+      defaultValue: 1,
+      min: 0,
+      max: 1,
+      step: 0.1,
+      description:
+        "Controls randomness: Lowering results in less random completions. As the temperature approaches zero, the model will become deterministic and repetitive.",
+    },
+    {
+      id: "maxTokens",
+      name: "Maximum length",
+      models: ["claude-2", "claude-instant-1", "claude-instant-1.2"],
+      defaultValue: 300,
+      min: 1,
+      max: 2048,
+      step: 8,
+      description:
+        "The maximum number of tokens to generate. Requests can use up to 2,048 or 4,000 tokens shared between prompt and completion. The exact limit varies by model. (One token is roughly 4 characters for normal English text)",
+    },
+    {
+      id: "topP",
+      name: "Top P",
+      models: ["claude-2", "claude-instant-1", "claude-instant-1.2"],
+      defaultValue: 0.9,
+      min: 0,
+      max: 1,
+      step: 0.1,
+      description:
+        "Controls diversity via nucleus sampling: 0.5 means half of all likelihood-weighted options are considered.",
+    },
+    {
+      id: "topK",
+      name: "Top K",
+      models: ["claude-2", "claude-instant-1", "claude-instant-1.2"],
+      defaultValue: 250,
+      min: 1,
+      max: 500,
+      step: 1,
+      description:
+        "Controls diversity via nucleus sampling: 0.5 means half of all likelihood-weighted options are considered.",
     },
   ],
   vertexai: [
