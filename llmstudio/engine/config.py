@@ -65,6 +65,7 @@ class Provider(str, Enum):
     OPENAI = "openai"
     VERTEXAI = "vertexai"
     BEDROCK = "bedrock"
+    ANTHROPIC = "anthropic"
 
     @classmethod
     def values(cls):
@@ -126,10 +127,19 @@ class BedrockConfig(BaseModel):
         return _resolve_api_key_from_input(value)
 
 
+class AnthropicConfig(BaseModel):
+    api_key: dict
+
+    @validator("api_key", pre=True)
+    def validate_api_key(cls, value):
+        return _resolve_api_key_from_input(value)
+
+
 provider_configs = {
     Provider.OPENAI: OpenAIConfig,
     Provider.VERTEXAI: VertexAIConfig,
     Provider.BEDROCK: BedrockConfig,
+    Provider.ANTHROPIC: AnthropicConfig,
 }
 
 
@@ -179,6 +189,7 @@ class ModelProvider(BaseModel):
             OpenAIConfig,
             VertexAIConfig,
             BedrockConfig,
+            AnthropicConfig,
         ]
     ] = None
 

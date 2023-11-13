@@ -18,4 +18,5 @@ __requirements__ = [
     "boto3==1.28.21",
     "botocore==1.31.21",
     "langchain",
+    "anthropic>=0.3.0",
 ]

@@ -2,6 +2,9 @@ export const getChatProvider = (modelName, uppercase) => {
   const modelToProviderMapping = {
     "gpt-3.5-turbo": "OpenAI",
     "gpt-4": "OpenAI",
+    "claude-2": "Anthropic",
+    "claude-instant-1": "Anthropic",
+    "claude-instant-1.2": "Anthropic",
     "text-bison": "Vertex AI",
     "chat-bison": "Vertex AI",
     "code-bison": "Vertex AI",
