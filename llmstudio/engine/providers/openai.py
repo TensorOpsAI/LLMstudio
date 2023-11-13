@@ -6,6 +6,7 @@ from typing import Optional
 import openai
 import tiktoken
 from fastapi.responses import StreamingResponse
+from openai import OpenAI
 from pydantic import BaseModel, Field
 
 from llmstudio.engine.config import OpenAIConfig
@@ -142,11 +143,11 @@ class OpenAIProvider(BaseProvider):
         Returns:
             bool: `True` if the API key is valid and initialization succeeds, otherwise `False`.
         """
-        openai.api_key = self.openai_config.api_key
+        client = OpenAI(api_key=self.openai_config.api_key)
         data = OpenAITest(**data)
         try:
             self.validate_model_field(data, OPENAI_PRICING_DICT.keys())
-            openai.Model.retrieve(data.model_name)
+            client.models.retrieve(data.model_name)
             return True
         except Exception:
             return False
@@ -171,7 +172,7 @@ class OpenAIProvider(BaseProvider):
         Notes:
         - The function incorporates retry logic and may switch to a higher capacity model if an InvalidRequestError is encountered.
         """
-        openai.api_key = self.openai_config.api_key
+        client = OpenAI(api_key=self.openai_config.api_key)
         retry_count = 0
         use_higher_capacity_model = False
 
@@ -186,7 +187,7 @@ class OpenAIProvider(BaseProvider):
                 )
                 return await loop.run_in_executor(
                     self.executor,
-                    lambda: openai.ChatCompletion.create(
+                    lambda: client.chat.completions.create(
                         model=model,
                         messages=[{"role": "user", "content": request.chat_input}],
                         temperature=request.parameters.temperature,
@@ -218,12 +219,12 @@ async def format_response(response: dict, request: OpenAIRequest, duration: floa
     - The function calculates the number of tokens used in both the input and output and includes this information in the returned dictionary.
     """
     input_tokens = get_tokens(request.chat_input, request.model_name)
-    output_tokens = get_tokens(response["choices"][0]["message"]["content"], request.model_name)
+    output_tokens = get_tokens(response.choices[0].message.content, request.model_name)
 
     return {
         "id": random.randint(0, 1000),
         "chatInput": request.chat_input,
-        "chatOutput": response["choices"][0]["message"]["content"],
+        "chatOutput": response.choices[0].message.content,
         "inputTokens": input_tokens,
         "outputTokens": output_tokens,
         "totalTokens": input_tokens + output_tokens,
@@ -281,11 +282,8 @@ def generate_stream_response(response: dict, data: OpenAIProvider):
     """
     chat_output = ""
     for chunk in response:
-        if (
-            chunk["choices"][0]["finish_reason"] != "stop"
-            and chunk["choices"][0]["finish_reason"] != "length"
-        ):
-            chunk_content = chunk["choices"][0]["delta"]["content"]
+        if chunk.choices[0].finish_reason != "stop" and chunk.choices[0].finish_reason != "length":
+            chunk_content = chunk.choices[0].delta.content
             chat_output += chunk_content
             yield chat_output
         else:
