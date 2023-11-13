@@ -4,9 +4,9 @@ import time
 from typing import Optional
 
 import openai
-from openai import OpenAI
 import tiktoken
 from fastapi.responses import StreamingResponse
+from openai import OpenAI
 from pydantic import BaseModel, Field
 
 from llmstudio.engine.config import OpenAIConfig
@@ -282,10 +282,7 @@ def generate_stream_response(response: dict, data: OpenAIProvider):
     """
     chat_output = ""
     for chunk in response:
-        if (
-            chunk.choices[0].finish_reason != "stop"
-            and chunk.choices[0].finish_reason != "length"
-        ):
+        if chunk.choices[0].finish_reason != "stop" and chunk.choices[0].finish_reason != "length":
             chunk_content = chunk.choices[0].delta.content
             chat_output += chunk_content
             yield chat_output
