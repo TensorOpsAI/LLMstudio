@@ -1,5 +1,3 @@
-import os
-
 from llmstudio.engine.config import EngineConfig
 
 from ..validators import AnthropicParameters
@@ -8,7 +6,11 @@ from .models import LLMClient, LLMModel
 
 class AnthropicClient(LLMClient):
 
-    MODEL_MAPPING = {"claude-2": "Claude2", "claude-instant-1": "Claude1", "claude-instant-1.2": "Claude1_2"}
+    MODEL_MAPPING = {
+        "claude-2": "Claude2",
+        "claude-instant-1": "Claude1",
+        "claude-instant-1.2": "Claude1_2",
+    }
 
     def __init__(
         self,
@@ -38,7 +40,9 @@ class AnthropicClient(LLMClient):
             )
             self._check_api_access()
 
-        def validate_parameters(self, parameters: AnthropicParameters = None) -> AnthropicParameters:
+        def validate_parameters(
+            self, parameters: AnthropicParameters = None
+        ) -> AnthropicParameters:
             parameters = parameters or {}
             return AnthropicParameters(**parameters).model_dump()
 
@@ -75,7 +79,6 @@ class AnthropicClient(LLMClient):
             )
 
     class Claude1_2(AnthropicModel):
-
         def __init__(
             self,
             model_name,
