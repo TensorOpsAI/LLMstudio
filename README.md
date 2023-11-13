@@ -4,6 +4,10 @@ Prompt Engineering at your fingertips
 
 ![LLMstudio logo](https://imgur.com/Xqsj6V2.gif)
 
+> [!IMPORTANT]
+> LLMstudio is now supporting OpenAI v1.0 + just added support to Anthropic
+
+
 ## 🌟 Features
 
 ![LLMstudio UI](https://imgur.com/zBnhtTN.png)
