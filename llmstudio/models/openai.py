@@ -55,13 +55,13 @@ class OpenAIClient(LLMClient):
 
         def __init__(
             self,
-            model_name: str,
+            model: str,
             api_key: str,
             engine_config: EngineConfig,
             parameters: OpenAIParameters = None,
         ):
             super().__init__(
-                model_name,
+                model,
                 api_key or os.environ.get("OPENAI_API_KEY") or self._raise_api_key_error(),
                 engine_config=engine_config,
                 parameters=parameters,
@@ -91,14 +91,14 @@ class OpenAIClient(LLMClient):
 
         def __init__(
             self,
-            model_name,
+            model,
             api_key,
             engine_config: EngineConfig,
             parameters: OpenAIParameters,
             **kwargs
         ):
             super().__init__(
-                model_name=model_name,
+                model=model,
                 api_key=api_key,
                 engine_config=engine_config,
                 parameters=parameters,
@@ -114,14 +114,14 @@ class OpenAIClient(LLMClient):
 
         def __init__(
             self,
-            model_name,
+            model,
             api_key,
             engine_config: EngineConfig,
             parameters: OpenAIParameters,
             **kwargs
         ):
             super().__init__(
-                model_name=model_name,
+                model=model,
                 api_key=api_key,
                 engine_config=engine_config,
                 parameters=parameters,

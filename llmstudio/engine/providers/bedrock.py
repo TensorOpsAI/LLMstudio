@@ -54,7 +54,7 @@ class BedrockRequest(BaseModel):
         api_key (Optional[str]): The API key for authenticating with the Bedrock API.
         api_secret (Optional[str]): The API secret for authenticating with the Bedrock API.
         api_region (Optional[str]): The region where the Bedrock API is hosted.
-        model_name (str): The name of the model to be used for the request.
+        model (str): The name of the model to be used for the request.
         chat_input (str): The input string for the chat.
         parameters (Optional[BaseModel]): Additional parameters for the model, encapsulated in a BaseModel.
         is_stream (Optional[bool]): Flag to indicate if the request is for streaming. Defaults to False.
@@ -63,33 +63,33 @@ class BedrockRequest(BaseModel):
     api_key: Optional[str]
     api_secret: Optional[str]
     api_region: Optional[str]
-    model_name: str
+    model: str
     chat_input: str
     parameters: Optional[BaseModel]
     is_stream: Optional[bool] = False
 
     @validator("parameters", pre=True, always=True)
-    def validate_parameters_based_on_model_name(cls, parameters, values):
+    def validate_parameters_based_on_model(cls, parameters, values):
         """
-        Validate and convert parameters based on the model_name.
+        Validate and convert parameters based on the model.
 
         Args:
             parameters (Dict[str, Any]): Parameters to validate and convert.
             values (Dict[str, Any]): Contains previously validated fields.
 
         Returns:
-            BaseModel: An instance of `TitanParameters` or `ClaudeParameters` based on `model_name`.
+            BaseModel: An instance of `TitanParameters` or `ClaudeParameters` based on `model`.
 
         Raises:
-            ValueError if model_name is invalid.
+            ValueError if model is invalid.
         """
-        model_name = values.get("model_name")
-        if model_name in TITAN_MODELS:
+        model = values.get("model")
+        if model in TITAN_MODELS:
             return TitanParameters(**parameters)
-        if model_name in CLAUDE_MODELS:
+        if model in CLAUDE_MODELS:
             return ClaudeParameters(**parameters)
 
-        raise ValueError(f"Invalid model_name: {model_name}")
+        raise ValueError(f"Invalid model: {model}")
 
 
 class BedrockTest(BaseModel):
@@ -100,16 +100,16 @@ class BedrockTest(BaseModel):
         api_key (str): The API key provided by the user for authentication with Bedrock's API.
         api_secret (str): The API secret key provided by the user for authentication.
         api_region (str): The API region for Bedrock API requests.
-        model_name (str): The name of the model intended for use with the Bedrock API.
+        model (str): The name of the model intended for use with the Bedrock API.
 
     Methods:
-        validate_model_name: Ensures that `model_name` is one of the allowed values.
+        validate_model: Ensures that `model` is one of the allowed values.
     """
 
     api_key: Optional[str]
     api_secret: Optional[str]
     api_region: Optional[str]
-    model_name: str
+    model: str
 
 
 class BedrockProvider(BaseProvider):
@@ -162,7 +162,7 @@ class BedrockProvider(BaseProvider):
                 None,
                 lambda: bedrock.invoke_model_with_response_stream(
                     body=json.dumps(body),
-                    modelId=data.model_name,
+                    modelId=data.model,
                     accept="application/json",
                     contentType="application/json",
                 ).get("body"),
@@ -174,7 +174,7 @@ class BedrockProvider(BaseProvider):
                 lambda: json.loads(
                     bedrock.invoke_model(
                         body=json.dumps(body),
-                        modelId=data.model_name,
+                        modelId=data.model,
                         accept="application/json",
                         contentType="application/json",
                     )
@@ -195,7 +195,7 @@ class BedrockProvider(BaseProvider):
             + response.get(response_keys["output_tokens_key"], 0),
             "cost": 0,  # TODO
             "timestamp": time.time(),
-            "modelName": data.model_name,
+            "model": data.model,
             "parameters": data.parameters.dict(),
         }
         return data
@@ -222,7 +222,7 @@ class BedrockProvider(BaseProvider):
             )
             response = bedrock.list_foundation_models()
 
-            if data.model_name in [i["modelId"] for i in response["modelSummaries"]]:
+            if data.model in [i["modelId"] for i in response["modelSummaries"]]:
                 return True
             else:
                 return False
@@ -243,7 +243,7 @@ def generate_body_and_response(data: BedrockProvider) -> Tuple[dict, dict]:
     Raises:
         ValueError if model name is invalid.
     """
-    if data.model_name in TITAN_MODELS:
+    if data.model in TITAN_MODELS:
         return {
             "inputText": data.chat_input,
             "textGenerationConfig": {
@@ -257,7 +257,7 @@ def generate_body_and_response(data: BedrockProvider) -> Tuple[dict, dict]:
             "output_tokens_key": "tokenCount",
             "use_results": True,
         }
-    if data.model_name in CLAUDE_MODELS:
+    if data.model in CLAUDE_MODELS:
         return {
             "prompt": data.chat_input,
             "max_tokens_to_sample": data.parameters.max_tokens,
@@ -271,7 +271,7 @@ def generate_body_and_response(data: BedrockProvider) -> Tuple[dict, dict]:
             "use_results": False,
         }
     else:
-        raise ValueError(f"Invalid model_name: {data.model_name}")
+        raise ValueError(f"Invalid model: {data.model}")
 
 
 def get_cost(input_tokens: int, output_tokens: int) -> float:

@@ -28,18 +28,18 @@ import {
 import { models, types } from "./../assets/modelsConfig";
 
 export default function ModelSelector() {
-  const { modelName, setModelName } = usePlaygroundStore();
+  const { model, setModel } = usePlaygroundStore();
   const [open, setOpen] = React.useState(false);
   const [selectedModel, setSelectedModel] = React.useState(
-    models.filter((m) => m.name === modelName)[0]
+    models.filter((m) => m.name === model)[0]
   );
   const [peekedModel, setPeekedModel] = React.useState(
-    models.filter((m) => m.name === modelName)[0]
+    models.filter((m) => m.name === model)[0]
   );
 
   React.useEffect(() => {
-    setSelectedModel(models.filter((m) => m.name === modelName)[0]);
-  }, [modelName]);
+    setSelectedModel(models.filter((m) => m.name === model)[0]);
+  }, [model]);
 
   return (
     <div className="grid gap-2">
@@ -105,16 +105,16 @@ export default function ModelSelector() {
                 {types.map((type) => (
                   <CommandGroup key={type} heading={type}>
                     {models
-                      .filter((model) => model.type === type)
-                      .map((model) => (
+                      .filter((singleModel) => singleModel.type === type)
+                      .map((singleModel) => (
                         <ModelItem
-                          key={model.id}
-                          model={model}
-                          isSelected={selectedModel?.id === model.id}
-                          onPeek={(model) => setPeekedModel(model)}
+                          key={singleModel.id}
+                          singleModel={singleModel}
+                          isSelected={selectedModel?.id === singleModel.id}
+                          onPeek={(singleModel) => setPeekedModel(singleModel)}
                           onSelect={() => {
-                            setSelectedModel(model);
-                            setModelName(model.name);
+                            setSelectedModel(singleModel);
+                            setModel(singleModel.name);
                             setOpen(false);
                           }}
                         />
@@ -130,14 +130,14 @@ export default function ModelSelector() {
   );
 }
 
-function ModelItem({ model, isSelected, onSelect, onPeek }) {
+function ModelItem({ singleModel, isSelected, onSelect, onPeek }) {
   const ref = React.useRef(null);
 
   useMutationObserver(ref, (mutations) => {
     for (const mutation of mutations) {
       if (mutation.type === "attributes") {
         if (mutation.attributeName === "aria-selected") {
-          onPeek(model);
+          onPeek(singleModel);
         }
       }
     }
@@ -145,12 +145,12 @@ function ModelItem({ model, isSelected, onSelect, onPeek }) {
 
   return (
     <CommandItem
-      key={model.id}
+      key={singleModel.id}
       onSelect={onSelect}
       ref={ref}
       className="aria-selected:bg-primary aria-selected:text-primary-foreground"
     >
-      {model.name}
+      {singleModel.name}
       <CheckIcon
         className={cn(
           "ml-auto h-4 w-4",

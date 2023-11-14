@@ -58,13 +58,13 @@ class VertexAIClient(LLMClient):
 
         def __init__(
             self,
-            model_name,
+            model,
             api_key,
             engine_config: EngineConfig,
             parameters: VertexAIParameters = None,
         ):
             super().__init__(
-                model_name,
+                model,
                 api_key or self._raise_api_key_error(),
                 engine_config=engine_config,
                 parameters=parameters,
@@ -94,14 +94,14 @@ class VertexAIClient(LLMClient):
 
         def __init__(
             self,
-            model_name,
+            model,
             api_key,
             engine_config: EngineConfig,
             parameters: VertexAIParameters,
             **kwargs
         ):
             super().__init__(
-                model_name=model_name,
+                model=model,
                 api_key=api_key,
                 engine_config=engine_config,
                 parameters=parameters,
@@ -117,14 +117,14 @@ class VertexAIClient(LLMClient):
 
         def __init__(
             self,
-            model_name,
+            model,
             api_key,
             engine_config: EngineConfig,
             parameters: VertexAIParameters,
             **kwargs
         ):
             super().__init__(
-                model_name=model_name,
+                model=model,
                 api_key=api_key,
                 engine_config=engine_config,
                 parameters=parameters,
@@ -140,14 +140,14 @@ class VertexAIClient(LLMClient):
 
         def __init__(
             self,
-            model_name,
+            model,
             api_key,
             engine_config: EngineConfig,
             parameters: VertexAIParameters,
             **kwargs
         ):
             super().__init__(
-                model_name=model_name,
+                model=model,
                 api_key=api_key,
                 engine_config=engine_config,
                 parameters=parameters,
@@ -163,14 +163,14 @@ class VertexAIClient(LLMClient):
 
         def __init__(
             self,
-            model_name,
+            model,
             api_key,
             engine_config: EngineConfig,
             parameters: VertexAIParameters,
             **kwargs
         ):
             super().__init__(
-                model_name=model_name,
+                model=model,
                 api_key=api_key,
                 engine_config=engine_config,
                 parameters=parameters,

@@ -9,6 +9,6 @@ export const taskSchema = z.object({
   totalTokens: z.number(), // input tokens
   cost: z.number(), // cost
   timestamp: z.date(),
-  modelName: z.string(),
+  model: z.string(),
   // parameters: z.union([z.number(), z.number(), z.number(), z.number(),z.number(),z.number()])
 });

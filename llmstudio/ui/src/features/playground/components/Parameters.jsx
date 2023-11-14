@@ -9,9 +9,9 @@ import { getChatProvider } from "../utils";
 import { parameters } from "./../assets/modelsConfig";
 
 export default function Parameters({ className }) {
-  const { modelName, isStream, setIsStream } = usePlaygroundStore();
+  const { model, isStream, setIsStream } = usePlaygroundStore();
 
-  // useEffect(() => {}, [modelName]);
+  // useEffect(() => {}, [model]);
 
   return (
     <div className={className}>
@@ -25,9 +25,9 @@ export default function Parameters({ className }) {
           />
         </div>
         <ModelSelector />
-        {parameters[getChatProvider(modelName)].map(
+        {parameters[getChatProvider(model)].map(
           (parameter) =>
-            parameter.models.includes(modelName) && (
+            parameter.models.includes(model) && (
               <SliderParameter
                 key={parameter.id}
                 id={parameter.id}

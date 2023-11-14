@@ -11,7 +11,7 @@ class LangchainLLMWrapper(LLM):
 
     @property
     def _llm_type(self) -> str:
-        return "Langchain Wrapper of " + self.model.model_name
+        return "Langchain Wrapper of " + self.model.model
 
     def _call(
         self,

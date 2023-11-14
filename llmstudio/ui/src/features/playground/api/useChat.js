@@ -6,7 +6,7 @@ export const useChat = () => {
   const {
     chatInput,
     setChatOutput,
-    modelName,
+    model,
     apiKey,
     apiSecret,
     apiRegion,
@@ -28,14 +28,14 @@ export const useChat = () => {
           data.inputTokens,
           data.outputTokens,
           data.cost,
-          data.modelName,
+          data.model,
           data.parameters
         );
       });
     },
     [
       chatInput,
-      modelName,
+      model,
       parameters,
       setChatOutput,
       setResponseStatus,
@@ -62,7 +62,7 @@ export const useChat = () => {
             inputTokens,
             outputTokens,
             cost,
-            modelName,
+            model,
             parameters
           );
           return;
@@ -83,7 +83,7 @@ export const useChat = () => {
     },
     [
       chatInput,
-      modelName,
+      model,
       parameters,
       setChatOutput,
       setResponseStatus,
@@ -93,7 +93,7 @@ export const useChat = () => {
 
   const submitChat = useCallback(async () => {
     setResponseStatus("waiting");
-    const chatProvider = getChatProvider(modelName);
+    const chatProvider = getChatProvider(model);
     const promise = fetch(`http://localhost:8000/api/engine/chat/${chatProvider}`, {
       method: "post",
       headers: {
@@ -101,7 +101,7 @@ export const useChat = () => {
       },
       body: JSON.stringify({
         chat_input: chatInput,
-        model_name: modelName,
+        model: model,
         api_key: apiKey,
         api_secret: apiSecret,
         api_region: apiRegion,
@@ -126,7 +126,7 @@ export const useChat = () => {
     return await promise;
   }, [
     chatInput,
-    modelName,
+    model,
     apiKey,
     apiSecret,
     apiRegion,

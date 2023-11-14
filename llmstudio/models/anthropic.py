@@ -27,13 +27,13 @@ class AnthropicClient(LLMClient):
 
         def __init__(
             self,
-            model_name: str,
+            model: str,
             api_key: str,
             engine_config: EngineConfig,
             parameters: AnthropicParameters = None,
         ):
             super().__init__(
-                model_name,
+                model,
                 api_key or self._raise_api_key_error(),
                 engine_config=engine_config,
                 parameters=parameters,
@@ -49,14 +49,14 @@ class AnthropicClient(LLMClient):
     class Claude2(AnthropicModel):
         def __init__(
             self,
-            model_name,
+            model,
             api_key,
             engine_config: EngineConfig,
             parameters: AnthropicParameters,
             **kwargs
         ):
             super().__init__(
-                model_name=model_name,
+                model=model,
                 api_key=api_key,
                 engine_config=engine_config,
                 parameters=parameters,
@@ -65,14 +65,14 @@ class AnthropicClient(LLMClient):
     class Claude1(AnthropicModel):
         def __init__(
             self,
-            model_name,
+            model,
             api_key,
             engine_config: EngineConfig,
             parameters: AnthropicParameters,
             **kwargs
         ):
             super().__init__(
-                model_name=model_name,
+                model=model,
                 api_key=api_key,
                 engine_config=engine_config,
                 parameters=parameters,
@@ -81,14 +81,14 @@ class AnthropicClient(LLMClient):
     class Claude1_2(AnthropicModel):
         def __init__(
             self,
-            model_name,
+            model,
             api_key,
             engine_config: EngineConfig,
             parameters: AnthropicParameters,
             **kwargs
         ):
             super().__init__(
-                model_name=model_name,
+                model=model,
                 api_key=api_key,
                 engine_config=engine_config,
                 parameters=parameters,

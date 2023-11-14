@@ -38,7 +38,7 @@ class EngineAPI(FastAPI):
         """
         self.dynamic_routes.clear()
         for route in config.routes:
-            for provider in route.model_providers:
+            for provider in route.providers:
                 self._add_dynamic_route(route, provider)
 
     def _add_dynamic_route(self, route: dict, provider: dict):

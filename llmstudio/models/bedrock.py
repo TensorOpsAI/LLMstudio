@@ -58,13 +58,13 @@ class BedrockClient(LLMClient):
 
         def __init__(
             self,
-            model_name: str,
+            model: str,
             api_key: str,
             api_secret: str,
             api_region: str,
             engine_config: EngineConfig,
         ):
-            super().__init__(model_name, api_key, api_secret, api_region, engine_config)
+            super().__init__(model, api_key, api_secret, api_region, engine_config)
             self._check_api_access()
 
     class Claude(BedrockModel):
@@ -77,14 +77,14 @@ class BedrockClient(LLMClient):
 
         def __init__(
             self,
-            model_name: str,
+            model: str,
             api_key: str,
             api_secret: str,
             api_region: str,
             engine_config: EngineConfig,
         ):
             super().__init__(
-                model_name=model_name,
+                model=model,
                 api_key=api_key,
                 api_secret=api_secret,
                 api_region=api_region,
@@ -114,14 +114,14 @@ class BedrockClient(LLMClient):
 
         def __init__(
             self,
-            model_name: str,
+            model: str,
             api_key: str,
             api_secret: str,
             api_region: str,
             engine_config: EngineConfig,
         ):
             super().__init__(
-                model_name=model_name,
+                model=model,
                 api_key=api_key,
                 api_secret=api_secret,
                 api_region=api_region,

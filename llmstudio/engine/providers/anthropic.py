@@ -23,7 +23,7 @@ class ClaudeParameters(BaseModel):
 
 class AnthropicRequest(BaseModel):
     api_key: Optional[str]
-    model_name: str
+    model: str
     chat_input: str
     parameters: Optional[ClaudeParameters] = ClaudeParameters()
     is_stream: Optional[bool] = False
@@ -34,7 +34,7 @@ class AnthropicTest(BaseModel):
     api_key: Optional[str]
     api_secret: Optional[str]
     api_region: Optional[str]
-    model_name: str
+    model: str
 
 
 class AnthropicProvider(BaseProvider):
@@ -52,7 +52,7 @@ class AnthropicProvider(BaseProvider):
         response = await loop.run_in_executor(
             None,
             lambda: client.completions.create(
-                model=data.model_name,
+                model=data.model,
                 prompt=f"{anthropic.HUMAN_PROMPT} {data.chat_input} {anthropic.AI_PROMPT}",
                 max_tokens_to_sample=data.parameters.max_tokens,
                 stream=data.is_stream,
@@ -74,7 +74,7 @@ class AnthropicProvider(BaseProvider):
                 "totalTokens": 0,
                 "cost": 0,
                 "timestamp": time.time(),
-                "modelName": data.model_name,
+                "model": data.model,
                 "parameters": data.parameters.dict(),
                 "latency": 0,
             }

@@ -48,7 +48,7 @@ class OpenAIRequest(BaseModel):
 
     Attributes:
         api_key (Optional[str]): The API key to use for authenticating the request.
-        model_name (str): The name of the language model to query.
+        model (str): The name of the language model to query.
         chat_input (str): The input text to send to the model.
         parameters (Optional[OpenAIParameters]): An optional instance of OpenAIParameters to further configure the request.
         is_stream (Optional[bool]): Indicates if the request should be a streaming request; default is False.
@@ -56,7 +56,7 @@ class OpenAIRequest(BaseModel):
     """
 
     api_key: Optional[str]
-    model_name: str
+    model: str
     chat_input: str
     parameters: Optional[OpenAIParameters] = OpenAIParameters()
     is_stream: Optional[bool] = False
@@ -71,15 +71,15 @@ class OpenAITest(BaseModel):
 
     Attributes:
         api_key (str): The API key provided by the user authentication with OpenAI API.
-        model_name (str): The name of the model to be used for generating text
+        model (str): The name of the model to be used for generating text
 
     Methods:
-        validate_model_name: Ensures that `model_name` is one of the allowed values.
+        validate_model: Ensures that `model` is one of the allowed values.
     ```
     """
 
     api_key: Optional[str]
-    model_name: str
+    model: str
 
 
 class OpenAIProvider(BaseProvider):
@@ -147,7 +147,7 @@ class OpenAIProvider(BaseProvider):
         data = OpenAITest(**data)
         try:
             self.validate_model_field(data, OPENAI_PRICING_DICT.keys())
-            client.models.retrieve(data.model_name)
+            client.models.retrieve(data.model)
             return True
         except Exception:
             return False
@@ -180,7 +180,7 @@ class OpenAIProvider(BaseProvider):
             try:
                 model = _select_appropriate_model(
                     input_text=request.chat_input,
-                    selected_model=request.model_name,
+                    selected_model=request.model,
                     safety_margin=request.safety_margin,
                     custom_max_tokens=request.custom_max_tokens,
                     use_higher_capacity_model=use_higher_capacity_model,
@@ -218,8 +218,8 @@ async def format_response(response: dict, request: OpenAIRequest, duration: floa
     Notes:
     - The function calculates the number of tokens used in both the input and output and includes this information in the returned dictionary.
     """
-    input_tokens = get_tokens(request.chat_input, request.model_name)
-    output_tokens = get_tokens(response.choices[0].message.content, request.model_name)
+    input_tokens = get_tokens(request.chat_input, request.model)
+    output_tokens = get_tokens(response.choices[0].message.content, request.model)
 
     return {
         "id": random.randint(0, 1000),
@@ -228,44 +228,44 @@ async def format_response(response: dict, request: OpenAIRequest, duration: floa
         "inputTokens": input_tokens,
         "outputTokens": output_tokens,
         "totalTokens": input_tokens + output_tokens,
-        "cost": get_cost(input_tokens, output_tokens, request.model_name),
+        "cost": get_cost(input_tokens, output_tokens, request.model),
         "timestamp": time.time(),
-        "modelName": request.model_name,
+        "model": request.model,
         "parameters": request.parameters.dict(),
         "latency": duration,
     }
 
 
-def get_cost(input_tokens: int, output_tokens: int, model_name: str) -> float:
+def get_cost(input_tokens: int, output_tokens: int, model: str) -> float:
     """
     Calculate the cost of using the OpenAI API based on token usage and model.
 
     Args:
         input_tokens (int): Number of tokens in the input.
         output_tokens (int): Number of tokens in the output.
-        model_name (str): Identifier of the model used.
+        model (str): Identifier of the model used.
 
     Returns:
         float: The calculated cost for the API usage.
     """
     return (
-        OPENAI_PRICING_DICT[model_name]["input_tokens"] * input_tokens
-        + OPENAI_PRICING_DICT[model_name]["output_tokens"] * output_tokens
+        OPENAI_PRICING_DICT[model]["input_tokens"] * input_tokens
+        + OPENAI_PRICING_DICT[model]["output_tokens"] * output_tokens
     )
 
 
-def get_tokens(chat_input: str, model_name: str) -> int:
+def get_tokens(chat_input: str, model: str) -> int:
     """
     Determine the number of tokens in a given input string using the specified model’s tokenizer.
 
     Args:
         chat_input (str): Text to be tokenized.
-        model_name (str): Identifier of the model, determines tokenizer used.
+        model (str): Identifier of the model, determines tokenizer used.
 
     Returns:
         int: Number of tokens in the input string.
     """
-    tokenizer = tiktoken.encoding_for_model(model_name)
+    tokenizer = tiktoken.encoding_for_model(model)
     return len(tokenizer.encode(chat_input))
 
 
@@ -288,9 +288,9 @@ def generate_stream_response(response: dict, data: OpenAIProvider):
             yield chunk_content
         else:
             if data.end_token:
-                input_tokens = get_tokens(data.chat_input, data.model_name)
-                output_tokens = get_tokens(chat_output, data.model_name)
-                cost = get_cost(input_tokens, output_tokens, data.model_name)
+                input_tokens = get_tokens(data.chat_input, data.model)
+                output_tokens = get_tokens(chat_output, data.model)
+                cost = get_cost(input_tokens, output_tokens, data.model)
                 yield f"{END_TOKEN},{input_tokens},{output_tokens},{cost}"  # json
 
 

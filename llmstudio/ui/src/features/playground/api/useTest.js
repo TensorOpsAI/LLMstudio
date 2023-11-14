@@ -3,11 +3,11 @@ import { usePlaygroundStore } from "../stores/PlaygroundStore";
 import { getChatProvider } from "../utils";
 
 export const useTest = () => {
-  const { modelName } = usePlaygroundStore();
+  const { model } = usePlaygroundStore();
 
   const testApi = useCallback(
     async (apiKey, apiSecret, apiRegion) => {
-      const chatProvider = getChatProvider(modelName);
+      const chatProvider = getChatProvider(model);
       const promise = fetch(`http://localhost:8000/api/engine/validation/${chatProvider}`, {
         method: "post",
         headers: {
@@ -17,7 +17,7 @@ export const useTest = () => {
           api_key: apiKey,
           api_secret: apiSecret,
           api_region: apiRegion,
-          model_name: modelName,
+          model: model,
         }),
       })
         .then((res) => res.json())
@@ -28,7 +28,7 @@ export const useTest = () => {
 
       return await promise;
     },
-    [modelName]
+    [model]
   );
 
   return testApi;

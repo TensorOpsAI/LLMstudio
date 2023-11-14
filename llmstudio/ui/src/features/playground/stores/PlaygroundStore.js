@@ -5,7 +5,7 @@ export const usePlaygroundStore = create((set) => ({
   executions: [],
   chatInput: "",
   chatOutput: "",
-  modelName: "gpt-3.5-turbo",
+  model: "gpt-3.5-turbo",
   apiKey: "",
   apiSecret: "",
   apiRegion: "",
@@ -25,7 +25,7 @@ export const usePlaygroundStore = create((set) => ({
     inputTokens,
     outputTokens,
     cost,
-    modelName,
+    model,
     parameters
   ) =>
     set((state) => ({
@@ -40,17 +40,17 @@ export const usePlaygroundStore = create((set) => ({
           totalTokens: Number(inputTokens + outputTokens),
           cost: Number(cost),
           timestamp: new Date(),
-          modelName: modelName,
+          model: model,
           parameters: parameters,
         },
       ],
     })),
   setExecutions: (executions) => set({ executions: executions }),
-  setExecution: (chatInput, chatOutput, modelName, parameters) =>
+  setExecution: (chatInput, chatOutput, model, parameters) =>
     set({
       chatInput: chatInput,
       chatOutput: chatOutput,
-      modelName: modelName,
+      model: model,
       parameters: parameters,
     }),
   setChatInput: (chatInput) => set({ chatInput: chatInput }),
@@ -58,7 +58,7 @@ export const usePlaygroundStore = create((set) => ({
     set((state) => ({
       chatOutput: isChunk ? state.chatOutput + chatOutput : chatOutput,
     })),
-  setModelName: (modelName) => set({ modelName: modelName }),
+  setModel: (model) => set({ model: model }),
   setApiKey: (apiKey) => set({ apiKey: apiKey }),
   setApiSecret: (apiSecret) => set({ apiSecret: apiSecret }),
   setApiRegion: (apiRegion) => set({ apiRegion: apiRegion }),

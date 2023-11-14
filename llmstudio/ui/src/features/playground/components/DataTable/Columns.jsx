@@ -140,7 +140,7 @@ export const columns = [
     },
   },
   {
-    accessorKey: "modelName",
+    accessorKey: "model",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Model" />
     ),
@@ -150,7 +150,7 @@ export const columns = [
         <div className="flex space-x-2">
           {label && <Badge variant="outline">{label.label}</Badge>}
           <span className="max-w-[500px] truncate font-medium">
-            {row.getValue("modelName")}
+            {row.getValue("model")}
           </span>
         </div>
       );

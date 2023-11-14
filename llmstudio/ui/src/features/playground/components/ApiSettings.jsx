@@ -25,7 +25,7 @@ export default function ApiSettings() {
     setApiSecret,
     apiRegion,
     setApiRegion,
-    modelName,
+    model,
   } = usePlaygroundStore();
   const testApi = useTest();
 
@@ -44,7 +44,7 @@ export default function ApiSettings() {
         setOpen(false);
         return "API key has been updated";
       },
-      error: `API key is not valid or doesn't have access to ${modelName}`,
+      error: `API key is not valid or doesn't have access to ${model}`,
     });
   };
 
@@ -59,11 +59,11 @@ export default function ApiSettings() {
         <DialogHeader>
           <DialogTitle>Edit API Key</DialogTitle>
           <DialogDescription>
-            Enter your {getChatProvider(modelName, true)} API Key
+            Enter your {getChatProvider(model, true)} API Key
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit}>
-          {credentials[modelName].needsKey && (
+          {credentials[model].needsKey && (
             <div className="px-4 py-2 my-4 bg-gray-800 rounded-lg">
               <textarea
                 name="apiKey"
@@ -76,7 +76,7 @@ export default function ApiSettings() {
               ></textarea>
             </div>
           )}
-          {credentials[modelName].needsSecret && (
+          {credentials[model].needsSecret && (
             <div className="px-4 py-2 my-4 bg-gray-800 rounded-lg">
               <input
                 name="apiSecret"
@@ -89,7 +89,7 @@ export default function ApiSettings() {
               ></input>
             </div>
           )}
-          {credentials[modelName].needsRegion && (
+          {credentials[model].needsRegion && (
             <div className="px-4 py-2 my-4 bg-gray-800 rounded-lg">
               <input
                 name="apiRegion"

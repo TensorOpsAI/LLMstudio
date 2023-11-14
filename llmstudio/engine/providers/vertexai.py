@@ -85,14 +85,14 @@ class VertexAIRequest(BaseModel):
 
     Attributes:
         api_key (Optional[dict]): API key for authentication, if required.
-        model_name (str): The name of the machine learning model to be used.
+        model (str): The name of the machine learning model to be used.
         chat_input (str): The input string for the chat interaction.
         parameters (Optional[VertexAIParameters]): Additional parameters for Vertex AI, defaults to an empty VertexAIParameters object.
         is_stream (Optional[bool]): Whether the request should be streamed, defaults to False.
     """
 
     api_key: Optional[dict]
-    model_name: str
+    model: str
     chat_input: str
     parameters: Optional[VertexAIParameters] = VertexAIParameters()
     is_stream: Optional[bool] = False
@@ -148,14 +148,14 @@ class VertexAIProvider(BaseProvider):
         data = VertexAIRequest(**data)
 
         self.validate_model_field(data, VERTEXAI_MODEL_MAP.keys())
-        model_class = VERTEXAI_MODEL_MAP.get(data.model_name)
+        model_class = VERTEXAI_MODEL_MAP.get(data.model)
         input_arg_name = VERTEXAI_INPUT_MAP.get(model_class)
 
         kwargs = {
             "temperature": data.parameters.temperature,
             "max_output_tokens": data.parameters.max_tokens,
         }
-        if data.model_name not in {"code-bison", "codechat-bison"}:
+        if data.model not in {"code-bison", "codechat-bison"}:
             kwargs.update(
                 {
                     "top_p": data.parameters.top_p,
@@ -164,12 +164,12 @@ class VertexAIProvider(BaseProvider):
             )
 
         if model_class in {TextGenerationModel, CodeGenerationModel}:
-            model = model_class.from_pretrained(data.model_name)
+            model = model_class.from_pretrained(data.model)
             response = await self.predict(
                 model, input_arg_name, data.chat_input, data.is_stream, loop, **kwargs
             )
         else:
-            model = model_class.from_pretrained(data.model_name)
+            model = model_class.from_pretrained(data.model)
             response = await self.chat_predict(
                 model, input_arg_name, data.chat_input, data.is_stream, loop, **kwargs
             )
@@ -186,7 +186,7 @@ class VertexAIProvider(BaseProvider):
             "totalTokens": len(data.chat_input) + len(response.text),
             "cost": get_cost(len(data.chat_input), len(response.text)),
             "timestamp": time.time(),
-            "modelName": data.model_name,
+            "model": data.model,
             "parameters": dict(data.parameters),
         }
 
@@ -264,7 +264,7 @@ def get_cost(input_tokens: int, output_tokens: int) -> float:
     Args:
         input_tokens (int): Number of tokens in the input.
         output_tokens (int): Number of tokens in the output.
-        model_name (str): Identifier of the model used.
+        model (str): Identifier of the model used.
 
     Returns:
         float: The calculated cost for the API usage.
@@ -272,18 +272,18 @@ def get_cost(input_tokens: int, output_tokens: int) -> float:
     return VERTEXAI_TOKEN_PRICE * (input_tokens + output_tokens)
 
 
-def get_tokens(chat_input: str, model_name: str) -> int:
+def get_tokens(chat_input: str, model: str) -> int:
     """
     Determine the number of tokens in a given input string using the specified model’s tokenizer.
 
     Args:
         chat_input (str): Text to be tokenized.
-        model_name (str): Identifier of the model, determines tokenizer used.
+        model (str): Identifier of the model, determines tokenizer used.
 
     Returns:
         int: Number of tokens in the input string.
     """
-    tokenizer = tiktoken.encoding_for_model(model_name)
+    tokenizer = tiktoken.encoding_for_model(model)
     return len(tokenizer.encode(chat_input))
 
 

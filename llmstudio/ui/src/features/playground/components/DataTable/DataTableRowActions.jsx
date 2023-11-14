@@ -11,19 +11,19 @@ import {
 import { usePlaygroundStore } from "../../stores/PlaygroundStore";
 
 export function DataTableRowActions({ row }) {
-  const { setExecution, modelName, setModelName } = usePlaygroundStore();
+  const { setExecution, model, setModel } = usePlaygroundStore();
 
   const restoreExecution = () => {
-    console.log(modelName);
+    console.log(model);
     setExecution(
       row.original.chatInput,
       row.original.chatOutput,
-      row.original.modelName,
+      row.original.model,
       row.original.parameters
     );
-    console.log(modelName);
-    setModelName(row.original.modelName);
-    console.log(modelName);
+    console.log(model);
+    setModel(row.original.model);
+    console.log(model);
   };
 
   return (

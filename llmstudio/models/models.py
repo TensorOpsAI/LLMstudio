@@ -24,7 +24,7 @@ class LLMModel(ABC):
     of the model.
 
     Attributes:
-        model_name (str): The name of the model being used.
+        model (str): The name of the model being used.
         api_key (str, optional): The API key for authenticating with the model provider.
         api_secret (str, optional): The API secret for authenticating with the model provider.
         api_region (str, optional): The API region for interfacing with the model provider.
@@ -38,7 +38,7 @@ class LLMModel(ABC):
     @abstractmethod
     def __init__(
         self,
-        model_name: str,
+        model: str,
         api_key: str = None,
         api_secret: str = None,
         api_region: str = None,
@@ -50,13 +50,13 @@ class LLMModel(ABC):
         Initialize the LLMModel instance.
 
         Args:
-            model_name (str): The name of the model to be used.
+            model (str): The name of the model to be used.
             api_key (str, optional): The API key for authentication. Default is None.
             api_secret (str, optional): The API secret for enhanced security. Default is None.
             tests (dict, optional): Dictionary of batch of tests to be used when running tests or evaluation. Default is Empty Dict.
             api_region (str, optional): The API region for interfacing. Default is None.
         """
-        self.model_name = model_name
+        self.model = model
         self.api_key = api_key
         self.api_secret = api_secret
         self.api_region = api_region
@@ -81,22 +81,20 @@ class LLMModel(ABC):
                 response = requests.post(
                     self.validation_url,
                     json={
-                        "model_name": self.model_name,
+                        "model": self.model,
                         "api_key": self.api_key,
                     },
                     headers={"Content-Type": "application/json"},
                     timeout=10,
                 )
                 if not response.json():
-                    raise ValueError(f"The API key doesn't have access to {self.model_name}")
+                    raise ValueError(f"The API key doesn't have access to {self.model}")
                 return  # Successful API check
             except RequestException:
                 retries += 1
                 time.sleep(delay)  # Wait before retrying
 
-        raise ValueError(
-            "Max retries reached. The API key doesn't have access to {self.model_name}"
-        )
+        raise ValueError("Max retries reached. The API key doesn't have access to {self.model}")
 
     @abstractmethod
     def validate_parameters(self, parameters: BaseModel) -> BaseModel:
@@ -154,7 +152,7 @@ class LLMModel(ABC):
         response = requests.post(
             self.chat_url,
             json={
-                "model_name": self.model_name,
+                "model": self.model,
                 "api_key": self.api_key,
                 "api_secret": self.api_secret,
                 "api_region": self.api_region,
@@ -193,7 +191,7 @@ class LLMModel(ABC):
             async with session.post(
                 self.chat_url,
                 json={
-                    "model_name": self.model_name,
+                    "model": self.model,
                     "api_key": self.api_key,
                     "api_secret": self.api_secret,
                     "api_region": self.api_region,
@@ -312,14 +310,14 @@ class LLMClient(ABC):
         self.engine_config = engine_config
         run_apis(engine_config=self.engine_config)
 
-    def get_model(self, model_name: str, parameters: BaseModel = None):
+    def get_model(self, model: str, parameters: BaseModel = None):
         """
         Retrieve an instance of an LLM model by name.
 
         The method uses `MODEL_MAPPING` to locate and initialize the appropriate model class.
 
         Args:
-            model_name (str): The name of the model to be retrieved.
+            model (str): The name of the model to be retrieved.
 
         Returns:
             instance of the desired model class, initialized with the provided model name and API key.
@@ -327,13 +325,13 @@ class LLMClient(ABC):
         Raises:
             ValueError: If the model name is not found in `MODEL_MAPPING`.
         """
-        model_class_name = self.MODEL_MAPPING.get(model_name)
+        model_class_name = self.MODEL_MAPPING.get(model)
         if not model_class_name:
-            raise ValueError(f"Unknown model: {model_name}")
+            raise ValueError(f"Unknown model: {model}")
 
         model_class = getattr(self, model_class_name)
         return model_class(
-            model_name=model_name,
+            model=model,
             api_key=self.api_key,
             api_secret=self.api_secret,
             api_region=self.api_region,
@@ -358,7 +356,7 @@ class LLMCompare(ABC):
         Returns:
             dict: The updated output_dict.
         """
-        output_dict[model.model_name] = model.chat(prompt)
+        output_dict[model.model] = model.chat(prompt)
         return output_dict
 
     def _compute_entrywise_average_similarity(self, list1, list2):
@@ -424,7 +422,7 @@ class LLMCompare(ABC):
             "average_output_token": average_output_token,
             "average_similarity": average_similarity,
         }
-        output_dict[model.model_name] = statistics
+        output_dict[model.model] = statistics
         return output_dict
 
     async def single_prompt_compare(self, models: [LLMClient], prompt: str):

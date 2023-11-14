@@ -47,24 +47,24 @@ class BaseProvider(ABC):
 
     def validate_model_field(self, data, model_list):
         """
-        Validate the 'model_name' field in the request data.
+        Validate the 'model' field in the request data.
 
         Parameters:
-            data: The data payload containing the 'model_name'.
+            data: The data payload containing the 'model'.
             model_list: List of valid model names.
 
         Raises:
-            HTTPException: If the 'model_name' is not provided or is not in the list of valid models.
+            HTTPException: If the 'model' is not provided or is not in the list of valid models.
         """
         from fastapi import HTTPException
 
-        if not data.model_name:
+        if not data.model:
             raise HTTPException(
                 status_code=422,
-                detail="The parameter 'model_name' is mandatory to be passed in the request body.",
+                detail="The parameter 'model' is mandatory to be passed in the request body.",
             )
-        if data.model_name not in model_list:
+        if data.model not in model_list:
             raise HTTPException(
                 status_code=422,
-                detail=f"The model '{data.model_name}' does not exist.",
+                detail=f"The model '{data.model}' does not exist.",
             )

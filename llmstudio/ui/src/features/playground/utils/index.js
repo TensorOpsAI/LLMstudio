@@ -1,4 +1,4 @@
-export const getChatProvider = (modelName, uppercase) => {
+export const getChatProvider = (model, uppercase) => {
   const modelToProviderMapping = {
     "gpt-3.5-turbo": "OpenAI",
     "gpt-4": "OpenAI",
@@ -15,7 +15,7 @@ export const getChatProvider = (modelName, uppercase) => {
     "anthropic.claude-v2": "Bedrock",
   };
 
-  const provider = modelToProviderMapping[modelName];
+  const provider = modelToProviderMapping[model];
   if (!provider) return;
 
   return uppercase ? provider : provider.toLowerCase().replace(" ", "");

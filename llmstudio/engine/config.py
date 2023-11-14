@@ -255,12 +255,12 @@ class RouteConfig(BaseModel):
     Attributes:
         name (str): The name of the route.
         route_type (RouteType): The type of the route, as defined in the RouteType enum.
-        model_providers (List[ModelProvider]): A list of model providers for the route.
+        providers (List[ModelProvider]): A list of model providers for the route.
     """
 
     name: str
     route_type: RouteType
-    model_providers: List[ModelProvider]
+    providers: List[ModelProvider]
 
     @validator("name", pre=True)
     def validate_endpoint_name(cls, route_name):
@@ -284,13 +284,13 @@ class RouteConfig(BaseModel):
             )
         return route_name
 
-    @validator("model_providers", pre=True)
-    def validate_model(cls, model_providers):
+    @validator("providers", pre=True)
+    def validate_model(cls, providers):
         """
         Validates that the provided model providers list is not empty and contains valid entries.
 
         Args:
-            model_providers (List[Dict]): A list of dictionaries containing model provider information.
+            providers (List[Dict]): A list of dictionaries containing model provider information.
 
         Returns:
             List[Dict]: The validated list of model providers.
@@ -298,18 +298,18 @@ class RouteConfig(BaseModel):
         Raises:
             ValueError: If the list is empty or contains invalid providers.
         """
-        if not model_providers:
+        if not providers:
             raise ValueError(
                 "No model providers were provided for the route. Please provide at least one model provider."
             )
-        for model_provider in model_providers:
-            if model_provider:
-                model_instance = ModelProvider(**model_provider)
+        for provider in providers:
+            if provider:
+                model_instance = ModelProvider(**provider)
                 if model_instance.provider not in Provider.values():
                     raise ValueError(
                         f"The provider entry for {model_instance.provider} is incorrect. Providers accepted are {Provider.values()}"
                     )
-        return model_providers
+        return providers
 
     @validator("route_type", pre=True)
     def validate_route_type(cls, value):
@@ -357,23 +357,11 @@ class Route(BaseModel):
         name (str): The name of the route.
         route_type (str): The type of the route, usually represented as a string-based identifier.
         route_url (str): The URL pattern for the route.
-
-    Config:
-        schema_extra: Provides an example instantiation of the Route class.
     """
 
     name: str
     route_type: str
     route_url: str
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "name": "openai",
-                "route_type": "llm/v1/completions",
-                "route_url": "/engine/openai",
-            }
-        }
 
 
 class EngineRouteConfig(BaseModel):
