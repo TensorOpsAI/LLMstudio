@@ -285,7 +285,7 @@ def generate_stream_response(response: dict, data: OpenAIProvider):
         if chunk.choices[0].finish_reason != "stop" and chunk.choices[0].finish_reason != "length":
             chunk_content = chunk.choices[0].delta.content
             chat_output += chunk_content
-            yield chat_output
+            yield chunk_content
         else:
             if data.end_token:
                 input_tokens = get_tokens(data.chat_input, data.model_name)
