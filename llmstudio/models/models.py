@@ -175,11 +175,14 @@ class LLMModel(ABC):
         else:
             return response.json()
 
-
     async def chat_async(
-        self, chat_input: str, parameters: BaseModel = None, is_stream: bool = False, timeout_s: int = 120
+        self,
+        chat_input: str,
+        parameters: BaseModel = None,
+        is_stream: bool = False,
+        timeout_s: int = 120,
     ):
-        
+
         timeout = ClientTimeout(total=timeout_s)
 
         async with ClientSession(timeout=timeout) as session:
