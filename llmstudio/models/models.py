@@ -6,7 +6,7 @@ from statistics import mean
 import nest_asyncio
 import numpy as np
 import requests
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ClientTimeout
 from pydantic import BaseModel
 from requests.exceptions import RequestException
 from sentence_transformers import SentenceTransformer, util
@@ -122,6 +122,7 @@ class LLMModel(ABC):
         is_stream: bool = False,
         safety_margin=None,
         custom_max_tokens=None,
+        timeout_s: int = 120,
     ):
         """
         Initiate a chat interaction with the language model.
@@ -166,7 +167,7 @@ class LLMModel(ABC):
             },
             stream=is_stream,
             headers={"Content-Type": "application/json"},
-            timeout=30,
+            timeout=timeout_s,
         )
 
         if is_stream:
@@ -174,11 +175,14 @@ class LLMModel(ABC):
         else:
             return response.json()
 
-    # Async (wannabe parallel) run tests
+
     async def chat_async(
-        self, chat_input: str, parameters: BaseModel = None, is_stream: bool = False
+        self, chat_input: str, parameters: BaseModel = None, is_stream: bool = False, timeout_s: int = 120
     ):
-        async with ClientSession() as session:
+        
+        timeout = ClientTimeout(total=timeout_s)
+
+        async with ClientSession(timeout=timeout) as session:
             if not parameters:
                 parameters = self.parameters
             else:
