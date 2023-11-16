@@ -26,7 +26,6 @@ def run_engine_app(engine_config=EngineConfig()):
         engine,
         host=engine_config.host,
         port=engine_config.port,
-        log_level="critical",
     )
 
 

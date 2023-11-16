@@ -69,11 +69,13 @@ export const useChat = () => {
         }
 
         const chunk = decoder.decode(value);
-        if (chunk.startsWith("<END_TOKEN>")) {
+        if (chunk.includes("<END_TOKEN>")) {
           let endChunk = chunk.split(",");
           inputTokens = endChunk[1];
           outputTokens = endChunk[2];
           cost = endChunk[3];
+          let contentBeforeEndToken = chunk.split('<END_TOKEN>')[0];
+          setChatOutput(contentBeforeEndToken, true);
         } else {
           chatOutput += chunk;
           setChatOutput(chunk, true);
