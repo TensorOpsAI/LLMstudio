@@ -7,6 +7,7 @@ from typing import Optional
 import tiktoken
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
+import openai
 from openai import OpenAI
 from pydantic import BaseModel, Field, ValidationError
 
@@ -57,6 +58,8 @@ class OpenAIProvider(Provider):
         except ValidationError as e:
             errors = e.errors()
             raise HTTPException(status_code=422, detail=errors)
+        except openai._exceptions.APIError as e:
+            raise HTTPException(status_code=e.status_code, detail=e.response.json())
 
     def generate_response(
         self, response: dict, request: OpenAIRequest, latency: float

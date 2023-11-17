@@ -56,6 +56,8 @@ class AnthropicProvider(Provider):
         except ValidationError as e:
             errors = e.errors()
             raise HTTPException(status_code=422, detail=errors)
+        except anthropic._exceptions.APIError as e:
+            raise HTTPException(status_code=e.status_code, detail=e.response.json())
 
     def generate_response(
         self, response: dict, request: AnthropicRequest, latency: float

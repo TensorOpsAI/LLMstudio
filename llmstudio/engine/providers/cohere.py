@@ -58,6 +58,8 @@ class CohereProvider(Provider):
         except ValidationError as e:
             errors = e.errors()
             raise HTTPException(status_code=422, detail=errors)
+        except (cohere.CohereAPIError, cohere.CohereAPIError) as e:
+            raise HTTPException(status_code=e.http_status, detail=str(e))
 
     def generate_response(
         self, response: dict, request: CohereRequest, latency: float
