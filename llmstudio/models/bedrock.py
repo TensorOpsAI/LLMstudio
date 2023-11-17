@@ -1,5 +1,3 @@
-from llmstudio.engine.config import EngineConfig
-
 from ..validators import ClaudeParameters, TitanParameters
 from .models import LLMClient, LLMModel
 
@@ -27,7 +25,6 @@ class BedrockClient(LLMClient):
         api_key: str = None,
         api_secret: str = None,
         api_region: str = None,
-        engine_config: EngineConfig = EngineConfig(),
     ):
         """
         Initialize the BedrockClient instance.
@@ -39,7 +36,6 @@ class BedrockClient(LLMClient):
             api_key=api_key,
             api_secret=api_secret,
             api_region=api_region,
-            engine_config=engine_config,
         )
 
     class BedrockModel(LLMModel):
@@ -62,10 +58,8 @@ class BedrockClient(LLMClient):
             api_key: str,
             api_secret: str,
             api_region: str,
-            engine_config: EngineConfig,
         ):
-            super().__init__(model, api_key, api_secret, api_region, engine_config)
-            self._check_api_access()
+            super().__init__(model, api_key, api_secret, api_region)
 
     class Claude(BedrockModel):
         """
@@ -81,17 +75,17 @@ class BedrockClient(LLMClient):
             api_key: str,
             api_secret: str,
             api_region: str,
-            engine_config: EngineConfig,
         ):
             super().__init__(
                 model=model,
                 api_key=api_key,
                 api_secret=api_secret,
                 api_region=api_region,
-                engine_config=engine_config,
             )
 
-        def validate_parameters(self, parameters: ClaudeParameters = None) -> ClaudeParameters:
+        def validate_parameters(
+            self, parameters: ClaudeParameters = None
+        ) -> ClaudeParameters:
             """
             Validate and possibly adjust the provided parameters for Claude model.
 
@@ -118,17 +112,17 @@ class BedrockClient(LLMClient):
             api_key: str,
             api_secret: str,
             api_region: str,
-            engine_config: EngineConfig,
         ):
             super().__init__(
                 model=model,
                 api_key=api_key,
                 api_secret=api_secret,
                 api_region=api_region,
-                engine_config=engine_config,
             )
 
-        def validate_parameters(self, parameters: TitanParameters = None) -> TitanParameters:
+        def validate_parameters(
+            self, parameters: TitanParameters = None
+        ) -> TitanParameters:
             """
             Validate and possibly adjust the provided parameters for Titan model.
 

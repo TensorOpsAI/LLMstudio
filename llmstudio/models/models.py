@@ -1,5 +1,4 @@
 import asyncio
-import time
 from abc import ABC, abstractmethod
 from statistics import mean
 
@@ -10,9 +9,6 @@ from aiohttp import ClientSession, ClientTimeout
 from pydantic import BaseModel
 from requests.exceptions import RequestException
 from sentence_transformers import SentenceTransformer, util
-
-from llmstudio.engine.config import EngineConfig, RouteType
-from llmstudio.utils.rest_utils import run_apis
 
 
 class LLMModel(ABC):
@@ -43,7 +39,6 @@ class LLMModel(ABC):
         api_secret: str = None,
         api_region: str = None,
         tests: dict = {},
-        engine_config: EngineConfig = EngineConfig(),
         parameters: BaseModel = None,
     ):
         """
@@ -61,9 +56,11 @@ class LLMModel(ABC):
         self.api_secret = api_secret
         self.api_region = api_region
         self.tests = tests
-        self.validation_url = f"{str(engine_config.routes_endpoint)}/{RouteType.LLM_VALIDATION.value}/{self.PROVIDER}"
+        self.validation_url = (
+            f"http://localhost:8000/api/engine/validation/{self.PROVIDER}"
+        )
         self.chat_url = (
-            f"{str(engine_config.routes_endpoint)}/{RouteType.LLM_CHAT.value}/{self.PROVIDER}"
+            f"http://localhost:8000/api/engine/chat/{self.PROVIDER}"
         )
         validated_params = self.validate_parameters(parameters)
         self.parameters = validated_params
@@ -73,28 +70,6 @@ class LLMModel(ABC):
         raise ValueError(
             "Please provide api_key parameter or set the specific environment variable."
         )
-
-    def _check_api_access(self, max_retries=3, delay=0.5):
-        retries = 0
-        while retries < max_retries:
-            try:
-                response = requests.post(
-                    self.validation_url,
-                    json={
-                        "model": self.model,
-                        "api_key": self.api_key,
-                    },
-                    headers={"Content-Type": "application/json"},
-                    timeout=10,
-                )
-                if not response.json():
-                    raise ValueError(f"The API key doesn't have access to {self.model}")
-                return  # Successful API check
-            except RequestException:
-                retries += 1
-                time.sleep(delay)  # Wait before retrying
-
-        raise ValueError("Max retries reached. The API key doesn't have access to {self.model}")
 
     @abstractmethod
     def validate_parameters(self, parameters: BaseModel) -> BaseModel:
@@ -211,22 +186,30 @@ class LLMModel(ABC):
 
         async def run_single_test(key):
             test, gt_answer = tests[key].values()
-            answer = await self.chat_async(test, parameters=parameters, is_stream=is_stream)
+            answer = await self.chat_async(
+                test, parameters=parameters, is_stream=is_stream
+            )
             return key, answer
 
         tasks = [run_single_test(key) for key in tests]
         test_responses = await asyncio.gather(*tasks)
         return {k: v for k, v in test_responses}
 
-    def run_tests(self, tests: dict = {}, parameters: dict = {}, is_stream: bool = False):
+    def run_tests(
+        self, tests: dict = {}, parameters: dict = {}, is_stream: bool = False
+    ):
         loop = asyncio.get_event_loop()
         if loop.is_running():
             # Jupyter Notebook; use a workaround since loop is already running
             nest_asyncio.apply()
-            return loop.run_until_complete(self.run_tests_async(tests, parameters, is_stream))
+            return loop.run_until_complete(
+                self.run_tests_async(tests, parameters, is_stream)
+            )
         else:
             # Standalone script; standard approach
-            return asyncio.run(self.run_tests_async(tests, parameters, is_stream))
+            return asyncio.run(
+                self.run_tests_async(tests, parameters, is_stream)
+            )
 
     def set_tests(self, tests: dict = {}):
         self.tests = tests
@@ -247,9 +230,7 @@ class LLMModel(ABC):
         if not tests:
             raise ValueError(f"tests should not be empty")
 
-        correct_format = (
-            """'test_1': {'question': 'What is the capital of Portugal', 'answer': 'Lisbon'}"""
-        )
+        correct_format = """'test_1': {'question': 'What is the capital of Portugal', 'answer': 'Lisbon'}"""
 
         if not isinstance(tests, dict):
             raise ValueError(f"tests is not a dict")
@@ -263,8 +244,13 @@ class LLMModel(ABC):
                     f"value of each test is not a Dictionary. Example of correct format: {correct_format}"
                 )
             if "question" not in value or "answer" not in value:
-                raise ValueError(f"tests value should be in format: {correct_format}")
-            if not (isinstance(value["question"], str) and isinstance(value["answer"], str)):
+                raise ValueError(
+                    f"tests value should be in format: {correct_format}"
+                )
+            if not (
+                isinstance(value["question"], str)
+                and isinstance(value["answer"], str)
+            ):
                 raise ValueError(f"question and answer should be strings")
         return tests
 
@@ -294,7 +280,6 @@ class LLMClient(ABC):
         api_key: str = None,
         api_secret: str = None,
         api_region: str = None,
-        engine_config: EngineConfig = EngineConfig(),
     ):
         """
         Initialize the LLMClient instance.
@@ -307,8 +292,6 @@ class LLMClient(ABC):
         self.api_key = api_key
         self.api_secret = api_secret
         self.api_region = api_region
-        self.engine_config = engine_config
-        run_apis(engine_config=self.engine_config)
 
     def get_model(self, model: str, parameters: BaseModel = None):
         """
@@ -335,7 +318,6 @@ class LLMClient(ABC):
             api_key=self.api_key,
             api_secret=self.api_secret,
             api_region=self.api_region,
-            engine_config=self.engine_config,
             parameters=parameters,
         )
 
@@ -344,7 +326,9 @@ class LLMCompare(ABC):
     def __int__(self):
         pass
 
-    async def _get_response_from_model(self, model: LLMModel, prompt: str, output_dict: dict):
+    async def _get_response_from_model(
+        self, model: LLMModel, prompt: str, output_dict: dict
+    ):
         """
         Helper method to get response from a given model and store it in the output dictionary.
 
@@ -375,7 +359,9 @@ class LLMCompare(ABC):
         model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
 
         # Ensure the two lists are of the same length
-        assert len(list1) == len(list2), "The two lists must be of the same length"
+        assert len(list1) == len(
+            list2
+        ), "The two lists must be of the same length"
 
         # Encode the sentences from both lists
         embeddings1 = model.encode(list1, convert_to_tensor=True)
@@ -383,12 +369,15 @@ class LLMCompare(ABC):
 
         # Compute average_similarity for respective entries
         average_similarity_vector = [
-            util.pytorch_cos_sim(emb1, emb2).item() for emb1, emb2 in zip(embeddings1, embeddings2)
+            util.pytorch_cos_sim(emb1, emb2).item()
+            for emb1, emb2 in zip(embeddings1, embeddings2)
         ]
 
         return np.array(average_similarity_vector)
 
-    async def _get_llm_performance(self, model, prompt_list, expected_output_list, output_dict):
+    async def _get_llm_performance(
+        self, model, prompt_list, expected_output_list, output_dict
+    ):
         latency_list = []
         cost_list = []
         out_tokens_list = []
@@ -399,7 +388,9 @@ class LLMCompare(ABC):
         ), "Prompt List and Expected List are not the same size"
 
         for prompt in prompt_list:
-            model_response = model.chat(prompt)  # assuming the chat method is asynchronous
+            model_response = model.chat(
+                prompt
+            )  # assuming the chat method is asynchronous
 
             chat_output_list.append(model_response["chatOutput"])
             latency_list.append(model_response["latency"])
@@ -413,7 +404,9 @@ class LLMCompare(ABC):
 
         # average_similarity performance
         average_similarity = mean(
-            self._compute_entrywise_average_similarity(chat_output_list, expected_output_list)
+            self._compute_entrywise_average_similarity(
+                chat_output_list, expected_output_list
+            )
         )
 
         statistics = {
@@ -439,17 +432,24 @@ class LLMCompare(ABC):
 
         output_dict = {}
 
-        tasks = [self._get_response_from_model(model, prompt, output_dict) for model in models]
+        tasks = [
+            self._get_response_from_model(model, prompt, output_dict)
+            for model in models
+        ]
 
         await asyncio.gather(*tasks)
 
         return output_dict
 
-    async def dataset_prompt_compare(self, models, prompt_list, expected_output_list):
+    async def dataset_prompt_compare(
+        self, models, prompt_list, expected_output_list
+    ):
         output_dict = {}
 
         tasks = [
-            self._get_llm_performance(model, prompt_list, expected_output_list, output_dict)
+            self._get_llm_performance(
+                model, prompt_list, expected_output_list, output_dict
+            )
             for model in models
         ]
 

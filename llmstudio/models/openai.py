@@ -1,7 +1,5 @@
 import os
 
-from llmstudio.engine.config import EngineConfig
-
 from ..validators import OpenAIParameters
 from .models import LLMClient, LLMModel
 
@@ -24,7 +22,6 @@ class OpenAIClient(LLMClient):
         api_key: str = None,
         api_secret: str = None,
         api_region: str = None,
-        engine_config: EngineConfig = EngineConfig(),
     ):
         """
         Initialize the OpenAIClient instance.
@@ -36,7 +33,6 @@ class OpenAIClient(LLMClient):
             api_key=api_key,
             api_secret=api_secret,
             api_region=api_region,
-            engine_config=engine_config,
         )
 
     class OpenAIModel(LLMModel):
@@ -57,18 +53,19 @@ class OpenAIClient(LLMClient):
             self,
             model: str,
             api_key: str,
-            engine_config: EngineConfig,
             parameters: OpenAIParameters = None,
         ):
             super().__init__(
                 model,
-                api_key or os.environ.get("OPENAI_API_KEY") or self._raise_api_key_error(),
-                engine_config=engine_config,
+                api_key
+                or os.environ.get("OPENAI_API_KEY")
+                or self._raise_api_key_error(),
                 parameters=parameters,
             )
-            self._check_api_access()
 
-        def validate_parameters(self, parameters: OpenAIParameters = None) -> OpenAIParameters:
+        def validate_parameters(
+            self, parameters: OpenAIParameters = None
+        ) -> OpenAIParameters:
             """
             Validate and possibly adjust the provided parameters for OpenAI models.
 
@@ -90,17 +87,11 @@ class OpenAIClient(LLMClient):
         """
 
         def __init__(
-            self,
-            model,
-            api_key,
-            engine_config: EngineConfig,
-            parameters: OpenAIParameters,
-            **kwargs
+            self, model, api_key, parameters: OpenAIParameters, **kwargs
         ):
             super().__init__(
                 model=model,
                 api_key=api_key,
-                engine_config=engine_config,
                 parameters=parameters,
             )
 
@@ -113,16 +104,10 @@ class OpenAIClient(LLMClient):
         """
 
         def __init__(
-            self,
-            model,
-            api_key,
-            engine_config: EngineConfig,
-            parameters: OpenAIParameters,
-            **kwargs
+            self, model, api_key, parameters: OpenAIParameters, **kwargs
         ):
             super().__init__(
                 model=model,
                 api_key=api_key,
-                engine_config=engine_config,
                 parameters=parameters,
             )

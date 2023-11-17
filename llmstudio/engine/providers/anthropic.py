@@ -1,99 +1,115 @@
 import asyncio
-import random
+import os
 import time
+import uuid
 from typing import Optional
 
 import anthropic
+import tiktoken
 from anthropic import Anthropic
+from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
-from llmstudio.engine.config import AnthropicConfig
-from llmstudio.engine.constants import END_TOKEN
-from llmstudio.engine.providers.base_provider import BaseProvider
-from llmstudio.engine.utils import validate_provider_config
+from llmstudio.engine.providers.provider import ChatRequest, Provider
 
 
 class ClaudeParameters(BaseModel):
     temperature: Optional[float] = Field(1, ge=0, le=1)
-    max_tokens: Optional[int] = Field(300, ge=1, le=2048)
-    top_p: Optional[float] = Field(0.999, ge=0, le=1)
-    top_k: Optional[int] = Field(250, ge=1, le=500)
+    max_tokens: Optional[int] = Field(256, ge=1)
+    top_p: Optional[float] = Field(1, ge=0, le=1)
+    top_k: Optional[int] = Field(5, ge=0, le=500)
 
 
-class AnthropicRequest(BaseModel):
-    api_key: Optional[str]
-    model: str
-    chat_input: str
+class AnthropicRequest(ChatRequest):
     parameters: Optional[ClaudeParameters] = ClaudeParameters()
-    is_stream: Optional[bool] = False
-    end_token: Optional[bool] = True
 
 
-class AnthropicTest(BaseModel):
-    api_key: Optional[str]
-    api_secret: Optional[str]
-    api_region: Optional[str]
-    model: str
+class AnthropicProvider(Provider):
+    def __init__(self, config):
+        super().__init__(config)
+        self.API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
+    async def chat(self, request: AnthropicRequest):
+        """Chat with the Anthropic API"""
+        try:
+            request = AnthropicRequest(**request)
+            await super().chat(request)
+            loop = asyncio.get_event_loop()
+            client = Anthropic(api_key=request.api_key or self.API_KEY)
 
-class AnthropicProvider(BaseProvider):
-    def __init__(self, config: AnthropicConfig, api_key: dict):
-        super().__init__()
-        self.anthropic_config = validate_provider_config(config, api_key)
+            response = await loop.run_in_executor(
+                self.executor,
+                lambda: client.completions.create(
+                    model=request.model,
+                    prompt=f"{anthropic.HUMAN_PROMPT} {request.chat_input} {anthropic.AI_PROMPT}",
+                    stream=request.is_stream,
+                    temperature=request.parameters.temperature,
+                    max_tokens_to_sample=request.parameters.max_tokens,
+                    top_p=request.parameters.top_p,
+                    top_k=request.parameters.top_k,
+                ),
+            )
 
-    async def chat(self, data: AnthropicRequest) -> dict:
-        data = AnthropicRequest(**data)
-        self.validate_model_field(data, ["claude-instant-1", "claude-instant-1.2", "claude-2"])
-        loop = asyncio.get_event_loop()
+            if request.is_stream:
+                return StreamingResponse(
+                    self.generate_stream(response, request)
+                )
+            else:
+                return self.generate_response(response, request)
+        except ValidationError as e:
+            errors = e.errors()
+            raise HTTPException(status_code=422, detail=errors)
 
-        client = Anthropic(api_key=data.api_key)
-
-        response = await loop.run_in_executor(
-            None,
-            lambda: client.completions.create(
-                model=data.model,
-                prompt=f"{anthropic.HUMAN_PROMPT} {data.chat_input} {anthropic.AI_PROMPT}",
-                max_tokens_to_sample=data.parameters.max_tokens,
-                stream=data.is_stream,
-                temperature=data.parameters.temperature,
-                top_p=data.parameters.top_p,
-                top_k=data.parameters.top_k,
-            ),
+    def generate_response(self, response: dict, request: AnthropicRequest):
+        """Generates a response from the Anthropic API"""
+        input_tokens, input_cost = self.get_tokens_and_cost(
+            request.chat_input, request.model, "input"
+        )
+        output_tokens, output_cost = self.get_tokens_and_cost(
+            response.completion, request.model, "output"
         )
 
-        if data.is_stream:
-            return StreamingResponse(generate_stream_response(response, data))
-        else:
-            return {
-                "id": random.randint(0, 1000),
-                "chatInput": data.chat_input,
-                "chatOutput": response.completion,
-                "inputTokens": 0,
-                "outputTokens": 0,
-                "totalTokens": 0,
-                "cost": 0,
-                "timestamp": time.time(),
-                "model": data.model,
-                "parameters": data.parameters.dict(),
-                "latency": 0,
-            }
+        return {
+            "id": uuid.uuid4(),
+            "chatInput": request.chat_input,
+            "chatOutput": response.completion,
+            "inputTokens": input_tokens,
+            "outputTokens": output_tokens,
+            "totalTokens": input_tokens + output_tokens,
+            "cost": input_cost + output_cost,
+            "timestamp": time.time(),
+            "model": request.model,
+            "parameters": request.parameters.model_dump(),
+            # latency
+        }
 
-    async def test(self, data: AnthropicTest) -> bool:
-        return 1
+    def generate_stream(self, response: dict, request: AnthropicRequest):
+        """Generates a stream of responses from the Anthropic API"""
+        chat_output = ""
+        for chunk in response:
+            if chunk.stop_reason != "stop_sequence":
+                chunk_content = chunk.completion
+                chat_output += chunk_content
+                yield chunk_content
+            else:
+                if request.has_end_token:
+                    input_tokens, input_cost = self.get_tokens_and_cost(
+                        request.chat_input, request.model, "input"
+                    )
+                    output_tokens, output_cost = self.get_tokens_and_cost(
+                        chat_output, request.model, "output"
+                    )
+                    yield f"{self.END_TOKEN},{input_tokens},{output_tokens},{input_cost+output_cost}"
 
+    def get_tokens_and_cost(self, input: str, model: str, type: str):
+        """Returns the number of tokens and the cost of the input/output string"""
+        model_config = self.config.models[model]
+        tokens = Anthropic().count_tokens(input)
 
-def get_cost(input_tokens: int, output_tokens: int) -> float:
-    return None
-
-
-def generate_stream_response(response, data):
-    chat_output = ""
-    for chunk in response:
-        if chunk.stop_reason != "stop_sequence":
-            chunk_content = chunk.completion
-            chat_output += chunk_content
-            yield chunk_content
-        else:
-            if data.end_token:
-                yield f"{END_TOKEN},{0},{0},{0}"  # json
+        token_cost = (
+            model_config.input_token_cost
+            if type == "input"
+            else model_config.output_token_cost
+        )
+        return tokens, token_cost * tokens
