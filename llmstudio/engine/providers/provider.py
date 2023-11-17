@@ -1,7 +1,8 @@
-from typing import Optional
-from pydantic import BaseModel
-from fastapi import HTTPException
 from concurrent.futures import ThreadPoolExecutor
+from typing import Optional
+
+from fastapi import HTTPException
+from pydantic import BaseModel
 
 
 class ChatRequest(BaseModel):
@@ -21,8 +22,11 @@ class Provider:
 
     async def chat(self, chat_request: ChatRequest):
         if chat_request.model not in self.config.models:
-            raise HTTPException(status_code=400, detail=f"Model {chat_request.model} is not supported by {self.config.name}")
-        
+            raise HTTPException(
+                status_code=400,
+                detail=f"Model {chat_request.model} is not supported by {self.config.name}",
+            )
+
     async def embed(self, chat_request: ChatRequest):
         pass
 

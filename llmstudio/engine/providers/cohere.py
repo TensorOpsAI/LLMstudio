@@ -5,10 +5,10 @@ import uuid
 from typing import Optional
 
 import cohere
-from tokenizers import Tokenizer
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, ValidationError
+from tokenizers import Tokenizer
 
 from llmstudio.engine.providers.provider import ChatRequest, Provider
 
@@ -95,12 +95,14 @@ class CohereProvider(Provider):
 
         if request.has_end_token:
             input_tokens, input_cost = self.get_tokens_and_cost(
-                        request.chat_input, request.model, "input"
-                    )
+                request.chat_input, request.model, "input"
+            )
             output_tokens, output_cost = self.get_tokens_and_cost(
-                        response.generations[0].text, request.model, "output"
-                    )
-            print(f"<END_TOKEN>,{input_tokens},{output_tokens},{input_cost+output_cost}")
+                response.generations[0].text, request.model, "output"
+            )
+            print(
+                f"<END_TOKEN>,{input_tokens},{output_tokens},{input_cost+output_cost}"
+            )
 
     def get_tokens_and_cost(self, input: str, model: str, type: str):
         """Returns the number of tokens and the cost of the input/output string"""
