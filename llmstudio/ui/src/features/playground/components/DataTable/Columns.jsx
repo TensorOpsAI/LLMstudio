@@ -123,6 +123,74 @@ export const columns = [
     },
   },
   {
+    accessorKey: "latency",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Latency" />
+    ),
+    cell: ({ row }) => {
+      const label = labels.find((label) => label.value === row.original.label);
+      return (
+        <div className="flex space-x-2">
+          {label && <Badge variant="outline">{label.label}</Badge>}
+          <span className="max-w-[500px] truncate font-medium">
+            {row.getValue("latency").toFixed(5)}
+          </span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "timeToFirstToken",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Time to First Token" />
+    ),
+    cell: ({ row }) => {
+      const label = labels.find((label) => label.value === row.original.label);
+      return (
+        <div className="flex space-x-2">
+          {label && <Badge variant="outline">{label.label}</Badge>}
+          <span className="max-w-[500px] truncate font-medium">
+            {row.getValue("timeToFirstToken").toFixed(5)}
+          </span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "interTokenLatency",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Inter Token Latency" />
+    ),
+    cell: ({ row }) => {
+      const label = labels.find((label) => label.value === row.original.label);
+      return (
+        <div className="flex space-x-2">
+          {label && <Badge variant="outline">{label.label}</Badge>}
+          <span className="max-w-[500px] truncate font-medium">
+            {row.getValue("interTokenLatency").toFixed(5)}
+          </span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "tokensPerSecond",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Tokens Per Second" />
+    ),
+    cell: ({ row }) => {
+      const label = labels.find((label) => label.value === row.original.label);
+      return (
+        <div className="flex space-x-2">
+          {label && <Badge variant="outline">{label.label}</Badge>}
+          <span className="max-w-[500px] truncate font-medium">
+            {row.getValue("tokensPerSecond").toFixed(5)}
+          </span>
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: "timestamp",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Timestamp" />

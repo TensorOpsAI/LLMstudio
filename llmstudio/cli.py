@@ -1,3 +1,4 @@
+import signal
 from threading import Thread
 
 import click
@@ -16,22 +17,26 @@ def main():
 
 @main.command()
 def server():
-    # def handle_shutdown(signum, frame):
-    #     print("Shutting down gracefully...")
-    #     os._exit(0)
+    import os
 
-    # # Register the signal handler
-    # signal.signal(signal.SIGINT, handle_shutdown)
+    print(os.environ.get("OPENAI_API_KEY"))
+
+    def handle_shutdown(signum, frame):
+        print("Shutting down gracefully...")
+        os._exit(0)
+
+    # Register the signal handler
+    signal.signal(signal.SIGINT, handle_shutdown)
 
     # Start the engine and UI in separate threads
-    engine_thread = Thread(target=run_engine_app)
     # ui_thread = Thread(target=run_ui_app)
+    engine_thread = Thread(target=run_engine_app)
 
-    engine_thread.daemon = True
     # ui_thread.daemon = True
+    engine_thread.daemon = True
 
-    engine_thread.start()
     # ui_thread.start()
+    engine_thread.start()
 
-    engine_thread.join()
     # ui_thread.join()
+    engine_thread.join()

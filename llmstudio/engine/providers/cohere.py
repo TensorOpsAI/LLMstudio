@@ -90,18 +90,41 @@ class CohereProvider(Provider):
         self, response: dict, request: CohereRequest, start_time: float
     ):
         """Generates a stream of responses from the Cohere API"""
+        chat_output = ""
+        first_token_time = None
+        previous_token_time = None
+        token_times = []
+
         for chunk in response:
+            current_time = time.time()
+            if first_token_time is None:
+                first_token_time = current_time
+            if previous_token_time is not None:
+                token_times.append(current_time - previous_token_time)
+            previous_token_time = current_time
+
             if not chunk.is_finished:
-                yield chunk.text
+                chunk_content = chunk.text
+                chat_output += chunk_content
+                yield chunk_content
 
         if request.has_end_token:
             input_tokens, input_cost = self.calculate_tokens_and_cost(
                 request.chat_input, request.model, "input"
             )
-            output_tokens, output_cost = self.calculate_tokens_and_cost(
-                response.generations[0].text, request.model, "output"
+            (output_tokens, output_cost,) = self.calculate_tokens_and_cost(
+                chat_output, request.model, "output"
             )
-            yield f"<END_TOKEN>,{input_tokens},{output_tokens},{input_cost+output_cost},{time.time()-start_time}"
+            total_time = current_time - start_time
+            ttft = first_token_time - start_time
+            inter_token_latency = (
+                sum(token_times) / len(token_times) if token_times else 0
+            )
+            tokens_per_second = (
+                output_tokens / total_time if total_time > 0 else 0
+            )
+
+            yield f"{self.END_TOKEN},input_tokens={input_tokens},output_tokens={output_tokens},cost={input_cost + output_cost},latency={total_time:.5f},time_to_first_token={ttft:.5f},inter_token_latency={inter_token_latency:.5f},tokens_per_second={tokens_per_second:.2f}"
 
     def calculate_tokens_and_cost(self, input: str, model: str, type: str):
         """Returns the number of tokens and the cost of the input/output string"""

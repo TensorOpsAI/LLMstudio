@@ -52,6 +52,10 @@ export const useChat = () => {
       let inputTokens = 0;
       let outputTokens = 0;
       let cost = 0;
+      let latency = 0;
+      let timeToFirstToken = 0;
+      let interTokenLatency = 0;
+      let tokensPerSecond = 0;
 
       reader.read().then(function pump({ done, value }) {
         if (done) {
@@ -62,6 +66,10 @@ export const useChat = () => {
             inputTokens,
             outputTokens,
             cost,
+            latency,
+            timeToFirstToken,
+            interTokenLatency,
+            tokensPerSecond,
             model,
             parameters
           );
@@ -70,10 +78,21 @@ export const useChat = () => {
 
         const chunk = decoder.decode(value);
         if (chunk.startsWith("<END_TOKEN>")) {
-          let endChunk = chunk.split(",");
-          inputTokens = endChunk[1];
-          outputTokens = endChunk[2];
-          cost = endChunk[3];
+          const dataPairs = chunk.split(',');
+          const dataObject = {};
+
+          dataPairs.forEach(pair => {
+            const [key, value] = pair.split('=');
+            dataObject[key] = value;
+          });
+
+          inputTokens = dataObject["input_tokens"];
+          outputTokens = dataObject["output_tokens"]
+          cost = dataObject["cost"];
+          latency = dataObject["latency"];
+          timeToFirstToken = dataObject["time_to_first_token"];
+          interTokenLatency = dataObject["inter_token_latency"];
+          tokensPerSecond = dataObject["tokens_per_second"];
         } else {
           chatOutput += chunk;
           setChatOutput(chunk, true);
@@ -106,6 +125,7 @@ export const useChat = () => {
         api_secret: apiSecret,
         api_region: apiRegion,
         is_stream: isStream,
+        has_end_token: true,
         parameters: {
           temperature: parameters.temperature,
           max_tokens: parameters.maxTokens,

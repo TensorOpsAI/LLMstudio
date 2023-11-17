@@ -25,6 +25,10 @@ export const usePlaygroundStore = create((set) => ({
     inputTokens,
     outputTokens,
     cost,
+    latency,
+    timeToFirstToken,
+    interTokenLatency,
+    tokensPerSecond,
     model,
     parameters
   ) =>
@@ -39,6 +43,10 @@ export const usePlaygroundStore = create((set) => ({
           outputTokens: Number(outputTokens),
           totalTokens: Number(inputTokens + outputTokens),
           cost: Number(cost),
+          latency: Number(latency),
+          timeToFirstToken: Number(timeToFirstToken),
+          interTokenLatency: Number(interTokenLatency),
+          tokensPerSecond: Number(tokensPerSecond),
           timestamp: new Date(),
           model: model,
           parameters: parameters,

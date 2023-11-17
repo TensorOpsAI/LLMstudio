@@ -135,7 +135,7 @@ class LLMModel(ABC):
                 "parameters": parameters,
                 "is_stream": is_stream,
                 "safety_margin": safety_margin,
-                "end_token": False,
+                "has_end_token": True,
                 "custom_max_token": custom_max_tokens,
             },
             stream=is_stream,
@@ -382,6 +382,9 @@ class LLMCompare(ABC):
         cost_list = []
         out_tokens_list = []
         chat_output_list = []
+        time_to_first_token_list = []
+        inter_token_latency_list = []
+        tokens_per_second_list = []
 
         assert len(prompt_list) == len(
             expected_output_list
@@ -389,18 +392,40 @@ class LLMCompare(ABC):
 
         for prompt in prompt_list:
             model_response = model.chat(
-                prompt
+                prompt, is_stream=True
             )  # assuming the chat method is asynchronous
 
-            chat_output_list.append(model_response["chatOutput"])
-            latency_list.append(model_response["latency"])
-            cost_list.append(model_response["cost"])
-            out_tokens_list.append(model_response["outputTokens"])
+            chat_output = ""
+            for chunk in model_response:
+                if not chunk.startswith("<END_TOKEN>"):
+                    chat_output += chunk
+
+            parsed_chunk = {
+                k: float(v) if "." in v else int(v)
+                for k, v in (
+                    p.split("=") for p in chunk.split(",") if "=" in p
+                )
+            }
+
+            chat_output_list.append(chat_output)
+            latency_list.append(parsed_chunk["latency"])
+            cost_list.append(parsed_chunk["cost"])
+            out_tokens_list.append(parsed_chunk["output_tokens"])
+            time_to_first_token_list.append(
+                parsed_chunk["time_to_first_token"]
+            )
+            inter_token_latency_list.append(
+                parsed_chunk["inter_token_latency"]
+            )
+            tokens_per_second_list.append(parsed_chunk["tokens_per_second"])
 
         # now compute some metrics
         average_latency = mean(latency_list)
         average_output_token = mean(out_tokens_list)
         average_cost = mean(cost_list)
+        average_time_to_first_token = mean(time_to_first_token_list)
+        average_inter_token_latency = mean(inter_token_latency_list)
+        average_tokens_per_second = mean(tokens_per_second_list)
 
         # average_similarity performance
         average_similarity = mean(
@@ -414,6 +439,9 @@ class LLMCompare(ABC):
             "average_cost": average_cost,
             "average_output_token": average_output_token,
             "average_similarity": average_similarity,
+            "average_time_to_first_token": average_time_to_first_token,
+            "average_inter_token_latency": average_inter_token_latency,
+            "average_tokens_per_second": average_tokens_per_second,
         }
         output_dict[model.model] = statistics
         return output_dict
