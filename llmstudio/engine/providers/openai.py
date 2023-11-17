@@ -198,7 +198,7 @@ class OpenAIProvider(BaseProvider):
                         stream=request.is_stream,
                     ),
                 )
-            except openai.error.InvalidRequestError as e:
+            except openai.BadRequestError as e:
                 retry_count += 1
                 use_higher_capacity_model = True
         raise ValueError("Maximum retries reached, cannot generate output within token limits.")
