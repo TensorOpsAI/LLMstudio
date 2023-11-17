@@ -51,12 +51,16 @@ class OpenAIProvider(Provider):
                     self.generate_stream(response, request, start_time)
                 )
             else:
-                return self.generate_response(response, request, time.time() - start_time)
+                return self.generate_response(
+                    response, request, time.time() - start_time
+                )
         except ValidationError as e:
             errors = e.errors()
             raise HTTPException(status_code=422, detail=errors)
 
-    def generate_response(self, response: dict, request: OpenAIRequest, latency: float):
+    def generate_response(
+        self, response: dict, request: OpenAIRequest, latency: float
+    ):
         """Generates a response from the OpenAI API"""
         input_tokens, input_cost = self.calculate_tokens_and_cost(
             request.chat_input, request.model, "input"
@@ -79,7 +83,9 @@ class OpenAIProvider(Provider):
             "latency": latency,
         }
 
-    def generate_stream(self, response: dict, request: OpenAIRequest, start_time: float):
+    def generate_stream(
+        self, response: dict, request: OpenAIRequest, start_time: float
+    ):
         """Generates a stream of responses from the OpenAI API"""
         chat_output = ""
         for chunk in response:
