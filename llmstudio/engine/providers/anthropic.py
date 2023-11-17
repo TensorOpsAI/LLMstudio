@@ -5,7 +5,6 @@ import uuid
 from typing import Optional
 
 import anthropic
-import tiktoken
 from anthropic import Anthropic
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
@@ -16,7 +15,7 @@ from llmstudio.engine.providers.provider import ChatRequest, Provider
 
 class ClaudeParameters(BaseModel):
     temperature: Optional[float] = Field(1, ge=0, le=1)
-    max_tokens: Optional[int] = Field(256, ge=1)
+    max_tokens_to_sample: Optional[int] = Field(256, ge=1)
     top_p: Optional[float] = Field(1, ge=0, le=1)
     top_k: Optional[int] = Field(5, ge=0, le=500)
 
@@ -35,38 +34,33 @@ class AnthropicProvider(Provider):
         try:
             request = AnthropicRequest(**request)
             await super().chat(request)
-            loop = asyncio.get_event_loop()
             client = Anthropic(api_key=request.api_key or self.API_KEY)
 
-            response = await loop.run_in_executor(
-                self.executor,
-                lambda: client.completions.create(
-                    model=request.model,
-                    prompt=f"{anthropic.HUMAN_PROMPT} {request.chat_input} {anthropic.AI_PROMPT}",
-                    stream=request.is_stream,
-                    temperature=request.parameters.temperature,
-                    max_tokens_to_sample=request.parameters.max_tokens,
-                    top_p=request.parameters.top_p,
-                    top_k=request.parameters.top_k,
-                ),
+            start_time = time.time()
+            response = await asyncio.to_thread(
+                client.completions.create,
+                model=request.model,
+                prompt=f"{anthropic.HUMAN_PROMPT} {request.chat_input} {anthropic.AI_PROMPT}",
+                stream=request.is_stream,
+                **request.parameters.model_dump(),
             )
 
             if request.is_stream:
                 return StreamingResponse(
-                    self.generate_stream(response, request)
+                    self.generate_stream(response, request, start_time)
                 )
             else:
-                return self.generate_response(response, request)
+                return self.generate_response(response, request, time.time() - start_time)
         except ValidationError as e:
             errors = e.errors()
             raise HTTPException(status_code=422, detail=errors)
 
-    def generate_response(self, response: dict, request: AnthropicRequest):
+    def generate_response(self, response: dict, request: AnthropicRequest, latency: float):
         """Generates a response from the Anthropic API"""
-        input_tokens, input_cost = self.get_tokens_and_cost(
+        input_tokens, input_cost = self.calculate_tokens_and_cost(
             request.chat_input, request.model, "input"
         )
-        output_tokens, output_cost = self.get_tokens_and_cost(
+        output_tokens, output_cost = self.calculate_tokens_and_cost(
             response.completion, request.model, "output"
         )
 
@@ -81,10 +75,10 @@ class AnthropicProvider(Provider):
             "timestamp": time.time(),
             "model": request.model,
             "parameters": request.parameters.model_dump(),
-            # latency
+            "latency": latency,
         }
 
-    def generate_stream(self, response: dict, request: AnthropicRequest):
+    def generate_stream(self, response: dict, request: AnthropicRequest, start_time: float):
         """Generates a stream of responses from the Anthropic API"""
         chat_output = ""
         for chunk in response:
@@ -94,15 +88,18 @@ class AnthropicProvider(Provider):
                 yield chunk_content
             else:
                 if request.has_end_token:
-                    input_tokens, input_cost = self.get_tokens_and_cost(
+                    input_tokens, input_cost = self.calculate_tokens_and_cost(
                         request.chat_input, request.model, "input"
                     )
-                    output_tokens, output_cost = self.get_tokens_and_cost(
+                    (
+                        output_tokens,
+                        output_cost,
+                    ) = self.calculate_tokens_and_cost(
                         chat_output, request.model, "output"
                     )
-                    yield f"{self.END_TOKEN},{input_tokens},{output_tokens},{input_cost+output_cost}"
+                    yield f"{self.END_TOKEN},{input_tokens},{output_tokens},{input_cost+output_cost},{time.time()-start_time}"
 
-    def get_tokens_and_cost(self, input: str, model: str, type: str):
+    def calculate_tokens_and_cost(self, input: str, model: str, type: str):
         """Returns the number of tokens and the cost of the input/output string"""
         model_config = self.config.models[model]
         tokens = Anthropic().count_tokens(input)

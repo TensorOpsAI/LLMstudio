@@ -1,4 +1,3 @@
-from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
 from fastapi import HTTPException
@@ -17,7 +16,6 @@ class ChatRequest(BaseModel):
 class Provider:
     def __init__(self, config):
         self.config = config
-        self.executor = ThreadPoolExecutor(max_workers=10)
         self.END_TOKEN = "<END_TOKEN>"
 
     async def chat(self, chat_request: ChatRequest):
@@ -36,5 +34,5 @@ class Provider:
     def generate_stream(self, response: dict, request: ChatRequest):
         pass
 
-    def get_tokens_and_cost(self, input: str, model: str, type: str):
+    def calculate_tokens_and_cost(self, input: str, model: str, type: str):
         pass
