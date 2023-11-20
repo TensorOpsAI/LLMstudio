@@ -59,9 +59,7 @@ class LLMModel(ABC):
         self.validation_url = (
             f"http://localhost:8000/api/engine/validation/{self.PROVIDER}"
         )
-        self.chat_url = (
-            f"http://localhost:8000/api/engine/chat/{self.PROVIDER}"
-        )
+        self.chat_url = f"http://localhost:8000/api/engine/chat/{self.PROVIDER}"
         validated_params = self.validate_parameters(parameters)
         self.parameters = validated_params
 
@@ -207,9 +205,7 @@ class LLMModel(ABC):
             )
         else:
             # Standalone script; standard approach
-            return asyncio.run(
-                self.run_tests_async(tests, parameters, is_stream)
-            )
+            return asyncio.run(self.run_tests_async(tests, parameters, is_stream))
 
     def set_tests(self, tests: dict = {}):
         self.tests = tests
@@ -244,12 +240,9 @@ class LLMModel(ABC):
                     f"value of each test is not a Dictionary. Example of correct format: {correct_format}"
                 )
             if "question" not in value or "answer" not in value:
-                raise ValueError(
-                    f"tests value should be in format: {correct_format}"
-                )
+                raise ValueError(f"tests value should be in format: {correct_format}")
             if not (
-                isinstance(value["question"], str)
-                and isinstance(value["answer"], str)
+                isinstance(value["question"], str) and isinstance(value["answer"], str)
             ):
                 raise ValueError(f"question and answer should be strings")
         return tests
@@ -359,9 +352,7 @@ class LLMCompare(ABC):
         model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
 
         # Ensure the two lists are of the same length
-        assert len(list1) == len(
-            list2
-        ), "The two lists must be of the same length"
+        assert len(list1) == len(list2), "The two lists must be of the same length"
 
         # Encode the sentences from both lists
         embeddings1 = model.encode(list1, convert_to_tensor=True)
@@ -402,21 +393,15 @@ class LLMCompare(ABC):
 
             parsed_chunk = {
                 k: float(v) if "." in v else int(v)
-                for k, v in (
-                    p.split("=") for p in chunk.split(",") if "=" in p
-                )
+                for k, v in (p.split("=") for p in chunk.split(",") if "=" in p)
             }
 
             chat_output_list.append(chat_output)
             latency_list.append(parsed_chunk["latency"])
             cost_list.append(parsed_chunk["cost"])
             out_tokens_list.append(parsed_chunk["output_tokens"])
-            time_to_first_token_list.append(
-                parsed_chunk["time_to_first_token"]
-            )
-            inter_token_latency_list.append(
-                parsed_chunk["inter_token_latency"]
-            )
+            time_to_first_token_list.append(parsed_chunk["time_to_first_token"])
+            inter_token_latency_list.append(parsed_chunk["inter_token_latency"])
             tokens_per_second_list.append(parsed_chunk["tokens_per_second"])
 
         # now compute some metrics
@@ -469,9 +454,7 @@ class LLMCompare(ABC):
 
         return output_dict
 
-    async def dataset_prompt_compare(
-        self, models, prompt_list, expected_output_list
-    ):
+    async def dataset_prompt_compare(self, models, prompt_list, expected_output_list):
         output_dict = {}
 
         tasks = [

@@ -23,11 +23,11 @@ export const useChat = () => {
         setChatOutput(data.chatOutput);
         setResponseStatus("done");
         addExecution(
-          data.chatInput,
-          data.chatOutput,
-          data.inputTokens,
-          data.outputTokens,
-          data.cost,
+          data.chat_input,
+          data.chat_output,
+          data.usage.input_tokens,
+          data.usage.output_tokens,
+          data.usage.cost,
           data.model,
           data.parameters
         );

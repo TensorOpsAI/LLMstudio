@@ -34,6 +34,7 @@ class ModelConfig(BaseModel):
 
 
 class ProviderConfig(BaseModel):
+    provider: str
     name: str
     chat: bool
     embed: bool
@@ -105,7 +106,7 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
             return list(set(all_models))  # Use set to avoid duplicates if any
 
     # Function to create a chat handler for a provider
-    def create_chat_handler(provider_name, provider_config):
+    def create_chat_handler(provider_config):
         async def chat_handler(request: Request):
             """Endpoint for chat functionality."""
             provider_class = globals()[f"{provider_config.name}Provider"]
@@ -118,7 +119,7 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
     for provider_name, provider_config in config.providers.items():
         if provider_config.chat:
             app.post(f"{ENGINE_BASE_ENDPOINT}/chat/{provider_name}")(
-                create_chat_handler(provider_name, provider_config)
+                create_chat_handler(provider_config)
             )
 
     return app

@@ -21,8 +21,6 @@ repos:
       - id: black
         files: llmstudio/
         exclude: ^llmstudio/ui/
-        args:
-          - "--line-length=79"
 
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
@@ -31,7 +29,6 @@ repos:
         files: llmstudio/
         exclude: ^llmstudio/ui/
         args:
-          - "--line-length=79"
           - "--profile=black"
 
   - repo: https://github.com/myint/autoflake

@@ -87,9 +87,7 @@ class VertexAIClient(LLMClient):
         'TextBison' Vertex AI LLM.
         """
 
-        def __init__(
-            self, model, api_key, parameters: VertexAIParameters, **kwargs
-        ):
+        def __init__(self, model, api_key, parameters: VertexAIParameters, **kwargs):
             super().__init__(
                 model=model,
                 api_key=api_key,
@@ -104,9 +102,7 @@ class VertexAIClient(LLMClient):
         with the 'ChatBison' Vertex AI LLM.
         """
 
-        def __init__(
-            self, model, api_key, parameters: VertexAIParameters, **kwargs
-        ):
+        def __init__(self, model, api_key, parameters: VertexAIParameters, **kwargs):
             super().__init__(
                 model=model,
                 api_key=api_key,
@@ -121,9 +117,7 @@ class VertexAIClient(LLMClient):
         with the 'ChatBison' Vertex AI LLM.
         """
 
-        def __init__(
-            self, model, api_key, parameters: VertexAIParameters, **kwargs
-        ):
+        def __init__(self, model, api_key, parameters: VertexAIParameters, **kwargs):
             super().__init__(
                 model=model,
                 api_key=api_key,
@@ -138,9 +132,7 @@ class VertexAIClient(LLMClient):
         with the 'ChatBison' Vertex AI LLM.
         """
 
-        def __init__(
-            self, model, api_key, parameters: VertexAIParameters, **kwargs
-        ):
+        def __init__(self, model, api_key, parameters: VertexAIParameters, **kwargs):
             super().__init__(
                 model=model,
                 api_key=api_key,

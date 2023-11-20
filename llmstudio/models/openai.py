@@ -86,9 +86,7 @@ class OpenAIClient(LLMClient):
         'GPT-3.5-turbo' OpenAI LLM.
         """
 
-        def __init__(
-            self, model, api_key, parameters: OpenAIParameters, **kwargs
-        ):
+        def __init__(self, model, api_key, parameters: OpenAIParameters, **kwargs):
             super().__init__(
                 model=model,
                 api_key=api_key,
@@ -103,9 +101,7 @@ class OpenAIClient(LLMClient):
         with the 'GPT-4' OpenAI LLM.
         """
 
-        def __init__(
-            self, model, api_key, parameters: OpenAIParameters, **kwargs
-        ):
+        def __init__(self, model, api_key, parameters: OpenAIParameters, **kwargs):
             super().__init__(
                 model=model,
                 api_key=api_key,

@@ -40,9 +40,7 @@ class AnthropicClient(LLMClient):
             return AnthropicParameters(**parameters).model_dump()
 
     class Claude2(AnthropicModel):
-        def __init__(
-            self, model, api_key, parameters: AnthropicParameters, **kwargs
-        ):
+        def __init__(self, model, api_key, parameters: AnthropicParameters, **kwargs):
             super().__init__(
                 model=model,
                 api_key=api_key,
@@ -50,9 +48,7 @@ class AnthropicClient(LLMClient):
             )
 
     class Claude1(AnthropicModel):
-        def __init__(
-            self, model, api_key, parameters: AnthropicParameters, **kwargs
-        ):
+        def __init__(self, model, api_key, parameters: AnthropicParameters, **kwargs):
             super().__init__(
                 model=model,
                 api_key=api_key,
@@ -60,9 +56,7 @@ class AnthropicClient(LLMClient):
             )
 
     class Claude1_2(AnthropicModel):
-        def __init__(
-            self, model, api_key, parameters: AnthropicParameters, **kwargs
-        ):
+        def __init__(self, model, api_key, parameters: AnthropicParameters, **kwargs):
             super().__init__(
                 model=model,
                 api_key=api_key,

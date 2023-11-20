@@ -1,13 +1,12 @@
 import asyncio
 import os
 import time
-import uuid
-from typing import Optional
+from typing import AsyncGenerator, Optional, Union
 
 import anthropic
 from anthropic import Anthropic
 from fastapi import HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field, ValidationError
 
 from llmstudio.engine.providers.provider import ChatRequest, Provider
@@ -29,7 +28,9 @@ class AnthropicProvider(Provider):
         super().__init__(config)
         self.API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
-    async def chat(self, request: AnthropicRequest):
+    async def chat(
+        self, request: AnthropicRequest
+    ) -> Union[StreamingResponse, JSONResponse]:
         """Chat with the Anthropic API"""
         try:
             request = AnthropicRequest(**request)
@@ -41,104 +42,52 @@ class AnthropicProvider(Provider):
                 client.completions.create,
                 model=request.model,
                 prompt=f"{anthropic.HUMAN_PROMPT} {request.chat_input} {anthropic.AI_PROMPT}",
-                stream=request.is_stream,
+                stream=True,
                 **request.parameters.model_dump(),
             )
 
+            response_handler = self.handle_response(request, response, start_time)
             if request.is_stream:
-                return StreamingResponse(
-                    self.generate_stream(response, request, start_time)
-                )
+                return StreamingResponse(response_handler)
             else:
-                return self.generate_response(
-                    response, request, time.time() - start_time
-                )
+                return JSONResponse(content=await response_handler.__anext__())
+
         except ValidationError as e:
-            errors = e.errors()
-            raise HTTPException(status_code=422, detail=errors)
+            raise HTTPException(status_code=422, detail=e.errors())
         except anthropic._exceptions.APIError as e:
-            raise HTTPException(
-                status_code=e.status_code, detail=e.response.json()
-            )
+            raise HTTPException(status_code=e.status_code, detail=e.response.json())
 
-    def generate_response(
-        self, response: dict, request: AnthropicRequest, latency: float
-    ):
-        """Generates a response from the Anthropic API"""
-        input_tokens, input_cost = self.calculate_tokens_and_cost(
-            request.chat_input, request.model, "input"
-        )
-        output_tokens, output_cost = self.calculate_tokens_and_cost(
-            response.completion, request.model, "output"
-        )
-
-        return {
-            "id": uuid.uuid4(),
-            "chatInput": request.chat_input,
-            "chatOutput": response.completion,
-            "inputTokens": input_tokens,
-            "outputTokens": output_tokens,
-            "totalTokens": input_tokens + output_tokens,
-            "cost": input_cost + output_cost,
-            "timestamp": time.time(),
-            "model": request.model,
-            "parameters": request.parameters.model_dump(),
-            "latency": latency,
-        }
-
-    def generate_stream(
-        self, response: dict, request: AnthropicRequest, start_time: float
-    ):
-        """Generates a stream of responses from the Anthropic API"""
+    async def handle_response(
+        self, request: AnthropicRequest, response: AsyncGenerator, start_time: float
+    ) -> AsyncGenerator[str, None]:
+        """Handles the response from the Anthropic API"""
         chat_output = ""
         first_token_time = None
         previous_token_time = None
         token_times = []
+        token_count = 0
 
         for chunk in response:
-            current_time = time.time()
-            if first_token_time is None:
-                first_token_time = current_time
-            if previous_token_time is not None:
-                token_times.append(current_time - previous_token_time)
-            previous_token_time = current_time
-
             if chunk.stop_reason != "stop_sequence":
-                chunk_content = chunk.completion
-                chat_output += chunk_content
-                yield chunk_content
-            else:
-                if request.has_end_token:
-                    input_tokens, input_cost = self.calculate_tokens_and_cost(
-                        request.chat_input, request.model, "input"
-                    )
-                    (
-                        output_tokens,
-                        output_cost,
-                    ) = self.calculate_tokens_and_cost(
-                        chat_output, request.model, "output"
-                    )
-                    total_time = current_time - start_time
-                    ttft = first_token_time - start_time
-                    inter_token_latency = (
-                        sum(token_times) / len(token_times)
-                        if token_times
-                        else 0
-                    )
-                    tokens_per_second = (
-                        output_tokens / total_time if total_time > 0 else 0
-                    )
+                token_count += 1
+                current_time = time.time()
+                first_token_time = first_token_time or current_time
+                if previous_token_time is not None:
+                    token_times.append(current_time - previous_token_time)
+                previous_token_time = current_time
 
-                    yield f"{self.END_TOKEN},input_tokens={input_tokens},output_tokens={output_tokens},cost={input_cost + output_cost},latency={total_time:.5f},time_to_first_token={ttft:.5f},inter_token_latency={inter_token_latency:.5f},tokens_per_second={tokens_per_second:.2f}"
+                chat_output += chunk.completion
+                if request.is_stream:
+                    yield chunk.completion
 
-    def calculate_tokens_and_cost(self, input: str, model: str, type: str):
-        """Returns the number of tokens and the cost of the input/output string"""
-        model_config = self.config.models[model]
-        tokens = Anthropic().count_tokens(input)
+        usage = self.calculate_usage(request.chat_input, chat_output, request.model)
 
-        token_cost = (
-            model_config.input_token_cost
-            if type == "input"
-            else model_config.output_token_cost
+        metrics = self.calculate_metrics(
+            start_time, time.time(), first_token_time, token_times, token_count
         )
-        return tokens, token_cost * tokens
+
+        if request.is_stream and request.has_end_token:
+            yield self.get_end_token_string(usage, metrics)
+
+        if not request.is_stream:
+            yield self.generate_response(request, chat_output, usage, metrics)
