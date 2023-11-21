@@ -55,7 +55,7 @@ class CohereProvider(Provider):
 
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
-        except (cohere.CohereAPIError, cohere.CohereAPIError) as e:
+        except cohere.CohereAPIError as e:
             raise HTTPException(status_code=e.http_status, detail=str(e))
 
     async def handle_response(

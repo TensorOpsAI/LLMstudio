@@ -21,13 +21,18 @@ export const models = [
     cost: "Complex intent, cause and effect, creative generation, search, summarization for audience",
   },
   {
+    id: "claude-2.1",
+    name: "claude-2.1",
+    type: "Anthropic",
+  },
+  {
     id: "claude-2",
     name: "claude-2",
     type: "Anthropic",
   },
   {
     id: "claude-instant-1",
-    name:"claude-instant-1",
+    name: "claude-instant-1",
     type: "Anthropic",
   },
   {
@@ -111,6 +116,11 @@ export const credentials = {
     needsRegion: false,
   },
   "gpt-4": {
+    needsKey: true,
+    needsSecret: false,
+    needsRegion: false,
+  },
+  "claude-2.1": {
     needsKey: true,
     needsSecret: false,
     needsRegion: false,
@@ -234,7 +244,7 @@ export const parameters = {
     {
       id: "temperature",
       name: "Temperature",
-      models: ["claude-2", "claude-instant-1", "claude-instant-1.2"],
+      models: ["claude-2.1", "claude-2", "claude-instant-1", "claude-instant-1.2"],
       defaultValue: 1,
       min: 0,
       max: 1,
@@ -245,7 +255,7 @@ export const parameters = {
     {
       id: "maxTokens",
       name: "Maximum length",
-      models: ["claude-2", "claude-instant-1", "claude-instant-1.2"],
+      models: ["claude-2.1", "claude-2", "claude-instant-1", "claude-instant-1.2"],
       defaultValue: 300,
       min: 1,
       max: 2048,
@@ -256,7 +266,7 @@ export const parameters = {
     {
       id: "topP",
       name: "Top P",
-      models: ["claude-2", "claude-instant-1", "claude-instant-1.2"],
+      models: ["claude-2.1", "claude-2", "claude-instant-1", "claude-instant-1.2"],
       defaultValue: 0.9,
       min: 0,
       max: 1,
@@ -267,7 +277,7 @@ export const parameters = {
     {
       id: "topK",
       name: "Top K",
-      models: ["claude-2", "claude-instant-1", "claude-instant-1.2"],
+      models: ["claude-2.1", "claude-2", "claude-instant-1", "claude-instant-1.2"],
       defaultValue: 250,
       min: 1,
       max: 500,

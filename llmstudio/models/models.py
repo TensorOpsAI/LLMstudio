@@ -153,7 +153,6 @@ class LLMModel(ABC):
         is_stream: bool = False,
         timeout_s: int = 120,
     ):
-
         timeout = ClientTimeout(total=timeout_s)
 
         async with ClientSession(timeout=timeout) as session:

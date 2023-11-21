@@ -116,21 +116,26 @@ providers:
     keys:
       - ANTHROPIC_API_KEY
     models:
-      claude-instant-1:
+      claude-2.1:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.000008
+        output_token_cost: 0.000024
+      claude-2:
         mode: chat
         max_tokens: 100000
-        input_token_cost: 0.00000163
-        output_token_cost: 0.00000551
+        input_token_cost: 0.000008
+        output_token_cost: 0.000024
       claude-instant-1.2:
         mode: chat
         max_tokens: 100000
         input_token_cost: 0.00000163
         output_token_cost: 0.00000551
-      claude-2:
+      claude-instant-1:
         mode: chat
         max_tokens: 100000
-        input_token_cost: 0.00001102
-        output_token_cost: 0.00003268
+        input_token_cost: 0.00000163
+        output_token_cost: 0.00000551
     parameters:
         temperature:
           name: "Temperature"

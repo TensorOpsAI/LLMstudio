@@ -3,11 +3,11 @@ from .models import LLMClient, LLMModel
 
 
 class AnthropicClient(LLMClient):
-
     MODEL_MAPPING = {
+        "claude-2.1": "Claude2",
         "claude-2": "Claude2",
         "claude-instant-1": "Claude1",
-        "claude-instant-1.2": "Claude1_2",
+        "claude-instant-1.2": "Claude1",
     }
 
     def __init__(
@@ -48,14 +48,6 @@ class AnthropicClient(LLMClient):
             )
 
     class Claude1(AnthropicModel):
-        def __init__(self, model, api_key, parameters: AnthropicParameters, **kwargs):
-            super().__init__(
-                model=model,
-                api_key=api_key,
-                parameters=parameters,
-            )
-
-    class Claude1_2(AnthropicModel):
         def __init__(self, model, api_key, parameters: AnthropicParameters, **kwargs):
             super().__init__(
                 model=model,
