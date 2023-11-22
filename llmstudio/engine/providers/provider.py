@@ -1,6 +1,15 @@
 import time
 import uuid
-from typing import Any, AsyncGenerator, Dict, Optional, Tuple, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Coroutine,
+    Dict,
+    Generator,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import tiktoken
 from anthropic import Anthropic
@@ -27,14 +36,28 @@ class Provider:
         self.tokenizer: Tokenizer = self._get_tokenizer()
 
     async def chat(
-        self, chat_request: ChatRequest
+        self, request: ChatRequest
     ) -> Union[StreamingResponse, JSONResponse]:
         """Makes a chat connection with the provider's API"""
-        if chat_request.model not in self.config.models:
+        if request.model not in self.config.models:
             raise HTTPException(
                 status_code=400,
-                detail=f"Model {chat_request.model} is not supported by {self.config.name}",
+                detail=f"Model {request.model} is not supported by {self.config.name}",
             )
+
+        start_time = time.time()
+        response = await self.generate_client(request)
+
+        response_handler = self.handle_response(request, response, start_time)
+        if request.is_stream:
+            return StreamingResponse(response_handler)
+        else:
+            return JSONResponse(content=await response_handler.__anext__())
+
+    async def generate_client(
+        self, request: ChatRequest
+    ) -> Coroutine[Any, Any, Generator]:
+        """Generate the provider's client"""
 
     async def handle_response(
         self, request: ChatRequest, response: AsyncGenerator, start_time: float

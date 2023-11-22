@@ -12,8 +12,8 @@ export const models = [
     cost: "Complex intent, cause and effect, creative generation, search, summarization for audience",
   },
   {
-    id: "gpt-4",
-    name: "gpt-4",
+    id: "gpt-4-1106-preview",
+    name: "gpt-4-1106-preview",
     description: "Very capable, but faster and lower cost than Davinci.",
     type: "OpenAI",
     strengths:
@@ -115,7 +115,7 @@ export const credentials = {
     needsSecret: false,
     needsRegion: false,
   },
-  "gpt-4": {
+  "gpt-4-1106-preview": {
     needsKey: true,
     needsSecret: false,
     needsRegion: false,
@@ -187,7 +187,7 @@ export const parameters = {
     {
       id: "temperature",
       name: "Temperature",
-      models: ["gpt-3.5-turbo", "gpt-4"],
+      models: ["gpt-3.5-turbo", "gpt-4-1106-preview"],
       defaultValue: 1,
       min: 0,
       max: 2,
@@ -198,7 +198,7 @@ export const parameters = {
     {
       id: "maxTokens",
       name: "Maximum length",
-      models: ["gpt-3.5-turbo", "gpt-4"],
+      models: ["gpt-3.5-turbo", "gpt-4-1106-preview"],
       defaultValue: 256,
       min: 1,
       max: 2048,
@@ -209,7 +209,7 @@ export const parameters = {
     {
       id: "topP",
       name: "Top P",
-      models: ["gpt-3.5-turbo", "gpt-4"],
+      models: ["gpt-3.5-turbo", "gpt-4-1106-preview"],
       defaultValue: 1,
       min: 0,
       max: 1,
@@ -220,7 +220,7 @@ export const parameters = {
     {
       id: "frequencyPenalty",
       name: "Frequency Penalty",
-      models: ["gpt-3.5-turbo", "gpt-4"],
+      models: ["gpt-3.5-turbo", "gpt-4-1106-preview"],
       defaultValue: 0,
       min: 0,
       max: 1,
@@ -231,7 +231,7 @@ export const parameters = {
     {
       id: "presencePenalty",
       name: "Presence Penalty",
-      models: ["gpt-3.5-turbo", "gpt-4"],
+      models: ["gpt-3.5-turbo", "gpt-4-1106-preview"],
       defaultValue: 0,
       min: 0,
       max: 1,

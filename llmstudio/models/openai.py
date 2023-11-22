@@ -15,7 +15,11 @@ class OpenAIClient(LLMClient):
         MODEL_MAPPING (dict): A dictionary mapping model names to corresponding class names.
     """
 
-    MODEL_MAPPING = {"gpt-3.5-turbo": "GPT3_5", "gpt-4": "GPT4"}
+    MODEL_MAPPING = {
+        "gpt-3.5-turbo": "GPT3_5",
+        "gpt-4": "GPT4",
+        "gpt-4-1106-preview": "GPT4",
+    }
 
     def __init__(
         self,

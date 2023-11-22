@@ -16,7 +16,8 @@ def main():
 
 
 @main.command()
-def server():
+@click.option("--ui", is_flag=True, help="Start the UI server.")
+def server(ui):
     import os
 
     def handle_shutdown(signum, frame):
@@ -27,14 +28,18 @@ def server():
     signal.signal(signal.SIGINT, handle_shutdown)
 
     # Start the engine and UI in separate threads
-    ui_thread = Thread(target=run_ui_app)
+    if ui:
+        ui_thread = Thread(target=run_ui_app)
     engine_thread = Thread(target=run_engine_app)
 
-    ui_thread.daemon = True
+    if ui:
+        ui_thread.daemon = True
     engine_thread.daemon = True
 
-    ui_thread.start()
+    if ui:
+        ui_thread.start()
     engine_thread.start()
 
-    ui_thread.join()
+    if ui:
+        ui_thread.join()
     engine_thread.join()

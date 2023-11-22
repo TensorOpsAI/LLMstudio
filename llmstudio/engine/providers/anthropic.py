@@ -1,7 +1,7 @@
 import asyncio
 import os
 import time
-from typing import AsyncGenerator, Optional, Union
+from typing import Any, AsyncGenerator, Coroutine, Generator, Optional, Union
 
 import anthropic
 from anthropic import Anthropic
@@ -34,26 +34,23 @@ class AnthropicProvider(Provider):
         """Chat with the Anthropic API"""
         try:
             request = AnthropicRequest(**request)
-            await super().chat(request)
-            client = Anthropic(api_key=request.api_key or self.API_KEY)
+            return await super().chat(request)
+        except ValidationError as e:
+            raise HTTPException(status_code=422, detail=e.errors())
 
-            start_time = time.time()
-            response = await asyncio.to_thread(
+    async def generate_client(
+        self, request: AnthropicRequest
+    ) -> Coroutine[Any, Any, Generator]:
+        """Generate an Anthropic client"""
+        try:
+            client = Anthropic(api_key=request.api_key or self.API_KEY)
+            return await asyncio.to_thread(
                 client.completions.create,
                 model=request.model,
                 prompt=f"{anthropic.HUMAN_PROMPT} {request.chat_input} {anthropic.AI_PROMPT}",
                 stream=True,
                 **request.parameters.model_dump(),
             )
-
-            response_handler = self.handle_response(request, response, start_time)
-            if request.is_stream:
-                return StreamingResponse(response_handler)
-            else:
-                return JSONResponse(content=await response_handler.__anext__())
-
-        except ValidationError as e:
-            raise HTTPException(status_code=422, detail=e.errors())
         except anthropic._exceptions.APIError as e:
             raise HTTPException(status_code=e.status_code, detail=e.response.json())
 

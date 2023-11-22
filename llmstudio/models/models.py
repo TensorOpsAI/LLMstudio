@@ -133,7 +133,6 @@ class LLMModel(ABC):
                 "parameters": parameters,
                 "is_stream": is_stream,
                 "safety_margin": safety_margin,
-                "has_end_token": True,
                 "custom_max_token": custom_max_tokens,
             },
             stream=is_stream,
@@ -382,26 +381,22 @@ class LLMCompare(ABC):
 
         for prompt in prompt_list:
             model_response = model.chat(
-                prompt, is_stream=True
+                prompt
             )  # assuming the chat method is asynchronous
 
-            chat_output = ""
-            for chunk in model_response:
-                if not chunk.startswith("<END_TOKEN>"):
-                    chat_output += chunk
-
-            parsed_chunk = {
-                k: float(v) if "." in v else int(v)
-                for k, v in (p.split("=") for p in chunk.split(",") if "=" in p)
-            }
-
-            chat_output_list.append(chat_output)
-            latency_list.append(parsed_chunk["latency"])
-            cost_list.append(parsed_chunk["cost"])
-            out_tokens_list.append(parsed_chunk["output_tokens"])
-            time_to_first_token_list.append(parsed_chunk["time_to_first_token"])
-            inter_token_latency_list.append(parsed_chunk["inter_token_latency"])
-            tokens_per_second_list.append(parsed_chunk["tokens_per_second"])
+            chat_output_list.append(model_response["chat_output"])
+            latency_list.append(model_response["metrics"]["latency"])
+            cost_list.append(model_response["usage"]["cost"])
+            out_tokens_list.append(model_response["usage"]["output_tokens"])
+            time_to_first_token_list.append(
+                model_response["metrics"]["time_to_first_token"]
+            )
+            inter_token_latency_list.append(
+                model_response["metrics"]["inter_token_latency"]
+            )
+            tokens_per_second_list.append(
+                model_response["metrics"]["tokens_per_second"]
+            )
 
         # now compute some metrics
         average_latency = mean(latency_list)

@@ -72,6 +72,23 @@ export const columns = [
     },
   },
   {
+    accessorKey: "model",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Model" />
+    ),
+    cell: ({ row }) => {
+      const label = labels.find((label) => label.value === row.original.label);
+      return (
+        <div className="flex space-x-2">
+          {label && <Badge variant="outline">{label.label}</Badge>}
+          <span className="max-w-[500px] truncate font-medium">
+            {row.getValue("model")}
+          </span>
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: "inputTokens",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Input Tokens" />
@@ -202,23 +219,6 @@ export const columns = [
           {label && <Badge variant="outline">{label.label}</Badge>}
           <span className="max-w-[500px] truncate font-medium">
             {row.getValue("timestamp").toLocaleString()}
-          </span>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "model",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Model" />
-    ),
-    cell: ({ row }) => {
-      const label = labels.find((label) => label.value === row.original.label);
-      return (
-        <div className="flex space-x-2">
-          {label && <Badge variant="outline">{label.label}</Badge>}
-          <span className="max-w-[500px] truncate font-medium">
-            {row.getValue("model")}
           </span>
         </div>
       );

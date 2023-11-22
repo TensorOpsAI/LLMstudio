@@ -5,7 +5,7 @@ export const usePlaygroundStore = create((set) => ({
   executions: [],
   chatInput: "",
   chatOutput: "",
-  model: "gpt-3.5-turbo",
+  model: "claude-2.1",
   apiKey: "",
   apiSecret: "",
   apiRegion: "",
