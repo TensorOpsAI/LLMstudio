@@ -1,0 +1,31 @@
+{
+  "files": {
+    "main.css": "/static/css/main.8b29a511.css",
+    "main.js": "/static/js/main.10e9dd50.js",
+    "static/js/649.210c95ca.chunk.js": "/static/js/649.210c95ca.chunk.js",
+    "static/js/766.7f7ca9a6.chunk.js": "/static/js/766.7f7ca9a6.chunk.js",
+    "static/js/283.fd6f10e1.chunk.js": "/static/js/283.fd6f10e1.chunk.js",
+    "static/js/628.ee0363fc.chunk.js": "/static/js/628.ee0363fc.chunk.js",
+    "static/js/529.5fb61c1b.chunk.js": "/static/js/529.5fb61c1b.chunk.js",
+    "static/js/282.f2489b77.chunk.js": "/static/js/282.f2489b77.chunk.js",
+    "static/js/992.02e4aebc.chunk.js": "/static/js/992.02e4aebc.chunk.js",
+    "static/js/514.5ab4d6dd.chunk.js": "/static/js/514.5ab4d6dd.chunk.js",
+    "static/js/480.baaa043e.chunk.js": "/static/js/480.baaa043e.chunk.js",
+    "static/js/828.6d81b7aa.chunk.js": "/static/js/828.6d81b7aa.chunk.js",
+    "static/js/535.cb102ef1.chunk.js": "/static/js/535.cb102ef1.chunk.js",
+    "static/media/VioletSans-Regular.woff": "/static/media/VioletSans-Regular.425614770e8617faebdd.woff",
+    "static/media/Satoshi-Medium.woff": "/static/media/Satoshi-Medium.2419b46c96ed15331ba2.woff",
+    "static/media/Satoshi-Regular.woff": "/static/media/Satoshi-Regular.ca3da5fd2b609836ef69.woff",
+    "static/media/Satoshi-Bold.woff": "/static/media/Satoshi-Bold.a875ff682ee232938607.woff",
+    "static/media/Satoshi-Black.woff": "/static/media/Satoshi-Black.4261d202e1e9410db1bf.woff",
+    "static/media/Satoshi-Light.woff": "/static/media/Satoshi-Light.67e7fa77f107df3491b6.woff",
+    "index.html": "/index.html",
+    "main.8b29a511.css.map": "/static/css/main.8b29a511.css.map",
+    "main.10e9dd50.js.map": "/static/js/main.10e9dd50.js.map",
+    "766.7f7ca9a6.chunk.js.map": "/static/js/766.7f7ca9a6.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.8b29a511.css",
+    "static/js/main.10e9dd50.js"
+  ]
+}
