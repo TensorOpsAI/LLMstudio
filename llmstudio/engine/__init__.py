@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -7,6 +8,7 @@ import uvicorn
 import yaml
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ValidationError
 
 from llmstudio.engine.providers import *
@@ -34,7 +36,7 @@ class ModelConfig(BaseModel):
 
 
 class ProviderConfig(BaseModel):
-    provider: str
+    id: str
     name: str
     chat: bool
     embed: bool
@@ -89,21 +91,18 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
 
     @app.get(f"{ENGINE_BASE_ENDPOINT}/models")
     def get_models(provider: Optional[str] = None):
-        """Return all models supported, filter by provider if given."""
-        if provider:
-            provider_config = config.providers.get(provider)
-            if provider_config and provider_config.models:
-                return list(provider_config.models.keys())
-            else:
-                return (
-                    []
-                )  # or raise an HTTPException if the provider does not exist or has no models
-        else:
-            all_models = []
-            for provider_config in config.providers.values():
-                if provider_config.models:
-                    all_models.extend(provider_config.models.keys())
-            return list(set(all_models))  # Use set to avoid duplicates if any
+        """Return all models supported with the provider as a key."""
+        all_models = {}
+        for provider_name, provider_config in config.providers.items():
+            if provider and provider_name != provider:
+                continue
+            if provider_config.models:
+                all_models[provider_name] = {}
+                all_models[provider_name]["name"] = provider_config.name
+                all_models[provider_name]["models"] = list(
+                    provider_config.models.keys()
+                )
+        return all_models[provider] if provider else all_models
 
     # Function to create a chat handler for a provider
     def create_chat_handler(provider_config):
@@ -121,6 +120,32 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
             app.post(f"{ENGINE_BASE_ENDPOINT}/chat/{provider_name}")(
                 create_chat_handler(provider_config)
             )
+
+    @app.get("/logs")
+    def get_logs():
+        """Return the logs in JSONL format."""
+        logs_path = Path(os.path.join(os.path.dirname(__file__), "logs.jsonl"))
+        if logs_path.exists():
+            with open(logs_path, "r") as file:
+                logs = [json.loads(line) for line in file]
+            return logs
+
+    @app.post("/api/export")
+    async def export(request: Request):
+        data = await request.json()
+        csv_content = ""
+
+        if len(data) > 0:
+            csv_content += ";".join(data[0].keys()) + "\n"
+            for execution in data:
+                csv_content += (
+                    ";".join([json.dumps(value) for value in execution.values()]) + "\n"
+                )
+
+        headers = {"Content-Disposition": "attachment; filename=parameters.csv"}
+        return StreamingResponse(
+            iter([csv_content]), media_type="text/csv", headers=headers
+        )
 
     return app
 

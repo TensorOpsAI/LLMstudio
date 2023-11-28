@@ -1,5 +1,8 @@
+import json
+import os
 import time
 import uuid
+from pathlib import Path
 from typing import (
     Any,
     AsyncGenerator,
@@ -15,7 +18,7 @@ import tiktoken
 from anthropic import Anthropic
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from tokenizers import Tokenizer
 
 
@@ -39,6 +42,11 @@ class Provider:
         self, request: ChatRequest
     ) -> Union[StreamingResponse, JSONResponse]:
         """Makes a chat connection with the provider's API"""
+        try:
+            request = self.validate_request(request)
+        except ValidationError as e:
+            raise HTTPException(status_code=422, detail=e.errors())
+
         if request.model not in self.config.models:
             raise HTTPException(
                 status_code=400,
@@ -53,6 +61,9 @@ class Provider:
             return StreamingResponse(response_handler)
         else:
             return JSONResponse(content=await response_handler.__anext__())
+
+    def validate_request(self, request: ChatRequest):
+        pass
 
     async def generate_client(
         self, request: ChatRequest
@@ -77,6 +88,7 @@ class Provider:
             "chat_input": request.chat_input,
             "chat_output": chat_output,
             "timestamp": time.time(),
+            "provider": self.config.id,
             "model": request.model,
             "usage": usage,
             "metrics": metrics,
@@ -125,4 +137,13 @@ class Provider:
         return {
             "anthropic": Anthropic().get_tokenizer(),
             "cohere": Tokenizer.from_pretrained("Cohere/command-nightly"),
-        }.get(self.config.provider, tiktoken.get_encoding("cl100k_base"))
+        }.get(self.config.id, tiktoken.get_encoding("cl100k_base"))
+
+    def save_log(self, response: Dict[str, Any]):
+        file_name = Path(os.path.join(os.path.dirname(__file__), "..", "logs.jsonl"))
+        if not os.path.exists(file_name):
+            with open(file_name, "w") as f:
+                pass
+
+        with open(file_name, "a") as f:
+            f.write(json.dumps(response) + "\n")

@@ -1,13 +1,12 @@
 import asyncio
 import os
 import time
-from typing import Any, AsyncGenerator, Coroutine, Generator, Optional, Union
+from typing import Any, AsyncGenerator, Coroutine, Generator, Optional
 
 import anthropic
 from anthropic import Anthropic
 from fastapi import HTTPException
-from fastapi.responses import JSONResponse, StreamingResponse
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 
 from llmstudio.engine.providers.provider import ChatRequest, Provider
 
@@ -28,15 +27,8 @@ class AnthropicProvider(Provider):
         super().__init__(config)
         self.API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
-    async def chat(
-        self, request: AnthropicRequest
-    ) -> Union[StreamingResponse, JSONResponse]:
-        """Chat with the Anthropic API"""
-        try:
-            request = AnthropicRequest(**request)
-            return await super().chat(request)
-        except ValidationError as e:
-            raise HTTPException(status_code=422, detail=e.errors())
+    def validate_request(self, request: AnthropicRequest):
+        return AnthropicRequest(**request)
 
     async def generate_client(
         self, request: AnthropicRequest
@@ -86,5 +78,9 @@ class AnthropicProvider(Provider):
         if request.is_stream and request.has_end_token:
             yield self.get_end_token_string(usage, metrics)
 
+        response = self.generate_response(request, chat_output, usage, metrics)
+
+        self.save_log(response)
+
         if not request.is_stream:
-            yield self.generate_response(request, chat_output, usage, metrics)
+            yield response

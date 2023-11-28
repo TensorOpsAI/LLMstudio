@@ -1,13 +1,12 @@
 import asyncio
 import os
 import time
-from typing import Any, AsyncGenerator, Coroutine, Generator, Optional, Union
+from typing import Any, AsyncGenerator, Coroutine, Generator, Optional
 
 import openai
 from fastapi import HTTPException
-from fastapi.responses import JSONResponse, StreamingResponse
 from openai import OpenAI
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 
 from llmstudio.engine.providers.provider import ChatRequest, Provider
 
@@ -29,15 +28,8 @@ class OpenAIProvider(Provider):
         super().__init__(config)
         self.API_KEY = os.getenv("OPENAI_API_KEY")
 
-    async def chat(
-        self, request: OpenAIRequest
-    ) -> Union[StreamingResponse, JSONResponse]:
-        """Chat with the OpenAI API"""
-        try:
-            request = OpenAIRequest(**request)
-            return await super().chat(request)
-        except ValidationError as e:
-            raise HTTPException(status_code=422, detail=e.errors())
+    def validate_request(self, request: OpenAIRequest):
+        return OpenAIRequest(**request)
 
     async def generate_client(
         self, request: OpenAIRequest
@@ -87,5 +79,9 @@ class OpenAIProvider(Provider):
         if request.is_stream and request.has_end_token:
             yield self.get_end_token_string(usage, metrics)
 
+        response = self.generate_response(request, chat_output, usage, metrics)
+
+        self.save_log(response)
+
         if not request.is_stream:
-            yield self.generate_response(request, chat_output, usage, metrics)
+            yield response
