@@ -108,7 +108,7 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
     def create_chat_handler(provider_config):
         async def chat_handler(request: Request):
             """Endpoint for chat functionality."""
-            provider_class = globals()[f"{provider_config.name}Provider"]
+            provider_class = provider_registry.get(f"{provider_config.name}Provider")
             provider_instance = provider_class(provider_config)
             return await provider_instance.chat(await request.json())
 

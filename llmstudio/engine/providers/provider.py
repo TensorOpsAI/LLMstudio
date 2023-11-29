@@ -21,6 +21,14 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, ValidationError
 from tokenizers import Tokenizer
 
+provider_registry = {}
+
+
+def provider(cls):
+    """Decorator to register a new provider."""
+    provider_registry[cls.__name__] = cls
+    return cls
+
 
 class ChatRequest(BaseModel):
     api_key: Optional[str] = None

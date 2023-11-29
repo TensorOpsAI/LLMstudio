@@ -8,7 +8,7 @@ from fastapi import HTTPException
 from openai import OpenAI
 from pydantic import BaseModel, Field
 
-from llmstudio.engine.providers.provider import ChatRequest, Provider
+from llmstudio.engine.providers.provider import ChatRequest, Provider, provider
 
 
 class OpenAIParameters(BaseModel):
@@ -23,6 +23,7 @@ class OpenAIRequest(ChatRequest):
     parameters: Optional[OpenAIParameters] = OpenAIParameters()
 
 
+@provider
 class OpenAIProvider(Provider):
     def __init__(self, config):
         super().__init__(config)

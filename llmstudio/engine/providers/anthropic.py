@@ -8,7 +8,7 @@ from anthropic import Anthropic
 from fastapi import HTTPException
 from pydantic import BaseModel, Field
 
-from llmstudio.engine.providers.provider import ChatRequest, Provider
+from llmstudio.engine.providers.provider import ChatRequest, Provider, provider
 
 
 class ClaudeParameters(BaseModel):
@@ -22,6 +22,7 @@ class AnthropicRequest(ChatRequest):
     parameters: Optional[ClaudeParameters] = ClaudeParameters()
 
 
+@provider
 class AnthropicProvider(Provider):
     def __init__(self, config):
         super().__init__(config)
