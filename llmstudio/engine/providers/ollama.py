@@ -1,9 +1,9 @@
 import asyncio
-import requests
 import json
 import time
 from typing import Any, AsyncGenerator, Coroutine, Generator, Optional
 
+import requests
 from fastapi import HTTPException
 from pydantic import BaseModel, Field
 
