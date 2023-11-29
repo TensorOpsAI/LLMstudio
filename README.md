@@ -7,7 +7,6 @@ Prompt Engineering at your fingertips
 > [!IMPORTANT]
 > LLMstudio is now supporting OpenAI v1.0 + just added support to Anthropic
 
-
 ## 🌟 Features
 
 ![LLMstudio UI](https://imgur.com/zBnhtTN.png)
@@ -16,21 +15,18 @@ Prompt Engineering at your fingertips
     - Access models from known providers such as OpenAI, VertexAI and Bedrock. All in one platform.
     - Speed up development with tracking and robustness features from LLMstudio.
     - Continue using popular libraries like LangChain through their LLMstudio-wrapped versions.
-3.  **Prompt Editing UI**:
-    - An intuitive interface designed for prompt engineering. 
+2.  **Prompt Editing UI**:
+    - An intuitive interface designed for prompt engineering.
     - Quickly iterate between prompts until you reach your desired results.
     - Access the history of your previous prompts and their results.
-5.  **History Management**:
+3.  **History Management**:
     - Track past runs, available for both on the UI and the Client.
     - Log the cost, latency and output of each prompt.
     - Export the history to a CSV.
-6.  **Context Limit Adaptability**:
+4.  **Context Limit Adaptability**:
     - Automatic switch to a larger-context fallback model if the current model's context limit is exceeded.
-    - Always use the lowest context model and only use the higher context ones when necessary to save costs. 
+    - Always use the lowest context model and only use the higher context ones when necessary to save costs.
     - For instance, exceeding 4k tokens in gpt-3.5-turbo triggers a switch to gpt-3.5-turbo-16k.
-  
-
-
 
 ### 👀 Coming soon:
 
@@ -40,7 +36,6 @@ Prompt Engineering at your fingertips
 - Projects and sessions. (Organize your History and API keys by project)
 - Resilience against service provider rate limits.
 - Organized tracking of groups of related prompts (Chains, Agents)
-
 
 ## 🚀 Quick Install
 
@@ -53,7 +48,7 @@ pip install LLMstudio
 Run the startup command
 
 ```
-LLMstudio server
+LLMstudio server --ui
 ```
 
 You can access the UI at http://localhost:3000 and send requests to the API at http://localhost:8000
