@@ -1,15 +1,269 @@
-routes:
-  - name: chat
-    route_type: chat
-    providers:
-      - provider: openai
-      - provider: vertexai
-      - provider: bedrock
-      - provider: anthropic
-
-  - name: validation
-    route_type: validation
-    providers:
-      - provider: openai
-      - provider: vertexai
-      - provider: anthropic
+providers:
+  anthropic:
+    id: anthropic
+    name: Anthropic
+    chat: true
+    embed: true
+    keys:
+      - ANTHROPIC_API_KEY
+    models:
+      claude-2.1:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.000008
+        output_token_cost: 0.000024
+      claude-2:
+        mode: chat
+        max_tokens: 100000
+        input_token_cost: 0.000008
+        output_token_cost: 0.000024
+      claude-instant-1.2:
+        mode: chat
+        max_tokens: 100000
+        input_token_cost: 0.00000163
+        output_token_cost: 0.00000551
+      claude-instant-1:
+        mode: chat
+        max_tokens: 100000
+        input_token_cost: 0.00000163
+        output_token_cost: 0.00000551
+    parameters:
+      temperature:
+        name: "Temperature"
+        type: float
+        default: 1
+        min: 0
+        max: 1
+        step: 0.01
+      max_tokens:
+        name: "Maximum tokens"
+        type: float
+        default: 256
+        min: 1
+        max: 4096
+        step: 0.01
+      top_p:
+        name: "Top P"
+        type: float
+        default: 1
+        min: 0
+        max: 1
+        step: 0.01
+      top_k:
+        name: "Top K"
+        type: float
+        default: 5
+        min: 0
+        max: 500
+        step: 1
+  ollama:
+    id: ollama
+    name: Ollama
+    chat: true
+    embed: true
+    keys:
+    models:
+      llama2:
+        mode: chat
+        max_tokens: 0
+        input_token_cost: 0
+        output_token_cost: 0
+    parameters:
+      temperature:
+        name: "Temperature"
+        type: float
+        default: 1
+        min: 0
+        max: 1
+        step: 0.01
+      max_tokens:
+        name: "Maximum tokens"
+        type: float
+        default: 256
+        min: 1
+        max: 4096
+        step: 0.01
+      top_p:
+        name: "Top P"
+        type: float
+        default: 1
+        min: 0
+        max: 1
+        step: 0.01
+      top_k:
+        name: "Top K"
+        type: float
+        default: 5
+        min: 0
+        max: 500
+        step: 1
+  openai:
+    id: openai
+    name: OpenAI
+    chat: true
+    embed: true
+    keys:
+      - OPENAI_API_KEY
+    models:
+      gpt-4-1106-preview:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0.00001
+        output_token_cost: 0.00003
+      gpt-4:
+        mode: chat
+        max_tokens: 8192
+        input_token_cost: 0.00003
+        output_token_cost: 0.00006
+      gpt-4-0314:
+        mode: chat
+        max_tokens: 8192
+        input_token_cost: 0.00003
+        output_token_cost: 0.00006
+      gpt-4-0613:
+        mode: chat
+        max_tokens: 8192
+        input_token_cost: 0.00003
+        output_token_cost: 0.00006
+      gpt-3.5-turbo:
+        mode: chat
+        max_tokens: 4097
+        input_token_cost: 0.0000015
+        output_token_cost: 0.000002
+      gpt-3.5-turbo-0301:
+        mode: chat
+        max_tokens: 4097
+        input_token_cost: 0.0000015
+        output_token_cost: 0.000002
+      gpt-3.5-turbo-0613:
+        mode: chat
+        max_tokens: 4097
+        input_token_cost: 0.0000015
+        output_token_cost: 0.000002
+      gpt-3.5-turbo-1106:
+        mode: chat
+        max_tokens: 16385
+        input_token_cost: 0.0000010
+        output_token_cost: 0.0000020
+      gpt-3.5-turbo-16k:
+        mode: chat
+        max_tokens: 16385
+        input_token_cost: 0.000003
+        output_token_cost: 0.000004
+      gpt-3.5-turbo-16k-0613:
+        mode: chat
+        max_tokens: 16385
+        input_token_cost: 0.000003
+        output_token_cost: 0.000004
+    parameters:
+      temperature:
+        name: "Temperature"
+        type: float
+        default: 1
+        min: 0
+        max: 2
+        step: 0.01
+      max_tokens:
+        name: "Maximum length"
+        type: int
+        default: 256
+        min: 1
+        max: 4096
+        step: 1
+      top_p:
+        name: "Top P"
+        type: float
+        default: 1
+        min: 0
+        max: 1
+        step: 0.01
+      frequency_penalty:
+        name: "Frequency Penalty"
+        type: float
+        default: 0
+        min: 0
+        max: 2
+        step: 0.01
+      presence_penalty:
+        name: "Presence Penalty"
+        type: float
+        default: 0
+        min: 0
+        max: 2
+        step: 0.01
+  cohere:
+    id: cohere
+    name: Cohere
+    chat: true
+    embed: true
+    keys:
+      - COHERE_API_KEY
+    models:
+      command-nightly:
+        mode: chat
+        max_tokens: 4096
+        input_token_cost: 0.000015
+        output_token_cost: 0.000015
+      command:
+        mode: chat
+        max_tokens: 4096
+        input_token_cost: 0.000015
+        output_token_cost: 0.000015
+      command-light:
+        mode: chat
+        max_tokens: 4096
+        input_token_cost: 0.000015
+        output_token_cost: 0.000015
+      command-medium-beta:
+        mode: chat
+        max_tokens: 4096
+        input_token_cost: 0.000015
+        output_token_cost: 0.000015
+      command-xlarge-beta:
+        mode: chat
+        max_tokens: 4096
+        input_token_cost: 0.000015
+        output_token_cost: 0.000015
+    parameters:
+      temperature:
+        name: "Temperature"
+        type: float
+        default: 0.75
+        min: 0
+        max: 5
+        step: 0.01
+      max_tokens:
+        name: "Maximum length"
+        type: int
+        default: 256
+        min: 1
+        max: 4096
+        step: 1
+      p:
+        name: "P"
+        type: float
+        default: 0
+        min: 0
+        max: 0.99
+        step: 0.01
+      k:
+        name: "K"
+        type: int
+        default: 0
+        min: 0
+        max: 500
+        step: 1
+      frequency_penalty:
+        name: "Frequency Penalty"
+        type: float
+        default: 0
+        min: 0
+        max: 10
+        step: 0.1
+      presence_penalty:
+        name: "Presence Penalty"
+        type: float
+        default: 0
+        min: 0
+        max: 1
+        step: 0.01

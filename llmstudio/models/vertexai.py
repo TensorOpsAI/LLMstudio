@@ -1,5 +1,3 @@
-from llmstudio.engine.config import EngineConfig
-
 from ..validators import VertexAIParameters
 from .models import LLMClient, LLMModel
 
@@ -27,7 +25,6 @@ class VertexAIClient(LLMClient):
         api_key: str = None,
         api_secret: str = None,
         api_region: str = None,
-        engine_config: EngineConfig = EngineConfig(),
     ):
         """
         Initialize the VertexAI Client instance.
@@ -39,7 +36,6 @@ class VertexAIClient(LLMClient):
             api_key=api_key,
             api_secret=api_secret,
             api_region=api_region,
-            engine_config=engine_config,
         )
 
     class VertexAIModel(LLMModel):
@@ -60,18 +56,17 @@ class VertexAIClient(LLMClient):
             self,
             model,
             api_key,
-            engine_config: EngineConfig,
             parameters: VertexAIParameters = None,
         ):
             super().__init__(
                 model,
                 api_key or self._raise_api_key_error(),
-                engine_config=engine_config,
                 parameters=parameters,
             )
-            self._check_api_access()
 
-        def validate_parameters(self, parameters: VertexAIParameters = None) -> VertexAIParameters:
+        def validate_parameters(
+            self, parameters: VertexAIParameters = None
+        ) -> VertexAIParameters:
             """
             Validate and possibly adjust the provided parameters for Vertex AI models.
 
@@ -92,18 +87,10 @@ class VertexAIClient(LLMClient):
         'TextBison' Vertex AI LLM.
         """
 
-        def __init__(
-            self,
-            model,
-            api_key,
-            engine_config: EngineConfig,
-            parameters: VertexAIParameters,
-            **kwargs
-        ):
+        def __init__(self, model, api_key, parameters: VertexAIParameters, **kwargs):
             super().__init__(
                 model=model,
                 api_key=api_key,
-                engine_config=engine_config,
                 parameters=parameters,
             )
 
@@ -115,18 +102,10 @@ class VertexAIClient(LLMClient):
         with the 'ChatBison' Vertex AI LLM.
         """
 
-        def __init__(
-            self,
-            model,
-            api_key,
-            engine_config: EngineConfig,
-            parameters: VertexAIParameters,
-            **kwargs
-        ):
+        def __init__(self, model, api_key, parameters: VertexAIParameters, **kwargs):
             super().__init__(
                 model=model,
                 api_key=api_key,
-                engine_config=engine_config,
                 parameters=parameters,
             )
 
@@ -138,18 +117,10 @@ class VertexAIClient(LLMClient):
         with the 'ChatBison' Vertex AI LLM.
         """
 
-        def __init__(
-            self,
-            model,
-            api_key,
-            engine_config: EngineConfig,
-            parameters: VertexAIParameters,
-            **kwargs
-        ):
+        def __init__(self, model, api_key, parameters: VertexAIParameters, **kwargs):
             super().__init__(
                 model=model,
                 api_key=api_key,
-                engine_config=engine_config,
                 parameters=parameters,
             )
 
@@ -161,17 +132,9 @@ class VertexAIClient(LLMClient):
         with the 'ChatBison' Vertex AI LLM.
         """
 
-        def __init__(
-            self,
-            model,
-            api_key,
-            engine_config: EngineConfig,
-            parameters: VertexAIParameters,
-            **kwargs
-        ):
+        def __init__(self, model, api_key, parameters: VertexAIParameters, **kwargs):
             super().__init__(
                 model=model,
                 api_key=api_key,
-                engine_config=engine_config,
                 parameters=parameters,
             )

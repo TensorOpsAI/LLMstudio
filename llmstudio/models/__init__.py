@@ -1,5 +1,6 @@
-from .anthropic import AnthropicClient
-from .bedrock import BedrockClient
-from .models import LLMClient, LLMCompare, LLMModel
-from .openai import OpenAIClient
-from .vertexai import VertexAIClient
+from llmstudio.models.anthropic import AnthropicClient
+from llmstudio.models.bedrock import BedrockClient
+from llmstudio.models.models import LLMClient, LLMCompare, LLMModel
+from llmstudio.models.ollama import OllamaClient
+from llmstudio.models.openai import OpenAIClient
+from llmstudio.models.vertexai import VertexAIClient

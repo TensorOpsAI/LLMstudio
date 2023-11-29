@@ -1,5 +1,5 @@
 name = "version"
-__version__ = "0.2.17"
+__version__ = "0.2.18"
 
 __requirements__ = [
     "pydantic",
@@ -14,9 +14,9 @@ __requirements__ = [
     "tiktoken",
     "google-auth",
     "google-cloud-aiplatform",
-    "awscli==1.29.21",
-    "boto3==1.28.21",
-    "botocore==1.31.21",
     "langchain",
     "anthropic>=0.3.0",
+    "python-dotenv",
+    "cohere",
+    "tokenizer",
 ]

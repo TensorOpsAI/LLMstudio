@@ -1,7 +1,5 @@
 import os
 
-from llmstudio.engine.config import EngineConfig
-
 from ..validators import OpenAIParameters
 from .models import LLMClient, LLMModel
 
@@ -17,14 +15,17 @@ class OpenAIClient(LLMClient):
         MODEL_MAPPING (dict): A dictionary mapping model names to corresponding class names.
     """
 
-    MODEL_MAPPING = {"gpt-3.5-turbo": "GPT3_5", "gpt-4": "GPT4"}
+    MODEL_MAPPING = {
+        "gpt-3.5-turbo": "GPT3_5",
+        "gpt-4": "GPT4",
+        "gpt-4-1106-preview": "GPT4",
+    }
 
     def __init__(
         self,
         api_key: str = None,
         api_secret: str = None,
         api_region: str = None,
-        engine_config: EngineConfig = EngineConfig(),
     ):
         """
         Initialize the OpenAIClient instance.
@@ -36,7 +37,6 @@ class OpenAIClient(LLMClient):
             api_key=api_key,
             api_secret=api_secret,
             api_region=api_region,
-            engine_config=engine_config,
         )
 
     class OpenAIModel(LLMModel):
@@ -57,18 +57,19 @@ class OpenAIClient(LLMClient):
             self,
             model: str,
             api_key: str,
-            engine_config: EngineConfig,
             parameters: OpenAIParameters = None,
         ):
             super().__init__(
                 model,
-                api_key or os.environ.get("OPENAI_API_KEY") or self._raise_api_key_error(),
-                engine_config=engine_config,
+                api_key
+                or os.environ.get("OPENAI_API_KEY")
+                or self._raise_api_key_error(),
                 parameters=parameters,
             )
-            self._check_api_access()
 
-        def validate_parameters(self, parameters: OpenAIParameters = None) -> OpenAIParameters:
+        def validate_parameters(
+            self, parameters: OpenAIParameters = None
+        ) -> OpenAIParameters:
             """
             Validate and possibly adjust the provided parameters for OpenAI models.
 
@@ -89,18 +90,10 @@ class OpenAIClient(LLMClient):
         'GPT-3.5-turbo' OpenAI LLM.
         """
 
-        def __init__(
-            self,
-            model,
-            api_key,
-            engine_config: EngineConfig,
-            parameters: OpenAIParameters,
-            **kwargs
-        ):
+        def __init__(self, model, api_key, parameters: OpenAIParameters, **kwargs):
             super().__init__(
                 model=model,
                 api_key=api_key,
-                engine_config=engine_config,
                 parameters=parameters,
             )
 
@@ -112,17 +105,9 @@ class OpenAIClient(LLMClient):
         with the 'GPT-4' OpenAI LLM.
         """
 
-        def __init__(
-            self,
-            model,
-            api_key,
-            engine_config: EngineConfig,
-            parameters: OpenAIParameters,
-            **kwargs
-        ):
+        def __init__(self, model, api_key, parameters: OpenAIParameters, **kwargs):
             super().__init__(
                 model=model,
                 api_key=api_key,
-                engine_config=engine_config,
                 parameters=parameters,
             )

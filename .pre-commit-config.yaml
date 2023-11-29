@@ -21,8 +21,6 @@ repos:
       - id: black
         files: llmstudio/
         exclude: ^llmstudio/ui/
-        args:
-          - "--line-length=99"
 
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
@@ -31,7 +29,6 @@ repos:
         files: llmstudio/
         exclude: ^llmstudio/ui/
         args:
-          - "--line-length=99"
           - "--profile=black"
 
   - repo: https://github.com/myint/autoflake
@@ -39,9 +36,9 @@ repos:
     hooks:
       - id: autoflake
         files: llmstudio/
-        exclude: ^llmstudio/ui/|__init__.py$
+        exclude:  ^llmstudio/ui/
         args:
-          - --remove-all-unused-imports
+          # - --remove-all-unused-imports
           - --recursive
           - --remove-unused-variables
           - --in-place
