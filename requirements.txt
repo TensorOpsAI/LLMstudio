@@ -12,3 +12,4 @@ google-auth
 google-cloud-aiplatform
 boto3
 langchain
+python-dotenv
