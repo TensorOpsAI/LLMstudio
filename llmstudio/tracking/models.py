@@ -1,7 +1,7 @@
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, JSON
 from sqlalchemy.orm import relationship
 
-from api.database_mgmt.database import Base
+from llmstudio.tracking.database import Base
 from sqlalchemy.sql import func
 
 

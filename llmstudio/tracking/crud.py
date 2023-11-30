@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from api.database_mgmt import models, schemas
+from llmstudio.tracking import models, schemas
 
 
 def get_project(db: Session, project_id: int):

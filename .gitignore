@@ -70,5 +70,6 @@ venv.bak/
 # Mac
 .DS_Store
 
-# Logs
+# Logs/tracking
 llmstudio/llm_engine/logs/execution_logs.jsonl
+*.db

@@ -1,30 +1,31 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional
 
 #BaseModels
 
 class ProjectBase(BaseModel):
     name: str
-    description: str | None = None
+    description: str = None
 
 class ProjectCreate(ProjectBase):
     pass
 
 class SessionBase(BaseModel):
     name: str
-    description: str | None = None
+    description: str = None
 
 
 class SessionCreate(SessionBase):
     pass
 
 class LogBase(BaseModel):
-    input: str | None = None
-    output: str | None = None
-    provider: str | None = None
-    model: str | None = None
-    parameters: dict | None = None
-    metrics: dict | None = None
+    input: str = None
+    output: str = None
+    provider: str = None
+    model: str = None
+    parameters: dict = None
+    metrics: dict = None
     
 
 class LogCreate(LogBase):

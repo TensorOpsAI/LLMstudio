@@ -72,14 +72,6 @@ from llmstudio.tracking.database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
 
-# Dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 # Functions for API Operations
 def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
     app = FastAPI(
@@ -95,11 +87,35 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    # Dependency
+    def get_db():
+        db = SessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
 
     @app.get(ENGINE_HEALTH_ENDPOINT)
     def health_check():
         """Health check endpoint to ensure the API is running."""
         return {"status": "healthy", "message": "Engine is up and running"}
+
+    # Function to create a chat handler for a provider
+    def create_chat_handler(provider_config):
+        async def chat_handler(request: Request):
+            """Endpoint for chat functionality."""
+            provider_class = provider_registry.get(f"{provider_config.name}Provider")
+            provider_instance = provider_class(provider_config)
+            return await provider_instance.chat(await request.json())
+
+        return chat_handler
+
+    # Dynamic route creation based on the 'chat' boolean
+    for provider_name, provider_config in config.providers.items():
+        if provider_config.chat:
+            app.post(f"{ENGINE_BASE_ENDPOINT}/chat/{provider_name}")(
+                create_chat_handler(provider_config)
+            )
 
     @app.get(f"{ENGINE_BASE_ENDPOINT}/providers")
     def get_providers():
@@ -147,63 +163,46 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
             iter([csv_content]), media_type="text/csv", headers=headers
         )
     
-    @app.post(f"{ENGINE_BASE_ENDPOINT}/projects/", response_model=schemas.Project)
+    @app.post(f"{TRACKING_BASE_ENDPOINT}/projects/", response_model=schemas.Project)
     def create_project(project: schemas.ProjectCreate, db: Session = Depends(get_db)):
         db_project = crud.get_project_by_name(db, name=project.name)
         if db_project:
             raise HTTPException(status_code=400, detail="Project already registered")
         return crud.create_project(db=db, project=project)
 
-    @app.get(f"{ENGINE_BASE_ENDPOINT}/projects/", response_model=list[schemas.Project])
+    @app.get(f"{TRACKING_BASE_ENDPOINT}/projects/", response_model=list[schemas.Project])
     def read_projects(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
         projects = crud.get_projects(db, skip=skip, limit=limit)
         return projects
 
-    @app.get(f"{ENGINE_BASE_ENDPOINT}/projects/{{project_id}}", response_model=schemas.Project)
+    @app.get(f"{TRACKING_BASE_ENDPOINT}/projects/{{project_id}}", response_model=schemas.Project)
     def read_project(project_id: int, db: Session = Depends(get_db)):
         db_project = crud.get_project(db, project_id=project_id)
         if db_project is None:
             raise HTTPException(status_code=404, detail="Project not found")
         return db_project
 
-    @app.post(f"{ENGINE_BASE_ENDPOINT}/projects/{{project_id}}/sessions/", response_model=schemas.Session)
+    @app.post(f"{TRACKING_BASE_ENDPOINT}/projects/{{project_id}}/sessions/", response_model=schemas.Session)
     def create_session(
         project_id: int, session: schemas.SessionCreate, db: Session = Depends(get_db)
     ):
         return crud.create_session(db=db, session=session, project_id=project_id)
 
-    @app.get(f"{ENGINE_BASE_ENDPOINT}/sessions/", response_model=list[schemas.Session])
+    @app.get(f"{TRACKING_BASE_ENDPOINT}/sessions/", response_model=list[schemas.Session])
     def read_sessions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
         sessions = crud.get_sessions(db, skip=skip, limit=limit)
         return sessions
 
-    @app.post(f"{ENGINE_BASE_ENDPOINT}/sessions/{{session_id}}/logs/", response_model=schemas.Log)
+    @app.post(f"{TRACKING_BASE_ENDPOINT}/sessions/{{session_id}}/logs/", response_model=schemas.Log)
     def add_log(
         session_id: int, log: schemas.LogCreate, db: Session = Depends(get_db)
     ):
         return crud.add_log(db=db, log=log, session_id=session_id)
 
-    @app.get(f"{ENGINE_BASE_ENDPOINT}/logs/", response_model=list[schemas.Log])
+    @app.get(f"{TRACKING_BASE_ENDPOINT}/logs/", response_model=list[schemas.Log])
     def read_logs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
         logs = crud.get_logs(db, skip=skip, limit=limit)
         return logs
-    
-    # Function to create a chat handler for a provider
-    def create_chat_handler(provider_config):
-        async def chat_handler(request: Request):
-            """Endpoint for chat functionality."""
-            provider_class = provider_registry.get(f"{provider_config.name}Provider")
-            provider_instance = provider_class(provider_config)
-            return await provider_instance.chat(await request.json())
-
-        return chat_handler
-
-    # Dynamic route creation based on the 'chat' boolean
-    for provider_name, provider_config in config.providers.items():
-        if provider_config.chat:
-            app.post(f"{ENGINE_BASE_ENDPOINT}/chat/{provider_name}")(
-                create_chat_handler(provider_config)
-            )
 
     return app
 
