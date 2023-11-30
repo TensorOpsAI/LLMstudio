@@ -1,8 +1,8 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, JSON
+from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
 from llmstudio.tracking.database import Base
-from sqlalchemy.sql import func
 
 
 class Project(Base):
@@ -29,6 +29,7 @@ class Session(Base):
 
     owner = relationship("Project", back_populates="sessions")
     logs = relationship("Log", back_populates="owner")
+
 
 class Log(Base):
     __tablename__ = "logs"

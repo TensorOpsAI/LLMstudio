@@ -1,15 +1,18 @@
-from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
 
-#BaseModels
+from pydantic import BaseModel
+
+# BaseModels
+
 
 class ProjectBase(BaseModel):
     name: str
     description: str = None
 
+
 class ProjectCreate(ProjectBase):
     pass
+
 
 class SessionBase(BaseModel):
     name: str
@@ -19,6 +22,7 @@ class SessionBase(BaseModel):
 class SessionCreate(SessionBase):
     pass
 
+
 class LogBase(BaseModel):
     input: str = None
     output: str = None
@@ -26,7 +30,7 @@ class LogBase(BaseModel):
     model: str = None
     parameters: dict = None
     metrics: dict = None
-    
+
 
 class LogCreate(LogBase):
     pass
@@ -40,6 +44,7 @@ class Log(LogBase):
     class Config:
         orm_mode = True
 
+
 class Session(SessionBase):
     session_id: int
     project_id: int
@@ -48,6 +53,7 @@ class Session(SessionBase):
 
     class Config:
         orm_mode = True
+
 
 class Project(ProjectBase):
     project_id: int

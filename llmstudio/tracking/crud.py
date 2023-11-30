@@ -4,7 +4,9 @@ from llmstudio.tracking import models, schemas
 
 
 def get_project(db: Session, project_id: int):
-    return db.query(models.Project).filter(models.Project.project_id == project_id).first()
+    return (
+        db.query(models.Project).filter(models.Project.project_id == project_id).first()
+    )
 
 
 def get_project_by_name(db: Session, name: str):
