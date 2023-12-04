@@ -84,23 +84,6 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
         """Health check endpoint to ensure the API is running."""
         return {"status": "healthy", "message": "Engine is up and running"}
 
-    # Function to create a chat handler for a provider
-    def create_chat_handler(provider_config):
-        async def chat_handler(request: Request):
-            """Endpoint for chat functionality."""
-            provider_class = provider_registry.get(f"{provider_config.name}Provider")
-            provider_instance = provider_class(provider_config)
-            return await provider_instance.chat(await request.json())
-
-        return chat_handler
-
-    # Dynamic route creation based on the 'chat' boolean
-    for provider_name, provider_config in config.providers.items():
-        if provider_config.chat:
-            app.post(f"{ENGINE_BASE_ENDPOINT}/chat/{provider_name}")(
-                create_chat_handler(provider_config)
-            )
-
     @app.get(f"{ENGINE_BASE_ENDPOINT}/providers")
     def get_providers():
         """Return all providers supported."""
@@ -120,6 +103,23 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
                     provider_config.models.keys()
                 )
         return all_models[provider] if provider else all_models
+    
+    # Function to create a chat handler for a provider
+    def create_chat_handler(provider_config):
+        async def chat_handler(request: Request):
+            """Endpoint for chat functionality."""
+            provider_class = provider_registry.get(f"{provider_config.name}Provider")
+            provider_instance = provider_class(provider_config)
+            return await provider_instance.chat(await request.json())
+
+        return chat_handler
+
+    # Dynamic route creation based on the 'chat' boolean
+    for provider_name, provider_config in config.providers.items():
+        if provider_config.chat:
+            app.post(f"{ENGINE_BASE_ENDPOINT}/chat/{provider_name}")(
+                create_chat_handler(provider_config)
+            )
 
     @app.post("/api/export")
     async def export(request: Request):
