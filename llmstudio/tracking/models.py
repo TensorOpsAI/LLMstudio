@@ -47,6 +47,7 @@ class Log(Base):
 
     owner = relationship("Session", back_populates="logs")
 
+
 class LogDefault(Base):
     __tablename__ = "logs_default"
 

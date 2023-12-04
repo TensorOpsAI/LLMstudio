@@ -103,7 +103,7 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
                     provider_config.models.keys()
                 )
         return all_models[provider] if provider else all_models
-    
+
     # Function to create a chat handler for a provider
     def create_chat_handler(provider_config):
         async def chat_handler(request: Request):

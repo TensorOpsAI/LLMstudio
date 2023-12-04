@@ -1,20 +1,15 @@
-import json
 import os
-from pathlib import Path
-from typing import Any, Dict, List, Optional
 
 import requests
 import uvicorn
 import yaml
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ValidationError
-
-from llmstudio.engine.providers import *
-from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from llmstudio.engine.providers import *
 from llmstudio.tracking import crud, models, schemas
 from llmstudio.tracking.database import SessionLocal, engine
 
@@ -104,6 +99,7 @@ def create_tracking_app() -> FastAPI:
         return logs
 
     return app
+
 
 def is_api_running(url: str) -> bool:
     try:

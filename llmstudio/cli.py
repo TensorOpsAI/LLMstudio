@@ -33,7 +33,6 @@ def server(ui):
         ui_thread = Thread(target=run_ui_app)
     engine_thread = Thread(target=run_engine_app)
     tracking_thread = Thread(target=run_tracking_app)
-    
 
     if ui:
         ui_thread.daemon = True
