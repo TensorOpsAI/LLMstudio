@@ -1,7 +1,12 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
+from dotenv import load_dotenv
+import os
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./llmstudio_mgmt.db"
+load_dotenv()
+
+SQLALCHEMY_DATABASE_URL = os.environ.get("BACKEND_TRACKING_URI", "sqlite:///./llmstudio_mgmt.db")
+# It works with any sqlalchemy table. host your postgres by changing it to something like
 # SQLALCHEMY_DATABASE_URL = "postgresql://user:password@postgresserver/db"
 
 engine = create_engine(

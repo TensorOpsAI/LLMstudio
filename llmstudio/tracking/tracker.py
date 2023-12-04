@@ -1,13 +1,19 @@
 import requests
 import json
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+TRACKING_HOST = os.getenv("TRACKING_HOST", "localhost")
+TRACKING_PORT = int(os.getenv("TRACKING_PORT", 8080))
 
 # URL for the POST request
-URL = 'http://localhost:8080/api/tracking/logs/'
+URL = f"http://{TRACKING_HOST}:{TRACKING_PORT}/api/tracking/logs/"
 
 # Headers to be sent with the request
 HEADERS = {
-    'accept': 'application/json',
-    'Content-Type': 'application/json'
+    "accept": "application/json",
+    "Content-Type": "application/json"
 }
 
 class Tracker:
