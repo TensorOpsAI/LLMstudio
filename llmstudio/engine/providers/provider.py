@@ -21,6 +21,8 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, ValidationError
 from tokenizers import Tokenizer
 
+from llmstudio.tracking.tracker import tracker
+
 provider_registry = {}
 
 
@@ -148,10 +150,15 @@ class Provider:
         }.get(self.config.id, tiktoken.get_encoding("cl100k_base"))
 
     def save_log(self, response: Dict[str, Any]):
-        file_name = Path(os.path.join(os.path.dirname(__file__), "..", "logs.jsonl"))
-        if not os.path.exists(file_name):
-            with open(file_name, "w") as f:
-                pass
+        local=False #NB: Make this dynamic
+        if local:
+            file_name = Path(os.path.join(os.path.dirname(__file__), "..", "logs.jsonl"))
+            if not os.path.exists(file_name):
+                with open(file_name, "w") as f:
+                    pass
 
-        with open(file_name, "a") as f:
-            f.write(json.dumps(response) + "\n")
+            with open(file_name, "a") as f:
+                f.write(json.dumps(response) + "\n")
+        else:
+            response["metrics"].update(response["usage"])
+            tracker.log(response)

@@ -46,3 +46,16 @@ class Log(Base):
     metrics = Column(JSON)
 
     owner = relationship("Session", back_populates="logs")
+
+class LogDefault(Base):
+    __tablename__ = "logs_default"
+
+    log_id = Column(Integer, primary_key=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    chat_input = Column(String)
+    chat_output = Column(String)
+    provider = Column(String)
+    model = Column(String)
+    parameters = Column(JSON)
+    metrics = Column(JSON)

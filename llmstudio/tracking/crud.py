@@ -37,7 +37,7 @@ def create_session(db: Session, session: schemas.SessionCreate, project_id: int)
     return db_session
 
 
-def add_log(db: Session, log: schemas.LogCreate, session_id: int):
+def add_log_to_session(db: Session, log: schemas.LogCreate, session_id: int):
     db_log = models.Log(**log.model_dump(), session_id=session_id)
     db.add(db_log)
     db.commit()
@@ -45,5 +45,17 @@ def add_log(db: Session, log: schemas.LogCreate, session_id: int):
     return db_log
 
 
-def get_logs(db: Session, skip: int = 0, limit: int = 100):
+def get_session_logs(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Log).offset(skip).limit(limit).all()
+
+
+def add_log(db: Session, log: schemas.LogDefaultCreate):
+    db_log = models.LogDefault(**log.model_dump())
+    db.add(db_log)
+    db.commit()
+    db.refresh(db_log)
+    return db_log
+
+
+def get_logs(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.LogDefault).offset(skip).limit(limit).all()

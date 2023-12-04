@@ -25,7 +25,6 @@ UI_HOST = os.getenv("ENGINE_HOST", "localhost")
 UI_PORT = int(os.getenv("UI_PORT", 8000))
 UI_URL = f"http://{UI_HOST}:{UI_PORT}"
 LOG_LEVEL = os.getenv("LOG_LEVEL", "critical")
-TRACKING_BASE_ENDPOINT = "/api/tracking"
 
 
 # Models for Configuration
@@ -64,15 +63,6 @@ def _load_engine_config() -> EngineConfig:
         raise RuntimeError(f"Error in configuration data: {e}")
 
 
-## Tracking
-from fastapi import Depends, HTTPException
-from sqlalchemy.orm import Session
-
-from llmstudio.tracking import crud, models, schemas
-from llmstudio.tracking.database import SessionLocal, engine
-
-models.Base.metadata.create_all(bind=engine)
-
 # Functions for API Operations
 def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
     app = FastAPI(
@@ -88,13 +78,6 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    # Dependency
-    def get_db():
-        db = SessionLocal()
-        try:
-            yield db
-        finally:
-            db.close()
 
     @app.get(ENGINE_HEALTH_ENDPOINT)
     def health_check():
@@ -138,15 +121,6 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
                 )
         return all_models[provider] if provider else all_models
 
-    @app.get("/logs")
-    def get_logs():
-        """Return the logs in JSONL format."""
-        logs_path = Path(os.path.join(os.path.dirname(__file__), "logs.jsonl"))
-        if logs_path.exists():
-            with open(logs_path, "r") as file:
-                logs = [json.loads(line) for line in file]
-            return logs
-
     @app.post("/api/export")
     async def export(request: Request):
         data = await request.json()
@@ -163,58 +137,6 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
         return StreamingResponse(
             iter([csv_content]), media_type="text/csv", headers=headers
         )
-
-    @app.post(f"{TRACKING_BASE_ENDPOINT}/projects/", response_model=schemas.Project)
-    def create_project(project: schemas.ProjectCreate, db: Session = Depends(get_db)):
-        db_project = crud.get_project_by_name(db, name=project.name)
-        if db_project:
-            raise HTTPException(status_code=400, detail="Project already registered")
-        return crud.create_project(db=db, project=project)
-
-    @app.get(
-        f"{TRACKING_BASE_ENDPOINT}/projects/", response_model=list[schemas.Project]
-    )
-    def read_projects(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-        projects = crud.get_projects(db, skip=skip, limit=limit)
-        return projects
-
-    @app.get(
-        f"{TRACKING_BASE_ENDPOINT}/projects/{{project_id}}",
-        response_model=schemas.Project,
-    )
-    def read_project(project_id: int, db: Session = Depends(get_db)):
-        db_project = crud.get_project(db, project_id=project_id)
-        if db_project is None:
-            raise HTTPException(status_code=404, detail="Project not found")
-        return db_project
-
-    @app.post(
-        f"{TRACKING_BASE_ENDPOINT}/projects/{{project_id}}/sessions/",
-        response_model=schemas.Session,
-    )
-    def create_session(
-        project_id: int, session: schemas.SessionCreate, db: Session = Depends(get_db)
-    ):
-        return crud.create_session(db=db, session=session, project_id=project_id)
-
-    @app.get(
-        f"{TRACKING_BASE_ENDPOINT}/sessions/", response_model=list[schemas.Session]
-    )
-    def read_sessions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-        sessions = crud.get_sessions(db, skip=skip, limit=limit)
-        return sessions
-
-    @app.post(
-        f"{TRACKING_BASE_ENDPOINT}/sessions/{{session_id}}/logs/",
-        response_model=schemas.Log,
-    )
-    def add_log(session_id: int, log: schemas.LogCreate, db: Session = Depends(get_db)):
-        return crud.add_log(db=db, log=log, session_id=session_id)
-
-    @app.get(f"{TRACKING_BASE_ENDPOINT}/logs/", response_model=list[schemas.Log])
-    def read_logs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-        logs = crud.get_logs(db, skip=skip, limit=limit)
-        return logs
 
     return app
 

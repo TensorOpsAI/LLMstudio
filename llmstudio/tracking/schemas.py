@@ -62,3 +62,24 @@ class Project(ProjectBase):
 
     class Config:
         orm_mode = True
+
+
+class LogDefaultBase(BaseModel):
+    chat_input: str = None
+    chat_output: str = None
+    provider: str = None
+    model: str = None
+    parameters: dict = None
+    metrics: dict = None
+
+
+class LogDefault(LogDefaultBase):
+    log_id: int
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+class LogDefaultCreate(LogDefaultBase):
+    pass
