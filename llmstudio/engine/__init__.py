@@ -121,15 +121,6 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
                 create_chat_handler(provider_config)
             )
 
-    @app.get("/logs")
-    def get_logs():
-        """Return the logs in JSONL format."""
-        logs_path = Path(os.path.join(os.path.dirname(__file__), "logs.jsonl"))
-        if logs_path.exists():
-            with open(logs_path, "r") as file:
-                logs = [json.loads(line) for line in file]
-            return logs
-
     @app.post("/api/export")
     async def export(request: Request):
         data = await request.json()

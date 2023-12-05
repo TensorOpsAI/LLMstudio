@@ -5,6 +5,7 @@ import click
 import dotenv
 
 from llmstudio.engine import run_engine_app
+from llmstudio.tracking import run_tracking_app
 from llmstudio.ui import run_ui_app
 
 dotenv.load_dotenv()
@@ -31,15 +32,19 @@ def server(ui):
     if ui:
         ui_thread = Thread(target=run_ui_app)
     engine_thread = Thread(target=run_engine_app)
+    tracking_thread = Thread(target=run_tracking_app)
 
     if ui:
         ui_thread.daemon = True
     engine_thread.daemon = True
+    tracking_thread.daemon = True
 
     if ui:
         ui_thread.start()
     engine_thread.start()
+    tracking_thread.start()
 
     if ui:
         ui_thread.join()
     engine_thread.join()
+    tracking_thread.join()

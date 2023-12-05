@@ -24,9 +24,9 @@ export const useChat = () => {
         addExecution(
           data.chat_input,
           data.chat_output,
-          data.usage.input_tokens,
-          data.usage.output_tokens,
-          data.usage.cost,
+          data.metrics.input_tokens,
+          data.metrics.output_tokens,
+          data.metrics.cost,
           data.model,
           data.parameters
         );

@@ -70,16 +70,21 @@ class AnthropicProvider(Provider):
                 if request.is_stream:
                     yield chunk.completion
 
-        usage = self.calculate_usage(request.chat_input, chat_output, request.model)
-
         metrics = self.calculate_metrics(
-            start_time, time.time(), first_token_time, token_times, token_count
+            request.chat_input,
+            chat_output,
+            request.model,
+            start_time,
+            time.time(),
+            first_token_time,
+            token_times,
+            token_count,
         )
 
         if request.is_stream and request.has_end_token:
-            yield self.get_end_token_string(usage, metrics)
+            yield self.get_end_token_string(metrics)
 
-        response = self.generate_response(request, chat_output, usage, metrics)
+        response = self.generate_response(request, chat_output, metrics)
 
         self.save_log(response)
 
