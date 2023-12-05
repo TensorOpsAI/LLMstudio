@@ -1,6 +1,5 @@
 import asyncio
 import os
-import time
 from typing import Any, AsyncGenerator, Coroutine, Generator, Optional
 
 import anthropic
@@ -47,46 +46,9 @@ class AnthropicProvider(Provider):
         except anthropic._exceptions.APIError as e:
             raise HTTPException(status_code=e.status_code, detail=e.response.json())
 
-    async def handle_response(
-        self, request: AnthropicRequest, response: AsyncGenerator, start_time: float
+    async def parse_response(
+        self, response: AsyncGenerator
     ) -> AsyncGenerator[str, None]:
-        """Handles the response from the Anthropic API"""
-        chat_output = ""
-        first_token_time = None
-        previous_token_time = None
-        token_times = []
-        token_count = 0
-
         for chunk in response:
             if chunk.stop_reason != "stop_sequence":
-                token_count += 1
-                current_time = time.time()
-                first_token_time = first_token_time or current_time
-                if previous_token_time is not None:
-                    token_times.append(current_time - previous_token_time)
-                previous_token_time = current_time
-
-                chat_output += chunk.completion
-                if request.is_stream:
-                    yield chunk.completion
-
-        metrics = self.calculate_metrics(
-            request.chat_input,
-            chat_output,
-            request.model,
-            start_time,
-            time.time(),
-            first_token_time,
-            token_times,
-            token_count,
-        )
-
-        if request.is_stream and request.has_end_token:
-            yield self.get_end_token_string(metrics)
-
-        response = self.generate_response(request, chat_output, metrics)
-
-        self.save_log(response)
-
-        if not request.is_stream:
-            yield response
+                yield chunk.completion

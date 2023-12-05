@@ -83,7 +83,50 @@ class Provider:
     async def handle_response(
         self, request: ChatRequest, response: AsyncGenerator, start_time: float
     ) -> AsyncGenerator[str, None]:
-        """Handles the response from the provider's API"""
+        """Handles the response from an API"""
+        chat_output = ""
+        first_token_time = None
+        previous_token_time = None
+        token_times = []
+        token_count = 0
+
+        async for chunk in self.parse_response(response):
+            token_count += 1
+            current_time = time.time()
+            first_token_time = first_token_time or current_time
+            if previous_token_time is not None:
+                token_times.append(current_time - previous_token_time)
+            previous_token_time = current_time
+
+            chat_output += chunk
+            if request.is_stream:
+                yield chunk
+
+        metrics = self.calculate_metrics(
+            request.chat_input,
+            chat_output,
+            request.model,
+            start_time,
+            time.time(),
+            first_token_time,
+            token_times,
+            token_count,
+        )
+
+        if request.is_stream and request.has_end_token:
+            yield self.get_end_token_string(metrics)
+
+        response = self.generate_response(request, chat_output, metrics)
+
+        self.save_log(response)
+
+        if not request.is_stream:
+            yield response
+
+    async def parse_response(
+        self, response: AsyncGenerator
+    ) -> AsyncGenerator[str, None]:
+        pass
 
     def generate_response(
         self,
