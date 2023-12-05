@@ -2,11 +2,8 @@ import os
 
 import requests
 import uvicorn
-import yaml
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, ValidationError
 from sqlalchemy.orm import Session
 
 from llmstudio.engine.providers import *
@@ -54,16 +51,14 @@ def create_tracking_app() -> FastAPI:
         """Health check endpoint to ensure the API is running."""
         return {"status": "healthy", "message": "Tracking is up and running"}
 
-    @app.post(f"{TRACKING_BASE_ENDPOINT}/projects/", response_model=schemas.Project)
+    @app.post(f"{TRACKING_BASE_ENDPOINT}/projects", response_model=schemas.Project)
     def create_project(project: schemas.ProjectCreate, db: Session = Depends(get_db)):
         db_project = crud.get_project_by_name(db, name=project.name)
         if db_project:
             raise HTTPException(status_code=400, detail="Project already registered")
         return crud.create_project(db=db, project=project)
 
-    @app.get(
-        f"{TRACKING_BASE_ENDPOINT}/projects/", response_model=list[schemas.Project]
-    )
+    @app.get(f"{TRACKING_BASE_ENDPOINT}/projects", response_model=list[schemas.Project])
     def read_projects(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
         projects = crud.get_projects(db, skip=skip, limit=limit)
         return projects
@@ -79,7 +74,7 @@ def create_tracking_app() -> FastAPI:
         return db_project
 
     @app.post(
-        f"{TRACKING_BASE_ENDPOINT}/projects/{{project_id}}/sessions/",
+        f"{TRACKING_BASE_ENDPOINT}/projects/{{project_id}}/sessions",
         response_model=schemas.Session,
     )
     def create_session(
@@ -87,21 +82,19 @@ def create_tracking_app() -> FastAPI:
     ):
         return crud.create_session(db=db, session=session, project_id=project_id)
 
-    @app.get(
-        f"{TRACKING_BASE_ENDPOINT}/sessions/", response_model=list[schemas.Session]
-    )
+    @app.get(f"{TRACKING_BASE_ENDPOINT}/sessions", response_model=list[schemas.Session])
     def read_sessions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
         sessions = crud.get_sessions(db, skip=skip, limit=limit)
         return sessions
 
     @app.post(
-        f"{TRACKING_BASE_ENDPOINT}/logs/",
+        f"{TRACKING_BASE_ENDPOINT}/logs",
         response_model=schemas.LogDefault,
     )
     def add_log(log: schemas.LogDefaultCreate, db: Session = Depends(get_db)):
         return crud.add_log(db=db, log=log)
 
-    @app.get(f"{TRACKING_BASE_ENDPOINT}/logs/", response_model=list[schemas.LogDefault])
+    @app.get(f"{TRACKING_BASE_ENDPOINT}/logs", response_model=list[schemas.LogDefault])
     def read_logs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
         logs = crud.get_logs(db, skip=skip, limit=limit)
         return logs
@@ -118,9 +111,8 @@ def is_api_running(url: str) -> bool:
 
 
 def run_tracking_app():
-    print(f"Running Tracking on {TRACKING_HOST}:{TRACKING_PORT}")
+    print(f"Running Tracking on http://{TRACKING_HOST}:{TRACKING_PORT}")
     try:
-
         tracking = create_tracking_app()
         uvicorn.run(
             tracking,

@@ -386,8 +386,8 @@ class LLMCompare(ABC):
 
             chat_output_list.append(model_response["chat_output"])
             latency_list.append(model_response["metrics"]["latency"])
-            cost_list.append(model_response["usage"]["cost"])
-            out_tokens_list.append(model_response["usage"]["output_tokens"])
+            cost_list.append(model_response["metrics"]["cost"])
+            out_tokens_list.append(model_response["metrics"]["output_tokens"])
             time_to_first_token_list.append(
                 model_response["metrics"]["time_to_first_token"]
             )

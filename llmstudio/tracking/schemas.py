@@ -42,7 +42,7 @@ class Log(LogBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class Session(SessionBase):
@@ -52,7 +52,7 @@ class Session(SessionBase):
     logs: list[Log] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class Project(ProjectBase):
@@ -61,7 +61,7 @@ class Project(ProjectBase):
     sessions: list[Session] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class LogDefaultBase(BaseModel):
@@ -78,7 +78,7 @@ class LogDefault(LogDefaultBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class LogDefaultCreate(LogDefaultBase):
