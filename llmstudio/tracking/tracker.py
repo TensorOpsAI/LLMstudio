@@ -9,7 +9,7 @@ TRACKING_HOST = os.getenv("TRACKING_HOST", "localhost")
 TRACKING_PORT = int(os.getenv("TRACKING_PORT", 8080))
 
 # URL for the POST request
-URL = f"http://{TRACKING_HOST}:{TRACKING_PORT}/api/tracking/logs/"
+URL = f"http://{TRACKING_HOST}:{TRACKING_PORT}/api/tracking/logs"
 
 # Headers to be sent with the request
 HEADERS = {"accept": "application/json", "Content-Type": "application/json"}
