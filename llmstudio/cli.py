@@ -1,14 +1,15 @@
+import os
 import signal
 from threading import Thread
 
 import click
-import dotenv
+from dotenv import load_dotenv
 
 from llmstudio.engine import run_engine_app
 from llmstudio.tracking import run_tracking_app
 from llmstudio.ui import run_ui_app
 
-dotenv.load_dotenv()
+load_dotenv(os.path.join(os.getcwd(), ".env"))
 
 
 @click.group()

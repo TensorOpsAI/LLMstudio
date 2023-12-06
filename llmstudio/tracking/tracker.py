@@ -4,7 +4,7 @@ import os
 import requests
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(os.path.join(os.getcwd(), ".env"))
 TRACKING_HOST = os.getenv("TRACKING_HOST", "localhost")
 TRACKING_PORT = int(os.getenv("TRACKING_PORT", 8080))
 
