@@ -1,0 +1,38 @@
+---
+title: "List models"
+api: "GET /api/engine/models"
+description: "Lists all models supported by LLMstudio"
+---
+
+<ParamField body="provider" type="string">
+  Provider id used to filter models
+</ParamField>
+
+<ResponseExample>
+
+```json Response
+{
+  "anthropic": {
+    "name": "Anthropic",
+    "models": [
+      "claude-2.1",
+      "claude-2",
+      "claude-instant-1.2",
+      "claude-instant-1"
+    ]
+  },
+  "ollama": {
+    "name": "Ollama",
+    "models": ["llama2"]
+  }
+}
+```
+
+```json Response (using provider)
+{
+  "name": "Anthropic",
+  "models": ["claude-2.1", "claude-2", "claude-instant-1.2", "claude-instant-1"]
+}
+```
+
+</ResponseExample>

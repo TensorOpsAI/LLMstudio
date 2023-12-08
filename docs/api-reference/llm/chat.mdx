@@ -1,0 +1,56 @@
+---
+title: Chat
+api: "POST /api/engine/chat/{provider}"
+description: "Lists all providers supported by LLMstudio"
+---
+
+<ParamField body="api_key" type="string" required default="None">
+  API key to access the provider
+</ParamField>
+
+<ParamField body="model" type="string" required>
+  API key to access the provider
+</ParamField>
+
+<ParamField body="chat_input" type="string" required>
+  API key to access the provider
+</ParamField>
+
+<ParamField body="parameters" type="json" default="None">
+  API key to access the provider
+</ParamField>
+
+<ParamField body="is_stream" type="json" default="False">
+  API key to access the provider
+</ParamField>
+
+<ResponseExample>
+
+```json Response
+{
+  "id": "e2dc428b-bcee-43bf-844f-2a00d707bf49",
+  "chat_input": "Write a haiku",
+  "chat_output": " Here is a haiku I wrote for you:\n\nLeaves float gently down\nAutumn breeze whispers softly\nNature's beauty shines",
+  "timestamp": 1702054550.185086,
+  "provider": "anthropic",
+  "model": "claude-2.1",
+  "metrics": {
+    "input_tokens": 4,
+    "output_tokens": 30,
+    "total_tokens": 34,
+    "cost": 0.0007520000000000001,
+    "latency": 3.2548670768737793,
+    "time_to_first_token": 0.8070380687713623,
+    "inter_token_latency": 0.09620759963989257,
+    "tokens_per_second": 7.988037417789844
+  },
+  "parameters": {
+    "temperature": 1,
+    "max_tokens_to_sample": 256,
+    "top_p": 1,
+    "top_k": 5
+  }
+}
+```
+
+</ResponseExample>
