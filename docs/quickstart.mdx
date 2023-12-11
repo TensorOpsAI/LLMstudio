@@ -1,0 +1,73 @@
+---
+title: Quickstart
+description: "Let's have you setup LLMstudio"
+---
+
+
+## Installation
+
+<Steps>
+  <Step>
+    Install the latest version of **LLMstudio** using `pip`
+
+    <Warning>We suggest that you create and activate a new environment using `conda`</Warning>
+    ```bash
+    pip install llmstudio
+    ```
+  </Step>
+  <Step >
+    Install `bun` if you want to use the UI
+    ```bash
+    curl -fsSL https://bun.sh/install | bash
+    ```
+  </Step>
+  <Step>
+    Create a `.env` file at the same path you'll run **LLMstudio**
+    ```bash
+    OPENAI_API_KEY="sk-api_key"
+    ANTHROPIC_API_KEY="sk-api_key"
+    ```
+  </Step>
+  <Step>
+    Now you should be able to run **LLMstudio** using the following command.
+    ```bash
+    llmstudio server --ui
+    ```
+    When the `--ui` flag is set, you'll be able to access the UI at [http://localhost:8000](http://localhost:8000)
+
+    <Check>You are done setting up **LLMstudio**!</Check>
+  </Step>
+</Steps>
+
+## Python Client
+
+Using it in a Python notebook is also fairly simple! Just run the following cell:
+
+```python
+from llmstudio import LLM
+model = LLM("anthropic/claude-2.1")
+model.chat("What are Large Language Models?")
+```
+
+The output will be something like the following JSON.
+
+```json
+{'id': 'b6ef2e41-2759-410e-a555-ceddcd197139',
+ 'chat_input': 'Describe Large Language Models in one short sentence',
+ 'chat_output': ' Large language models are AI systems trained on vast amounts of text data to generate human-like text and power language applications.',
+ 'timestamp': 1702325277.018998,
+ 'provider': 'anthropic',
+ 'model': 'claude-2.1',
+ 'metrics': {'input_tokens': 8,
+  'output_tokens': 24,
+  'total_tokens': 32,
+  'cost': 0.00064,
+  'latency': 5.634583950042725,
+  'time_to_first_token': 3.776610851287842,
+  'inter_token_latency': 0.07244679202204166,
+  'tokens_per_second': 4.259409428058662},
+ 'parameters': {'temperature': 1,
+  'max_tokens_to_sample': 256,
+  'top_p': 1,
+  'top_k': 5}}
+```

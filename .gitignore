@@ -73,3 +73,4 @@ venv.bak/
 # Logs/tracking
 llmstudio/llm_engine/logs/execution_logs.jsonl
 *.db
+.prettierignore
