@@ -21,9 +21,6 @@ ENGINE_VERSION = "0.1.0"
 ENGINE_HOST = os.getenv("ENGINE_HOST", "localhost")
 ENGINE_PORT = int(os.getenv("ENGINE_PORT", 8000))
 ENGINE_URL = f"http://{ENGINE_HOST}:{ENGINE_PORT}"
-UI_HOST = os.getenv("ENGINE_HOST", "localhost")
-UI_PORT = int(os.getenv("UI_PORT", 8000))
-UI_URL = f"http://{UI_HOST}:{UI_PORT}"
 LOG_LEVEL = os.getenv("LOG_LEVEL", "critical")
 
 
@@ -120,6 +117,16 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
             app.post(f"{ENGINE_BASE_ENDPOINT}/chat/{provider_name}")(
                 create_chat_handler(provider_config)
             )
+
+    @app.get(f"{ENGINE_BASE_ENDPOINT}/parameters")
+    def get_parameters(provider: str, model: Optional[str] = None):
+        """Return parameters for a given provider and model in an array JSON format."""
+        provider_config = config.providers.get(provider)
+        if not provider_config:
+            return {"error": f"Provider {provider} not found"}, 404
+        parameters = provider_config.parameters
+        parameters_array = [{"id": key, **value} for key, value in parameters.items()]
+        return parameters_array
 
     @app.post("/api/export")
     async def export(request: Request):
