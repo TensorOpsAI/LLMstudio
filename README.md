@@ -37,21 +37,38 @@ Prompt Engineering at your fingertips
 - Resilience against service provider rate limits.
 - Organized tracking of groups of related prompts (Chains, Agents)
 
-## 🚀 Quick Install
+## 🚀 Quickstart
 
-Install the SDK using
+Don't forget to check out [https://docs.llmstudio.ai](docs) page.
 
-```
-pip install LLMstudio
-```
+## Installation
 
-Run the startup command
+Install the latest version of **LLMstudio** using `pip`. We suggest that you create and activate a new environment using `conda`
 
-```
-LLMstudio server --ui
+```bash
+pip install llmstudio
 ```
 
-You can access the UI at http://localhost:3000 and send requests to the API at http://localhost:8000
+Install `bun` if you want to use the UI
+
+```bash
+curl -fsSL https://bun.sh/install | bash
+```
+
+Create a `.env` file at the same path you'll run **LLMstudio**
+
+```bash
+OPENAI_API_KEY="sk-api_key"
+ANTHROPIC_API_KEY="sk-api_key"
+```
+
+Now you should be able to run **LLMstudio** using the following command.
+
+```bash
+llmstudio server --ui
+```
+
+When the `--ui` flag is set, you'll be able to access the UI at [http://localhost:8000](http://localhost:8000)
 
 ## 🤔 About LLMstudio
 
