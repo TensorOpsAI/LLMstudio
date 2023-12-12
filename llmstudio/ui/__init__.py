@@ -9,9 +9,10 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "critical")
 
 
 def run_bun_in_thread():
+    ui_dir = os.path.join(os.path.dirname(__file__))
     try:
-        subprocess.run(["bun", "update", "--silent"], check=True)
-        subprocess.run(["bun", "run", "dev"], check=True)
+        subprocess.run(["bun", "update"], cwd=ui_dir, check=True)
+        subprocess.run(["bun", "run", "dev"], cwd=ui_dir, check=True)
     except Exception as e:
         print(f"Error running the UI app: {e}")
 
