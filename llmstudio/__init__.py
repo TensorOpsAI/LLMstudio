@@ -1,7 +1,7 @@
 from llmstudio.llm import LLM
 
 name = "version"
-__version__ = "0.2.21"
+__version__ = "0.2.22"
 
 __requirements__ = [
     "pydantic",
