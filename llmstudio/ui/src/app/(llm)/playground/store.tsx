@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-interface Log {
+export interface Log {
   log_id: string;
   chat_input: string;
   chat_output: string;
@@ -34,7 +34,7 @@ interface Store {
   setOutput: (output: string, isChunk?: boolean) => void;
   setModel: (model: string) => void;
   setProvider: (provider: string) => void;
-  setParameter: (parameter: string, value: number) => void;
+  setParameter: (parameter: string, value: any) => void;
   getParameter: (
     parameter: string
   ) => string | number | readonly string[] | undefined;

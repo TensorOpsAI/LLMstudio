@@ -12,14 +12,27 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+import { Log, useStore } from '@/app/(llm)/playground/store';
+
 interface DataTableRowActionsProps<TData> {
   row: Row<TData>;
 }
 
-export function DataTableRowActions<TData>({
+export function DataTableRowActions<TData extends Log>({
   row,
 }: DataTableRowActionsProps<TData>) {
-  const task = row.original;
+  const { setInput, setOutput, setModel, setProvider, setParameter } =
+    useStore();
+
+  const restore = () => {
+    setInput(row.original.chat_input);
+    setOutput(row.original.chat_output);
+    setModel(row.original.model);
+    setProvider(row.original.provider);
+    Object.entries(row.original.parameters).forEach(([key, value]) =>
+      setParameter(key, value)
+    );
+  };
 
   return (
     <DropdownMenu>
@@ -33,8 +46,9 @@ export function DataTableRowActions<TData>({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end' className='w-[160px]'>
+        <DropdownMenuItem onClick={restore}>Restore</DropdownMenuItem>
         <DropdownMenuItem>
-          Delete
+          <div className='text-red-600'>Delete</div>
           <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>
