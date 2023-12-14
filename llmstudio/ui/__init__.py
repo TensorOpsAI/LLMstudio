@@ -1,5 +1,6 @@
 import os
 import subprocess
+from pathlib import Path
 import threading
 
 UI_HOST = os.getenv("ENGINE_HOST", "localhost")
@@ -9,7 +10,7 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "critical")
 
 
 def run_bun_in_thread():
-    ui_dir = os.path.join(os.path.dirname(__file__))
+    ui_dir = Path(os.path.join(os.path.dirname(__file__)))
     try:
         subprocess.run(["bun", "update"], cwd=ui_dir, check=True)
         subprocess.run(["bun", "run", "dev"], cwd=ui_dir, check=True)
