@@ -2,7 +2,4 @@ recursive-include * *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 recursive-exclude llmstudio/ui/node_modules *
-recursive-exclude llmstudio/ui/src *
-recursive-exclude llmstudio/ui *
-recursive-include llmstudio/ui/build *
 global-exclude .DS_Store
