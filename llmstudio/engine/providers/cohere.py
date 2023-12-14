@@ -42,7 +42,7 @@ class CohereProvider(Provider):
                 model=request.model,
                 prompt=request.chat_input,
                 stream=True,
-                **request.parameters.model_dump(),
+                **request.parameters.dict(),
             )
         except cohere.CohereAPIError or cohere.CohereConnectionError as e:
             raise HTTPException(status_code=e.http_status, detail=str(e))

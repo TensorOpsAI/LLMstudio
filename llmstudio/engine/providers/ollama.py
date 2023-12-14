@@ -39,7 +39,7 @@ class OllamaProvider(Provider):
                 json={
                     "model": request.model,
                     "prompt": request.chat_input,
-                    **request.parameters.model_dump(),
+                    **request.parameters.dict(),
                 },
                 stream=True,
             )

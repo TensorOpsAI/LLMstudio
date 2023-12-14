@@ -57,11 +57,7 @@ class Provider:
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
 
-        if request.model not in self.config.models:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Model {request.model} is not supported by {self.config.name}",
-            )
+        self.validate_model(request)
 
         start_time = time.time()
         response = await self.generate_client(request)
@@ -74,6 +70,13 @@ class Provider:
 
     def validate_request(self, request: ChatRequest):
         pass
+
+    def validate_model(self, request: ChatRequest):
+        if request.model not in self.config.models:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Model {request.model} is not supported by {self.config.name}",
+            )
 
     async def generate_client(
         self, request: ChatRequest
@@ -143,7 +146,7 @@ class Provider:
             "provider": self.config.id,
             "model": request.model,
             "metrics": metrics,
-            "parameters": request.parameters.model_dump(),
+            "parameters": request.parameters.dict(),
         }
 
     def calculate_metrics(

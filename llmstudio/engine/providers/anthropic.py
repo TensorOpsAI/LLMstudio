@@ -41,7 +41,7 @@ class AnthropicProvider(Provider):
                 model=request.model,
                 prompt=f"{anthropic.HUMAN_PROMPT} {request.chat_input} {anthropic.AI_PROMPT}",
                 stream=True,
-                **request.parameters.model_dump(),
+                **request.parameters.dict(),
             )
         except anthropic._exceptions.APIError as e:
             raise HTTPException(status_code=e.status_code, detail=e.response.json())

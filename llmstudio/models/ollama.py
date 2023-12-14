@@ -34,7 +34,7 @@ class OllamaClient(LLMClient):
             self, parameters: OllamaParameters = None
         ) -> OllamaParameters:
             parameters = parameters or {}
-            return OllamaParameters(**parameters).model_dump()
+            return OllamaParameters(**parameters).dict()
 
     class Llama2(OllamaModel):
         def __init__(self, model, api_key, parameters: OllamaParameters, **kwargs):

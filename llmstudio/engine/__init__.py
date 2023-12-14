@@ -48,12 +48,31 @@ class EngineConfig(BaseModel):
 
 # Configuration Loading
 def _load_engine_config() -> EngineConfig:
-    config_path = Path(os.path.join(os.path.dirname(__file__), "config.yaml"))
+    default_config_path = Path(os.path.join(os.path.dirname(__file__), "config.yaml"))
+    local_config_path = Path(os.getcwd(), "config.yaml")
+
+    def _merge_configs(config1, config2):
+        for key in config2:
+            if key in config1:
+                if isinstance(config1[key], dict) and isinstance(config2[key], dict):
+                    _merge_configs(config1[key], config2[key])
+                elif isinstance(config1[key], list) and isinstance(config2[key], list):
+                    config1[key].extend(config2[key])
+                else:
+                    config1[key] = config2[key]
+            else:
+                config1[key] = config2[key]
+        return config1
+
     try:
-        config_data = yaml.safe_load(config_path.read_text())
+        default_config_data = yaml.safe_load(default_config_path.read_text())
+        local_config_data = (
+            yaml.safe_load(local_config_path.read_text())
+            if local_config_path.exists()
+            else {}
+        )
+        config_data = _merge_configs(default_config_data, local_config_data)
         return EngineConfig(**config_data)
-    except FileNotFoundError:
-        raise RuntimeError(f"Configuration file not found at {config_path}")
     except yaml.YAMLError as e:
         raise RuntimeError(f"Error parsing YAML configuration: {e}")
     except ValidationError as e:

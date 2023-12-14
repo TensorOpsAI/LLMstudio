@@ -77,7 +77,7 @@ class VertexAIClient(LLMClient):
                 VertexAIParameters: Validated/adjusted parameters.
             """
             parameters = parameters or {}
-            return VertexAIParameters(**parameters).model_dump()
+            return VertexAIParameters(**parameters).dict()
 
     class TextBison(VertexAIModel):
         """

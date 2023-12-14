@@ -268,8 +268,8 @@ providers:
         max: 1
         step: 0.01
   azure:
-    id: openai
-    name: OpenAI
+    id: azure
+    name: Azure
     chat: true
     embed: true
     keys:
@@ -282,19 +282,9 @@ providers:
         max_tokens: 128000
         input_token_cost: 0.00001
         output_token_cost: 0.00003
-      gpt-4:
+      gpt-3.5-turbo-16k:
         mode: chat
-        max_tokens: 8192
-        input_token_cost: 0.00003
-        output_token_cost: 0.00006
-      gpt-4-0314:
-        mode: chat
-        max_tokens: 8192
-        input_token_cost: 0.00003
-        output_token_cost: 0.00006
-      gpt-4-0613:
-        mode: chat
-        max_tokens: 8192
+        max_tokens: 16385
         input_token_cost: 0.00003
         output_token_cost: 0.00006
       gpt-3.5-turbo:
@@ -302,31 +292,6 @@ providers:
         max_tokens: 4097
         input_token_cost: 0.0000015
         output_token_cost: 0.000002
-      gpt-3.5-turbo-0301:
-        mode: chat
-        max_tokens: 4097
-        input_token_cost: 0.0000015
-        output_token_cost: 0.000002
-      gpt-3.5-turbo-0613:
-        mode: chat
-        max_tokens: 4097
-        input_token_cost: 0.0000015
-        output_token_cost: 0.000002
-      gpt-3.5-turbo-1106:
-        mode: chat
-        max_tokens: 16385
-        input_token_cost: 0.0000010
-        output_token_cost: 0.0000020
-      gpt-3.5-turbo-16k:
-        mode: chat
-        max_tokens: 16385
-        input_token_cost: 0.000003
-        output_token_cost: 0.000004
-      gpt-3.5-turbo-16k-0613:
-        mode: chat
-        max_tokens: 16385
-        input_token_cost: 0.000003
-        output_token_cost: 0.000004
     parameters:
       temperature:
         name: "Temperature"

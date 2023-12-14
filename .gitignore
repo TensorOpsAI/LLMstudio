@@ -63,6 +63,7 @@ env.bak/
 venv.bak/
 .python-version
 .mypy_cache
+config.yaml
 
 # Jupyter Notebook
 .ipynb_checkpoints

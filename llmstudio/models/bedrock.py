@@ -96,7 +96,7 @@ class BedrockClient(LLMClient):
                 ClaudeParameters: Validated/adjusted parameters.
             """
             parameters = parameters or {}
-            return ClaudeParameters(**parameters).model_dump()
+            return ClaudeParameters(**parameters).dict()
 
     class Titan(BedrockModel):
         """
@@ -133,4 +133,4 @@ class BedrockClient(LLMClient):
                 TitanParameters: Validated/adjusted parameters.
             """
             parameters = parameters or {}
-            return TitanParameters(**parameters).model_dump()
+            return TitanParameters(**parameters).dict()

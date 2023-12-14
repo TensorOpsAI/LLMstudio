@@ -80,7 +80,7 @@ class OpenAIClient(LLMClient):
                 OpenAIParameters: Validated/adjusted parameters.
             """
             parameters = parameters or {}
-            return OpenAIParameters(**parameters).model_dump()
+            return OpenAIParameters(**parameters).dict()
 
     class GPT3_5(OpenAIModel):
         """

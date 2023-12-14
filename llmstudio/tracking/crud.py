@@ -30,7 +30,7 @@ def get_sessions(db: Session, skip: int = 0, limit: int = 100):
 
 
 def create_session(db: Session, session: schemas.SessionCreate, project_id: int):
-    db_session = models.Session(**session.model_dump(), project_id=project_id)
+    db_session = models.Session(**session.dict(), project_id=project_id)
     db.add(db_session)
     db.commit()
     db.refresh(db_session)
@@ -38,7 +38,7 @@ def create_session(db: Session, session: schemas.SessionCreate, project_id: int)
 
 
 def add_log_to_session(db: Session, log: schemas.LogCreate, session_id: int):
-    db_log = models.Log(**log.model_dump(), session_id=session_id)
+    db_log = models.Log(**log.dict(), session_id=session_id)
     db.add(db_log)
     db.commit()
     db.refresh(db_log)
@@ -50,7 +50,7 @@ def get_session_logs(db: Session, skip: int = 0, limit: int = 100):
 
 
 def add_log(db: Session, log: schemas.LogDefaultCreate):
-    db_log = models.LogDefault(**log.model_dump())
+    db_log = models.LogDefault(**log.dict())
     db.add(db_log)
     db.commit()
     db.refresh(db_log)

@@ -42,7 +42,7 @@ class OpenAIProvider(Provider):
                 model=request.model,
                 messages=[{"role": "user", "content": request.chat_input}],
                 stream=True,
-                **request.parameters.model_dump(),
+                **request.parameters.dict(),
             )
         except openai._exceptions.APIError as e:
             raise HTTPException(status_code=e.status_code, detail=e.response.json())

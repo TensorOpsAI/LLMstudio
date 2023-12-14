@@ -19,7 +19,7 @@ class AzureParameters(BaseModel):
 
 
 class AzureRequest(ChatRequest):
-    api_endpoint: str
+    api_endpoint: Optional[str] = None
     api_version: Optional[str] = "2023-05-15"
     parameters: Optional[AzureParameters] = AzureParameters()
 
@@ -50,7 +50,7 @@ class AzureProvider(Provider):
                 model=request.model,
                 messages=[{"role": "user", "content": request.chat_input}],
                 stream=True,
-                **request.parameters.model_dump(),
+                **request.parameters.dict(),
             )
         except openai._exceptions.APIError as e:
             raise HTTPException(status_code=e.status_code, detail=e.response.json())
@@ -59,5 +59,11 @@ class AzureProvider(Provider):
         self, response: AsyncGenerator
     ) -> AsyncGenerator[str, None]:
         for chunk in response:
-            if chunk.choices[0].finish_reason not in ["stop", "length"]:
-                yield chunk.choices[0].delta.content
+            try:
+                if (
+                    chunk.choices[0].finish_reason not in ["stop", "length"]
+                    and chunk.choices[0].delta.content is not None
+                ):
+                    yield chunk.choices[0].delta.content
+            except Exception as e:
+                pass

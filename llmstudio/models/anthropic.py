@@ -37,7 +37,7 @@ class AnthropicClient(LLMClient):
             self, parameters: AnthropicParameters = None
         ) -> AnthropicParameters:
             parameters = parameters or {}
-            return AnthropicParameters(**parameters).model_dump()
+            return AnthropicParameters(**parameters).dict()
 
     class Claude2(AnthropicModel):
         def __init__(self, model, api_key, parameters: AnthropicParameters, **kwargs):
