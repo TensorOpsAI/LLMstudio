@@ -38,7 +38,7 @@ export const columns: ColumnDef<any>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='ID' />
     ),
-    cell: ({ row }) => <div className='w-[80px]'>{row.original.log_id}</div>,
+    cell: ({ row }) => <div className='w-[15px]'>{row.original.log_id}</div>,
     enableSorting: false,
     enableHiding: false,
   },
