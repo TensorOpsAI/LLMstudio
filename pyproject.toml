@@ -1,0 +1,45 @@
+[tool.poetry]
+name = "llmstudio"
+version = "0.2.28"
+description = "Prompt Perfection at Your Fingertips"
+authors = ["Cláudio Lemos <claudio@tensorops.ai>"]
+license = "MIT"
+homepage = "https://llmstudio.ai/"
+repository = "https://github.com/tensoropsai/llmstudio"
+documentation = "https://docs.llmstudio.ai"
+readme = "README.md"
+keywords = ["ml", "ai", "llm", "llmops", "openai", "langchain", "chatgpt", "llmstudio", "tensorops"]
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/tensoropsai/llmstudio/issues"
+"Source Code" = "https://github.com/tensoropsai/llmstudio"
+"Documentation" = "https://docs.llmstudio.ai"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pydantic = "^2.5.3"
+requests = "^2.31.0"
+numpy = "^1.26.2"
+torch = "^2.1.2"
+sentence-transformers = "^2.2.2"
+fastapi = "^0.108.0"
+uvicorn = "^0.25.0"
+pyyaml = "^6.0.1"
+openai = "^1.6.1"
+tiktoken = "^0.5.2"
+google-auth = "^2.25.2"
+google-cloud-aiplatform = "^1.38.1"
+langchain = "^0.0.352"
+anthropic = "^0.8.1"
+python-dotenv = "^1.0.0"
+cohere = "^4.39"
+tokenizer = "^3.4.3"
+
+[tool.poetry.dev-dependencies]
+
+[tool.poetry.scripts]
+llmstudio = "llmstudio.cli:main"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
