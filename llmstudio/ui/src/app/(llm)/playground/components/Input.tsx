@@ -28,8 +28,8 @@ export default function Input() {
   };
 
   return (
-    <form onSubmit={onSubmit} className='h-full'>
-      <div className='h-full rounded-lg border'>
+    <form onSubmit={onSubmit} className='flex h-full flex-col'>
+      <div className='flex h-full flex-grow flex-col  rounded-lg border'>
         <div className='flex items-center justify-between p-3'>
           <h1 className='text-2xl font-bold'>Input</h1>
           <Button
@@ -43,7 +43,7 @@ export default function Input() {
             Submit
           </Button>
         </div>
-        <div className='rounded-lg px-4 py-2'>
+        <div className='flex-grow rounded-lg px-4 py-2'>
           <textarea
             id='input'
             ref={textareaRef}
