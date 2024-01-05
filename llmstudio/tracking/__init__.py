@@ -102,14 +102,6 @@ def create_tracking_app() -> FastAPI:
     return app
 
 
-def is_api_running(url: str) -> bool:
-    try:
-        response = requests.get(url, timeout=5)
-        return response.status_code == 200
-    except requests.RequestException:
-        return False
-
-
 def run_tracking_app():
     print(f"Running Tracking on http://{TRACKING_HOST}:{TRACKING_PORT}")
     try:
