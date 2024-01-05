@@ -167,14 +167,6 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
     return app
 
 
-def is_api_running(url: str) -> bool:
-    try:
-        response = requests.get(url, timeout=5)
-        return response.status_code == 200
-    except requests.RequestException:
-        return False
-
-
 def run_engine_app():
     print(f"Running Engine on {ENGINE_HOST}:{ENGINE_PORT}")
     try:

@@ -59,11 +59,8 @@ class AzureProvider(Provider):
         self, response: AsyncGenerator
     ) -> AsyncGenerator[str, None]:
         for chunk in response:
-            try:
-                if (
-                    chunk.choices[0].finish_reason not in ["stop", "length"]
-                    and chunk.choices[0].delta.content is not None
-                ):
-                    yield chunk.choices[0].delta.content
-            except Exception as e:
-                pass
+            if (
+                chunk.choices[0].finish_reason not in ["stop", "length"]
+                and chunk.choices[0].delta.content is not None
+            ):
+                yield chunk.choices[0].delta.content

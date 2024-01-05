@@ -41,9 +41,6 @@ class Log(LogBase):
     session_id: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class Session(SessionBase):
     session_id: int
@@ -51,17 +48,11 @@ class Session(SessionBase):
     created_at: datetime
     logs: list[Log] = []
 
-    class Config:
-        from_attributes = True
-
 
 class Project(ProjectBase):
     project_id: int
     created_at: datetime
     sessions: list[Session] = []
-
-    class Config:
-        from_attributes = True
 
 
 class LogDefaultBase(BaseModel):
@@ -76,9 +67,6 @@ class LogDefaultBase(BaseModel):
 class LogDefault(LogDefaultBase):
     log_id: int
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class LogDefaultCreate(LogDefaultBase):

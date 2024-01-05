@@ -13,11 +13,11 @@ const links = [
     route: '/playground',
     icon: Shapes,
   },
-  {
-    name: 'Compare',
-    route: '/compare',
-    icon: GitCompare,
-  },
+  // {
+  //   name: 'Compare',
+  //   route: '/compare',
+  //   icon: GitCompare,
+  // },
   {
     name: 'Docs',
     route: 'https://docs.llmstudio.ai',
