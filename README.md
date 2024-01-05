@@ -68,7 +68,7 @@ Now you should be able to run **LLMstudio** using the following command.
 llmstudio server --ui
 ```
 
-When the `--ui` flag is set, you'll be able to access the UI at [http://localhost:8000](http://localhost:8000)
+When the `--ui` flag is set, you'll be able to access the UI at [http://localhost:3000](http://localhost:3000)
 
 ## 🤔 About LLMstudio
 
@@ -99,4 +99,4 @@ Step into the future of AI with LLMstudio, by watching our [introduction video](
 
 ---
 
-Thank you for choosing LLMstudio. Your journey to perfecting AI interactions begins here.
+Thank you for choosing LLMstudio. Your journey to perfecting AI interactions starts here.
