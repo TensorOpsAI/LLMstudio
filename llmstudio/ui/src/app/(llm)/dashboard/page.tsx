@@ -75,7 +75,7 @@ export default function Dashboard() {
               <BarChart
                 className='mt-6'
                 data={metrics.average_latency}
-                categories={['value']}
+                categories={['latency']}
                 index='name'
                 yAxisWidth={48}
               />
@@ -85,7 +85,7 @@ export default function Dashboard() {
               <BarChart
                 className='mt-6'
                 data={metrics.average_ttft}
-                categories={['value']}
+                categories={['ttft']}
                 index='name'
                 yAxisWidth={48}
               />
@@ -95,7 +95,7 @@ export default function Dashboard() {
               <BarChart
                 className='mt-6'
                 data={metrics.average_itl}
-                categories={['value']}
+                categories={['itl']}
                 index='name'
                 yAxisWidth={48}
               />
@@ -105,7 +105,7 @@ export default function Dashboard() {
               <BarChart
                 className='mt-6'
                 data={metrics.average_tps}
-                categories={['value']}
+                categories={['tps']}
                 index='name'
                 yAxisWidth={48}
               />

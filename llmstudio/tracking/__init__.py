@@ -190,19 +190,19 @@ def create_tracking_app() -> FastAPI:
                 {"name": model, "cost": cost} for model, cost in total_cost_by_model
             ],
             "average_latency": [
-                {"name": model, "value": average_latency}
+                {"name": model, "latency": average_latency}
                 for model, average_latency, _, _, _ in average_query
             ],
             "average_ttft": [
-                {"name": model, "value": average_ttft}
+                {"name": model, "ttft": average_ttft}
                 for model, _, average_ttft, _, _ in average_query
             ],
             "average_itl": [
-                {"name": model, "value": average_itl}
+                {"name": model, "itl": average_itl}
                 for model, _, _, average_itl, _ in average_query
             ],
             "average_tps": [
-                {"name": model, "value": average_tps}
+                {"name": model, "tps": average_tps}
                 for model, _, _, _, average_tps in average_query
             ],
         }
