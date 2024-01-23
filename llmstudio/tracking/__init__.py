@@ -95,7 +95,7 @@ def create_tracking_app() -> FastAPI:
         return crud.add_log(db=db, log=log)
 
     @app.get(f"{TRACKING_BASE_ENDPOINT}/logs", response_model=list[schemas.LogDefault])
-    def read_logs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    def read_logs(skip: int = 0, limit: int = 1000, db: Session = Depends(get_db)):
         logs = crud.get_logs(db, skip=skip, limit=limit)
         return logs
 

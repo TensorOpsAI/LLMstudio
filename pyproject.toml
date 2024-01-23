@@ -26,6 +26,7 @@ anthropic = "^0.8.1"
 python-dotenv = "^1.0.0"
 cohere = "^4.39"
 tokenizer = "^3.4.3"
+aiohttp = "^3.9.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.4.4"

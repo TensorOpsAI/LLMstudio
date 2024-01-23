@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import Any, AsyncGenerator, Coroutine, Generator, Optional
+from typing import Any, AsyncGenerator, Coroutine, Generator, Optional, List, Dict
 
 import openai
 from fastapi import HTTPException
@@ -20,6 +20,7 @@ class OpenAIParameters(BaseModel):
 
 class OpenAIRequest(ChatRequest):
     parameters: Optional[OpenAIParameters] = OpenAIParameters()
+    functions: Optional[List[Dict[str, Any]]] = None
 
 
 @provider
@@ -41,6 +42,8 @@ class OpenAIProvider(Provider):
                 client.chat.completions.create,
                 model=request.model,
                 messages=[{"role": "user", "content": request.chat_input}],
+                functions=request.functions,
+                function_call="auto",
                 stream=True,
                 **request.parameters.dict(),
             )
@@ -52,4 +55,12 @@ class OpenAIProvider(Provider):
     ) -> AsyncGenerator[str, None]:
         for chunk in response:
             if chunk.choices[0].finish_reason not in ["stop", "length"]:
-                yield chunk.choices[0].delta.content
+                try:
+                    if chunk.choices[0].delta.content:
+                        yield chunk.choices[0].delta.content
+                    elif chunk.choices[0].delta.function_call.arguments:
+                        yield chunk.choices[0].delta.function_call.arguments
+                    else:
+                        print(chunk)
+                except:
+                    print(chunk)
