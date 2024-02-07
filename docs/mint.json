@@ -41,7 +41,7 @@
   "navigation": [
     {
       "group": "Get Started",
-      "pages": ["quickstart"]
+      "pages": ["quickstart", "support"]
     },
     {
       "group": "Endpoint Examples",
