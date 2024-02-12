@@ -87,11 +87,11 @@ class Provider:
         self, request: ChatRequest, response: AsyncGenerator, start_time: float
     ) -> AsyncGenerator[str, None]:
         """Handles the response from an API"""
-        chat_output = ""
         first_token_time = None
         previous_token_time = None
         token_times = []
         token_count = 0
+        chunks = []
 
         async for chunk in self.parse_response(response):
             token_count += 1
@@ -101,13 +101,15 @@ class Provider:
                 token_times.append(current_time - previous_token_time)
             previous_token_time = current_time
 
-            chat_output += chunk
+            chunks.append(chunk)
             if request.is_stream:
                 yield chunk
 
+        response = self.join_chunks(chunks)
+
         metrics = self.calculate_metrics(
             request.chat_input,
-            chat_output,
+            response,
             request.model,
             start_time,
             time.time(),
@@ -116,43 +118,141 @@ class Provider:
             token_count,
         )
 
-        if request.is_stream and request.has_end_token:
-            yield self.get_end_token_string(metrics)
-
-        response = self.generate_response(request, chat_output, metrics)
-
-        self.save_log(response)
+        response = {**response.model_dump(), "metrics": metrics}
 
         if not request.is_stream:
             yield response
+
+        self.save_log(response)
+
+    def join_chunks(self, chunks):
+        from openai.types.chat import (
+            ChatCompletion,
+            ChatCompletionMessage,
+            ChatCompletionMessageToolCall,
+        )
+        from openai.types.chat.chat_completion import Choice
+        from openai.types.chat.chat_completion_message import FunctionCall
+        from openai.types.chat.chat_completion_message_tool_call import Function
+
+        if chunks[-1].get("choices")[0].get("finish_reason") == "tool_calls":
+            tool_calls = [
+                chunk.get("choices")[0].get("delta").get("tool_calls")[0]
+                for chunk in chunks[1:-1]
+            ]
+            tool_call_id = tool_calls[0].get("id")
+            tool_call_name = tool_calls[0].get("function").get("name")
+            tool_call_type = tool_calls[0].get("type")
+            tool_call_arguments = ""
+            for chunk in tool_calls[1:]:
+                tool_call_arguments += chunk.get("function").get("arguments")
+
+            return ChatCompletion(
+                id=chunks[-1].get("id"),
+                created=chunks[-1].get("created"),
+                model=chunks[-1].get("model"),
+                object="chat.completion",
+                choices=[
+                    Choice(
+                        finish_reason="tool_calls",
+                        index=0,
+                        logprobs=None,
+                        message=ChatCompletionMessage(
+                            content=None,
+                            role="assistant",
+                            function_call=None,
+                            tool_calls=[
+                                ChatCompletionMessageToolCall(
+                                    id=tool_call_id,
+                                    function=Function(
+                                        arguments=tool_call_arguments,
+                                        name=tool_call_name,
+                                    ),
+                                    type=tool_call_type,
+                                )
+                            ],
+                        ),
+                    )
+                ],
+            )
+        elif chunks[-1].get("choices")[0].get("finish_reason") == "function_call":
+            function_calls = [
+                chunk.get("choices")[0].get("delta").get("function_call")
+                for chunk in chunks[1:-1]
+            ]
+            function_call_name = (
+                chunks[0]
+                .get("choices")[0]
+                .get("delta")
+                .get("function_call")
+                .get("name")
+            )
+            function_call_arguments = ""
+            for chunk in function_calls:
+                function_call_arguments += chunk.get("arguments")
+
+            return ChatCompletion(
+                id=chunks[-1].get("id"),
+                created=chunks[-1].get("created"),
+                model=chunks[-1].get("model"),
+                object="chat.completion",
+                choices=[
+                    Choice(
+                        finish_reason="function_call",
+                        index=0,
+                        logprobs=None,
+                        message=ChatCompletionMessage(
+                            content=None,
+                            role="assistant",
+                            tool_calls=None,
+                            function_call=FunctionCall(
+                                arguments=function_call_arguments,
+                                name=function_call_name,
+                            ),
+                        ),
+                    )
+                ],
+            )
+        elif chunks[-1].get("choices")[0].get("finish_reason") == "stop":
+            stop_content = "".join(
+                filter(
+                    None,
+                    [
+                        chunk.get("choices")[0].get("delta").get("content")
+                        for chunk in chunks[1:]
+                    ],
+                )
+            )
+
+            return ChatCompletion(
+                id=chunks[-1].get("id"),
+                created=chunks[-1].get("created"),
+                model=chunks[-1].get("model"),
+                object="chat.completion",
+                choices=[
+                    Choice(
+                        finish_reason="stop",
+                        index=0,
+                        logprobs=None,
+                        message=ChatCompletionMessage(
+                            content=stop_content,
+                            role="assistant",
+                            function_call=None,
+                            tool_calls=None,
+                        ),
+                    )
+                ],
+            )
 
     async def parse_response(
         self, response: AsyncGenerator
     ) -> AsyncGenerator[str, None]:
         pass
 
-    def generate_response(
-        self,
-        request: ChatRequest,
-        chat_output: str,
-        metrics: Dict[str, Any],
-    ) -> Dict[str, Any]:
-        """Generates a complete response with metrics"""
-        return {
-            "id": str(uuid.uuid4()),
-            "chat_input": request.chat_input,
-            "chat_output": chat_output,
-            "timestamp": time.time(),
-            "provider": self.config.id,
-            "model": request.model,
-            "metrics": metrics,
-            "parameters": request.parameters.dict(),
-        }
-
     def calculate_metrics(
         self,
-        input: str,
-        output: str,
+        input: Any,
+        output: Any,
         model: str,
         start_time: float,
         end_time: float,
@@ -162,8 +262,8 @@ class Provider:
     ) -> Dict[str, Any]:
         """Calculates metrics based on token times and output"""
         model_config = self.config.models[model]
-        input_tokens = len(self.tokenizer.encode(input))
-        output_tokens = len(self.tokenizer.encode(output))
+        input_tokens = len(self.tokenizer.encode(self.input_to_string(input)))
+        output_tokens = len(self.tokenizer.encode(self.output_to_string(output)))
 
         input_cost = model_config.input_token_cost * input_tokens
         output_cost = model_config.output_token_cost * output_tokens
@@ -179,6 +279,20 @@ class Provider:
             "inter_token_latency": sum(token_times) / len(token_times),
             "tokens_per_second": token_count / total_time,
         }
+
+    def input_to_string(self, input):
+        if isinstance(input, str):
+            return input
+        else:
+            return "".join([input.content for message in input])
+
+    def output_to_string(self, output):
+        if output.choices[0].finish_reason == "stop":
+            return output.choices[0].message.content
+        elif output.choices[0].finish_reason == "tool_calls":
+            return output.choices[0].message.tool_calls[0].function.arguments
+        elif output.choices[0].finish_reason == "function_call":
+            return output.choices[0].message.function_call.arguments
 
     def get_end_token_string(self, metrics: Dict[str, Any]) -> str:
         return f"{self.END_TOKEN},input_tokens={metrics['input_tokens']},output_tokens={metrics['output_tokens']},cost={metrics['cost']},latency={metrics['latency']:.5f},time_to_first_token={metrics['time_to_first_token']:.5f},inter_token_latency={metrics['inter_token_latency']:.5f},tokens_per_second={metrics['tokens_per_second']:.2f}"

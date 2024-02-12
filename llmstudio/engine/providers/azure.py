@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import Any, AsyncGenerator, Coroutine, Generator, Optional
+from typing import Any, AsyncGenerator, Coroutine, Generator, Optional, List, Dict
 
 import openai
 from fastapi import HTTPException
@@ -12,7 +12,7 @@ from llmstudio.engine.providers.provider import ChatRequest, Provider, provider
 
 class AzureParameters(BaseModel):
     temperature: Optional[float] = Field(default=1, ge=0, le=2)
-    max_tokens: Optional[int] = Field(default=256, ge=1)
+    max_tokens: Optional[int] = Field(default=2048, ge=1)
     top_p: Optional[float] = Field(default=1, ge=0, le=1)
     frequency_penalty: Optional[float] = Field(default=0, ge=0, le=1)
     presence_penalty: Optional[float] = Field(default=0, ge=0, le=1)
@@ -22,6 +22,8 @@ class AzureRequest(ChatRequest):
     api_endpoint: Optional[str] = None
     api_version: Optional[str] = "2023-05-15"
     parameters: Optional[AzureParameters] = AzureParameters()
+    functions: Optional[List[Dict[str, Any]]] = None
+    chat_input: Any
 
 
 @provider
@@ -48,9 +50,15 @@ class AzureProvider(Provider):
             return await asyncio.to_thread(
                 client.chat.completions.create,
                 model=request.model,
-                messages=[{"role": "user", "content": request.chat_input}],
+                messages=(
+                    [{"role": "user", "content": request.chat_input}]
+                    if isinstance(request.chat_input, str)
+                    else request.chat_input
+                ),
+                functions=request.functions,
+                function_call="auto" if request.functions else None,
                 stream=True,
-                **request.parameters.dict(),
+                **request.parameters.model_dump(),
             )
         except openai._exceptions.APIError as e:
             raise HTTPException(status_code=e.status_code, detail=e.response.json())
@@ -59,8 +67,4 @@ class AzureProvider(Provider):
         self, response: AsyncGenerator
     ) -> AsyncGenerator[str, None]:
         for chunk in response:
-            if (
-                chunk.choices[0].finish_reason not in ["stop", "length"]
-                and chunk.choices[0].delta.content is not None
-            ):
-                yield chunk.choices[0].delta.content
+            yield chunk.model_dump()

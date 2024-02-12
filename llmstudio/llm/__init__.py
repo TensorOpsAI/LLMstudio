@@ -1,5 +1,6 @@
 import requests
 import aiohttp
+from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
 
 class LLM:
@@ -10,8 +11,6 @@ class LLM:
         self.api_version = kwargs.get("api_version")
 
     def chat(self, input: str, is_stream: bool = False, **kwargs):
-        print(f"Chatting with {self.provider}/{self.model}")
-        print({**kwargs})
         response = requests.post(
             f"http://localhost:8000/api/engine/chat/{self.provider}",
             json={
@@ -32,15 +31,14 @@ class LLM:
         if is_stream:
             return self.generate_chat(response)
         else:
-            return response.json()
+            return ChatCompletion(**response.json())
 
     def generate_chat(self, response):
         for chunk in response.iter_content(chunk_size=None):
             if chunk:
-                yield chunk.decode("utf-8")
+                yield ChatCompletionChunk(**chunk.decode("utf-8"))
 
     async def async_chat(self, input: str, is_stream=False, **kwargs):
-        print(f"Async chatting with {self.provider}/{self.model}")
         if is_stream:
             return self.async_stream(input)
         else:
@@ -63,7 +61,7 @@ class LLM:
             ) as response:
                 response.raise_for_status()
 
-                return await response.json()
+                return await ChatCompletion(**response.json())
 
     async def async_stream(self, input: str, **kwargs):
         async with aiohttp.ClientSession() as session:
@@ -84,4 +82,4 @@ class LLM:
 
                 async for chunk in response.content.iter_any():
                     if chunk:
-                        yield chunk.decode("utf-8")
+                        yield ChatCompletionChunk(**chunk.decode("utf-8"))
