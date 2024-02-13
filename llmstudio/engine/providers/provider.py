@@ -9,6 +9,7 @@ from typing import (
     Coroutine,
     Dict,
     Generator,
+    List,
     Optional,
     Tuple,
     Union,
@@ -35,10 +36,12 @@ def provider(cls):
 class ChatRequest(BaseModel):
     api_key: Optional[str] = None
     model: str
-    chat_input: str
+    chat_input: Any
     parameters: Optional[BaseModel] = None
     is_stream: Optional[bool] = False
     has_end_token: Optional[bool] = False
+    functions: Optional[List[Dict[str, Any]]] = None
+
 
 
 class Provider:
@@ -181,15 +184,14 @@ class Provider:
                 for chunk in chunks[1:-1]
             ]
             function_call_name = (
-                chunks[0]
-                .get("choices")[0]
-                .get("delta")
-                .get("function_call")
+                function_calls[0]
                 .get("name")
             )
             function_call_arguments = ""
             for chunk in function_calls:
-                function_call_arguments += chunk.get("arguments")
+                part = chunk.get("arguments", "")
+                if part:
+                    function_call_arguments += part
 
             return ChatCompletion(
                 id=chunks[-1].get("id"),
@@ -284,7 +286,7 @@ class Provider:
         if isinstance(input, str):
             return input
         else:
-            return "".join([input.content for message in input])
+            return "".join([message.get("content", "") for message in input])
 
     def output_to_string(self, output):
         if output.choices[0].finish_reason == "stop":
