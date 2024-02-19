@@ -1,9 +1,11 @@
 import os
 
-import requests
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Optional
+import calendar
+from sqlalchemy import extract, func
 from sqlalchemy.orm import Session
 
 from llmstudio.engine.providers import *
@@ -95,9 +97,127 @@ def create_tracking_app() -> FastAPI:
         return crud.add_log(db=db, log=log)
 
     @app.get(f"{TRACKING_BASE_ENDPOINT}/logs", response_model=list[schemas.LogDefault])
-    def read_logs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    def read_logs(skip: int = 0, limit: int = 1000, db: Session = Depends(get_db)):
         logs = crud.get_logs(db, skip=skip, limit=limit)
         return logs
+
+    @app.get(
+        f"{TRACKING_BASE_ENDPOINT}/dashboard/metrics",
+        response_model=schemas.DashboardMetrics,
+    )
+    def get_dashboard_metrics(
+        db: Session = Depends(get_db), year: int = 2024, month: Optional[int] = None
+    ):
+        metrics_query = db.query(
+            models.LogDefault.model,
+            models.LogDefault.provider,
+            func.count().label("total_requests"),
+            extract("month", models.LogDefault.created_at).label("month"),
+            extract("day", models.LogDefault.created_at).label("day"),
+        ).filter(extract("year", models.LogDefault.created_at) == year)
+
+        if month:
+            metrics_query = metrics_query.filter(
+                extract("month", models.LogDefault.created_at) == month
+            )
+            days_in_month = calendar.monthrange(year, month)[1]
+        else:
+            days_in_month = 12  # Months in a year
+
+        metrics_query = metrics_query.group_by(
+            "month", "day", models.LogDefault.model, models.LogDefault.provider
+        ).all()
+
+        # Get unique models and providers from the database
+        unique_models = db.query(models.LogDefault.model).distinct().all()
+        unique_providers = db.query(models.LogDefault.provider).distinct().all()
+
+        # Flatten the lists of tuples to lists of strings
+        unique_models = [model[0] for model in unique_models]
+        unique_providers = [provider[0] for provider in unique_providers]
+
+        total_cost_by_provider = (
+            db.query(
+                models.LogDefault.provider,
+                func.sum(models.LogDefault.metrics["cost"]).label("cost"),
+            )
+            .group_by(models.LogDefault.provider)
+            .all()
+        )
+
+        total_cost_by_model = (
+            db.query(
+                models.LogDefault.model,
+                func.sum(models.LogDefault.metrics["cost"]).label("cost"),
+            )
+            .group_by(models.LogDefault.model)
+            .all()
+        )
+
+        average_query = (
+            db.query(
+                models.LogDefault.model,
+                func.avg(models.LogDefault.metrics["latency"]).label("average_latency"),
+                func.avg(models.LogDefault.metrics["time_to_first_token"]).label(
+                    "average_ttft"
+                ),
+                func.avg(models.LogDefault.metrics["inter_token_latency"]).label(
+                    "average_itl"
+                ),
+                func.avg(models.LogDefault.metrics["tokens_per_second"]).label(
+                    "average_tps"
+                ),
+            )
+            .group_by(models.LogDefault.model)
+            .all()
+        )
+
+        # Initialize the data structure with dates and zeros for all models and providers
+        dashboard_data = {
+            "request_by_provider": [
+                {"date": index + 1, **{provider: 0 for provider in unique_providers}}
+                for index in range(days_in_month)
+            ],
+            "request_by_model": [
+                {"date": index + 1, **{model: 0 for model in unique_models}}
+                for index in range(days_in_month)
+            ],
+            "total_cost_by_provider": [
+                {"name": provider, "cost": cost}
+                for provider, cost in total_cost_by_provider
+            ],
+            "total_cost_by_model": [
+                {"name": model, "cost": cost} for model, cost in total_cost_by_model
+            ],
+            "average_latency": [
+                {"name": model, "latency": average_latency}
+                for model, average_latency, _, _, _ in average_query
+            ],
+            "average_ttft": [
+                {"name": model, "ttft": average_ttft}
+                for model, _, average_ttft, _, _ in average_query
+            ],
+            "average_itl": [
+                {"name": model, "itl": average_itl}
+                for model, _, _, average_itl, _ in average_query
+            ],
+            "average_tps": [
+                {"name": model, "tps": average_tps}
+                for model, _, _, _, average_tps in average_query
+            ],
+        }
+
+        # Populate the data structure with actual counts from the query
+        for metric in metrics_query:
+            index = metric.month - 1 if not month else metric.day - 1
+            dashboard_data["request_by_model"][index][
+                metric.model
+            ] = metric.total_requests
+            dashboard_data["request_by_provider"][index][
+                metric.provider
+            ] = metric.total_requests
+
+        return dashboard_data
 
     return app
 

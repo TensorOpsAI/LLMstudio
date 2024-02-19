@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List, Dict
 
 from pydantic import BaseModel
 
@@ -71,3 +72,14 @@ class LogDefault(LogDefaultBase):
 
 class LogDefaultCreate(LogDefaultBase):
     pass
+
+
+class DashboardMetrics(BaseModel):
+    request_by_provider: List[Dict[str, int]]
+    request_by_model: List[Dict[str, int]]
+    total_cost_by_provider: List[Dict]
+    total_cost_by_model: List[Dict]
+    average_latency: List[Dict]
+    average_ttft: List[Dict]
+    average_itl: List[Dict]
+    average_tps: List[Dict]
