@@ -128,10 +128,14 @@ class Provider:
                 else request.chat_input[-1]["content"]
             ),
             "chat_output": output_string,
-            "timestamp": time.time(),
-            "context": request.chat_input,
-            "model": request.model,
+            "context": (
+                [{"role": "user", "content": request.chat_input}]
+                if isinstance(request.chat_input, str)
+                else request.chat_input
+            ),
             "provider": self.config.id,
+            "model": request.model,
+            "timestamp": time.time(),
             "parameters": request.parameters.model_dump(),
             "metrics": metrics,
         }
@@ -359,5 +363,7 @@ class Provider:
             with open(file_name, "a") as f:
                 f.write(json.dumps(response) + "\n")
         else:
-            print(response)
+            from llmstudio.tracking.models import Log
+
+            print(Log(**response))
             tracker.log(response)
