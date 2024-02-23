@@ -21,7 +21,6 @@ from fastapi import HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, ValidationError
 from tokenizers import Tokenizer
-
 from llmstudio.tracking.tracker import tracker
 
 provider_registry = {}
@@ -41,7 +40,6 @@ class ChatRequest(BaseModel):
     is_stream: Optional[bool] = False
     has_end_token: Optional[bool] = False
     functions: Optional[List[Dict[str, Any]]] = None
-
 
 
 class Provider:
@@ -108,7 +106,7 @@ class Provider:
             if request.is_stream:
                 yield chunk
 
-        response = self.join_chunks(chunks)
+        response, output_string = self.join_chunks(chunks, request)
 
         metrics = self.calculate_metrics(
             request.chat_input,
@@ -121,14 +119,29 @@ class Provider:
             token_count,
         )
 
-        response = {**response.model_dump(), "metrics": metrics}
+        response = {
+            **response.model_dump(),
+            "id": str(uuid.uuid4()),
+            "chat_input": (
+                request.chat_input
+                if isinstance(request.chat_input, str)
+                else request.chat_input[-1]["content"]
+            ),
+            "chat_output": output_string,
+            "timestamp": time.time(),
+            "context": request.chat_input,
+            "model": request.model,
+            "provider": self.config.id,
+            "parameters": request.parameters.model_dump(),
+            "metrics": metrics,
+        }
+
+        self.save_log(response)
 
         if not request.is_stream:
             yield response
 
-        self.save_log(response)
-
-    def join_chunks(self, chunks):
+    def join_chunks(self, chunks, request):
         from openai.types.chat import (
             ChatCompletion,
             ChatCompletionMessage,
@@ -137,6 +150,9 @@ class Provider:
         from openai.types.chat.chat_completion import Choice
         from openai.types.chat.chat_completion_message import FunctionCall
         from openai.types.chat.chat_completion_message_tool_call import Function
+
+        from llmstudio.engine.providers.azure import AzureRequest
+        from llmstudio.engine.providers.openai import OpenAIRequest
 
         if chunks[-1].get("choices")[0].get("finish_reason") == "tool_calls":
             tool_calls = [
@@ -150,70 +166,86 @@ class Provider:
             for chunk in tool_calls[1:]:
                 tool_call_arguments += chunk.get("function").get("arguments")
 
-            return ChatCompletion(
-                id=chunks[-1].get("id"),
-                created=chunks[-1].get("created"),
-                model=chunks[-1].get("model"),
-                object="chat.completion",
-                choices=[
-                    Choice(
-                        finish_reason="tool_calls",
-                        index=0,
-                        logprobs=None,
-                        message=ChatCompletionMessage(
-                            content=None,
-                            role="assistant",
-                            function_call=None,
-                            tool_calls=[
-                                ChatCompletionMessageToolCall(
-                                    id=tool_call_id,
-                                    function=Function(
-                                        arguments=tool_call_arguments,
-                                        name=tool_call_name,
-                                    ),
-                                    type=tool_call_type,
-                                )
-                            ],
-                        ),
-                    )
-                ],
+            return (
+                ChatCompletion(
+                    id=chunks[-1].get("id"),
+                    created=chunks[-1].get("created"),
+                    model=chunks[-1].get("model"),
+                    object="chat.completion",
+                    choices=[
+                        Choice(
+                            finish_reason="tool_calls",
+                            index=0,
+                            logprobs=None,
+                            message=ChatCompletionMessage(
+                                content=None,
+                                role="assistant",
+                                function_call=None,
+                                tool_calls=[
+                                    ChatCompletionMessageToolCall(
+                                        id=tool_call_id,
+                                        function=Function(
+                                            arguments=tool_call_arguments,
+                                            name=tool_call_name,
+                                        ),
+                                        type=tool_call_type,
+                                    )
+                                ],
+                            ),
+                        )
+                    ],
+                ),
+                tool_call_arguments,
             )
         elif chunks[-1].get("choices")[0].get("finish_reason") == "function_call":
             function_calls = [
                 chunk.get("choices")[0].get("delta").get("function_call")
                 for chunk in chunks[1:-1]
             ]
-            function_call_name = (
-                function_calls[0]
-                .get("name")
-            )
+
+            if isinstance(request, AzureRequest):
+                function_call_name = function_calls[0].get("name")
+            elif isinstance(request, OpenAIRequest):
+                function_call_name = (
+                    chunks[0]
+                    .get("choices")[0]
+                    .get("delta")
+                    .get("function_call")
+                    .get("name")
+                )
             function_call_arguments = ""
             for chunk in function_calls:
-                part = chunk.get("arguments", "")
-                if part:
-                    function_call_arguments += part
+                if isinstance(request, AzureRequest):
+                    part = chunk.get("arguments", "")
+                    if part:
+                        function_call_arguments += part
+                elif isinstance(request, OpenAIRequest):
+                    function_call_arguments += chunk.get("arguments")
 
-            return ChatCompletion(
-                id=chunks[-1].get("id"),
-                created=chunks[-1].get("created"),
-                model=chunks[-1].get("model"),
-                object="chat.completion",
-                choices=[
-                    Choice(
-                        finish_reason="function_call",
-                        index=0,
-                        logprobs=None,
-                        message=ChatCompletionMessage(
-                            content=None,
-                            role="assistant",
-                            tool_calls=None,
-                            function_call=FunctionCall(
-                                arguments=function_call_arguments,
-                                name=function_call_name,
+            return (
+                ChatCompletion(
+                    id=chunks[-1].get("id"),
+                    created=chunks[-1].get("created"),
+                    model=chunks[-1].get("model"),
+                    object="chat.completion",
+                    choices=[
+                        Choice(
+                            finish_reason="function_call",
+                            index=0,
+                            logprobs=None,
+                            message=ChatCompletionMessage(
+                                content=None,
+                                role="assistant",
+                                tool_calls=None,
+                                function_call=FunctionCall(
+                                    arguments=function_call_arguments,
+                                    name=function_call_name,
+                                ),
                             ),
-                        ),
-                    )
-                ],
+                        )
+                    ],
+                ),
+                function_call_arguments,
             )
         elif chunks[-1].get("choices")[0].get("finish_reason") == "stop":
             stop_content = "".join(
@@ -226,24 +258,27 @@ class Provider:
                 )
             )
 
-            return ChatCompletion(
-                id=chunks[-1].get("id"),
-                created=chunks[-1].get("created"),
-                model=chunks[-1].get("model"),
-                object="chat.completion",
-                choices=[
-                    Choice(
-                        finish_reason="stop",
-                        index=0,
-                        logprobs=None,
-                        message=ChatCompletionMessage(
-                            content=stop_content,
-                            role="assistant",
-                            function_call=None,
-                            tool_calls=None,
-                        ),
-                    )
-                ],
+            return (
+                ChatCompletion(
+                    id=chunks[-1].get("id"),
+                    created=chunks[-1].get("created"),
+                    model=chunks[-1].get("model"),
+                    object="chat.completion",
+                    choices=[
+                        Choice(
+                            finish_reason="stop",
+                            index=0,
+                            logprobs=None,
+                            message=ChatCompletionMessage(
+                                content=stop_content,
+                                role="assistant",
+                                function_call=None,
+                                tool_calls=None,
+                            ),
+                        )
+                    ],
+                ),
+                stop_content,
             )
 
     async def parse_response(
@@ -286,7 +321,13 @@ class Provider:
         if isinstance(input, str):
             return input
         else:
-            return "".join([message.get("content", "") for message in input])
+            return "".join(
+                [
+                    message.get("content", "")
+                    for message in input
+                    if message.get("content") is not None
+                ]
+            )
 
     def output_to_string(self, output):
         if output.choices[0].finish_reason == "stop":
@@ -318,4 +359,5 @@ class Provider:
             with open(file_name, "a") as f:
                 f.write(json.dumps(response) + "\n")
         else:
+            print(response)
             tracker.log(response)

@@ -1,6 +1,7 @@
 import requests
 import aiohttp
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
+from llmstudio.cli import start_server_if_not_running
 
 
 class LLM:
@@ -9,6 +10,7 @@ class LLM:
         self.api_key = kwargs.get("api_key")
         self.api_endpoint = kwargs.get("api_endpoint")
         self.api_version = kwargs.get("api_version")
+        start_server_if_not_running()
 
     def chat(self, input: str, is_stream: bool = False, **kwargs):
         response = requests.post(
