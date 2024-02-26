@@ -363,7 +363,4 @@ class Provider:
             with open(file_name, "a") as f:
                 f.write(json.dumps(response) + "\n")
         else:
-            from llmstudio.tracking.models import Log
-
-            print(Log(**response))
             tracker.log(response)
