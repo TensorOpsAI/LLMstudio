@@ -10,6 +10,10 @@ class LLM:
         self.api_key = kwargs.get("api_key")
         self.api_endpoint = kwargs.get("api_endpoint")
         self.api_version = kwargs.get("api_version")
+        self.temperature = kwargs.get("temperature")
+        self.top_p = kwargs.get("top_p")
+        self.top_k = kwargs.get("top_k")
+        self.max_tokens = kwargs.get("max_tokens")
         start_server_if_not_running()
 
     def chat(self, input: str, is_stream: bool = False, **kwargs):
@@ -18,10 +22,16 @@ class LLM:
             json={
                 "model": self.model,
                 "api_key": self.api_key,
-                "api_secret": self.api_endpoint,
-                "api_region": self.api_version,
+                "api_endpoint": self.api_endpoint,
+                "api_version": self.api_version,
                 "chat_input": input,
                 "is_stream": is_stream,
+                "parameters": {
+                    "temperature": self.temperature,
+                    "top_p": self.top_p,
+                    "top_k": self.top_k,
+                    "max_tokens": self.max_tokens,
+                },
                 **kwargs,
             },
             stream=is_stream,
