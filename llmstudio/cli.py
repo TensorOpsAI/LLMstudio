@@ -13,19 +13,15 @@ from llmstudio.ui import run_ui_app
 load_dotenv(os.path.join(os.getcwd(), ".env"))
 
 
-def assign_port(default_port):
+def assign_port():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        try:
-            s.bind(("", default_port))
-        except socket.error:
-            s.bind(("", 0))
+        s.bind(("", 0))
         return s.getsockname()[1]
 
 
-os.environ["LLMSTUDIO_ENGINE_PORT"] = str(assign_port(9001))
-os.environ["LLMSTUDIO_TRACKING_PORT"] = str(assign_port(9002))
-os.environ["LLMSTUDIO_UI_PORT"] = str(assign_port(9002))
+os.environ["LLMSTUDIO_ENGINE_PORT"] = str(assign_port())
+os.environ["LLMSTUDIO_TRACKING_PORT"] = str(assign_port())
+os.environ["LLMSTUDIO_UI_PORT"] = str(assign_port())
 
 
 def is_server_running(host, port):

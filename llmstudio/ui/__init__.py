@@ -9,7 +9,7 @@ def run_bun_in_thread():
     try:
         subprocess.run(["bun", "update"], cwd=ui_dir, check=True)
         subprocess.run(
-            ["bun", "run", "dev", "--port", int(os.getenv("LLMSTUDIO_UI_PORT"))],
+            ["bun", "run", "dev", "--port", os.getenv("LLMSTUDIO_UI_PORT")],
             cwd=ui_dir,
             check=True,
         )
