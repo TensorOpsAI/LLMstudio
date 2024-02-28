@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import Any, AsyncGenerator, Coroutine, Generator, Optional, List, Dict
+from typing import Any, AsyncGenerator, Coroutine, Dict, Generator, List, Optional
 
 import openai
 from fastapi import HTTPException
@@ -20,7 +20,7 @@ class AzureParameters(BaseModel):
 
 class AzureRequest(ChatRequest):
     api_endpoint: Optional[str] = None
-    api_version: Optional[str] = "2023-05-15"
+    api_version: Optional[str] = None
     parameters: Optional[AzureParameters] = AzureParameters()
     functions: Optional[List[Dict[str, Any]]] = None
     chat_input: Any

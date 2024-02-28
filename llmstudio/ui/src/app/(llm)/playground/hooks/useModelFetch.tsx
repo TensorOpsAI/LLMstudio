@@ -12,7 +12,11 @@ export function useModelFetch() {
   useEffect(() => {
     async function fetchModels() {
       try {
-        const response = await fetch('http://localhost:8000/api/engine/models');
+        const response = await fetch(
+          `http://${process.env.LLMSTUDIO_ENGINE_HOST || 'localhost'}:${
+            process.env.LLMSTUDIO_ENGINE_PORT || '8000'
+          }/api/engine/models`
+        );
         const data = await response.json();
         const fetchedProviders: ModelType[] = Object.keys(data).map((key) => ({
           name: data[key].name,

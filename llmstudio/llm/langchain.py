@@ -1,12 +1,14 @@
 from typing import Any, Dict, List, Optional, Tuple
+
 from langchain.schema.messages import BaseMessage
-from langchain.schema.output import ChatResult, ChatGeneration
-from langchain_core.language_models.chat_models import BaseChatModel
-from llmstudio.llm import LLM
+from langchain.schema.output import ChatGeneration, ChatResult
 from langchain_community.adapters.openai import (
-    convert_message_to_dict,
     convert_dict_to_message,
+    convert_message_to_dict,
 )
+from langchain_core.language_models.chat_models import BaseChatModel
+
+from llmstudio.llm import LLM
 
 
 class ChatLLMstudio(BaseChatModel):

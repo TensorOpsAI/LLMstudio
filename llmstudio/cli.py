@@ -1,5 +1,6 @@
 import os
 import signal
+import socket
 from threading import Thread
 
 import click
@@ -8,9 +9,47 @@ from dotenv import load_dotenv
 from llmstudio.engine import run_engine_app
 from llmstudio.tracking import run_tracking_app
 from llmstudio.ui import run_ui_app
-import socket
 
 load_dotenv(os.path.join(os.getcwd(), ".env"))
+
+
+def assign_port(default_port):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            s.bind(("", default_port))
+        except socket.error:
+            s.bind(("", 0))
+        return s.getsockname()[1]
+
+
+os.environ["LLMSTUDIO_ENGINE_PORT"] = str(assign_port(9001))
+os.environ["LLMSTUDIO_TRACKING_PORT"] = str(assign_port(9002))
+os.environ["LLMSTUDIO_UI_PORT"] = str(assign_port(9002))
+
+
+def is_server_running(host, port):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        return s.connect_ex((host, port)) == 0
+
+
+def start_server():
+    engine_port = int(os.environ.get("LLMSTUDIO_ENGINE_PORT"))
+    tracking_port = int(os.environ.get("LLMSTUDIO_TRACKING_PORT"))
+
+    if not is_server_running("localhost", engine_port):
+        engine_thread = Thread(target=run_engine_app, daemon=True)
+        engine_thread.start()
+
+    if not is_server_running("localhost", tracking_port):
+        tracking_thread = Thread(target=run_tracking_app, daemon=True)
+        tracking_thread.start()
+
+    def handle_shutdown(signum, frame):
+        print("Shutting down gracefully...")
+        os._exit(0)
+
+    signal.signal(signal.SIGINT, handle_shutdown)
 
 
 @click.group()
@@ -18,35 +57,9 @@ def main():
     pass
 
 
-# Function to check if the server is already running
-def is_server_running(host="localhost", port=8000):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex((host, port)) == 0
-
-
-# Function to start the server
-def start_server_if_not_running():
-    if not is_server_running():
-        import os
-
-        def handle_shutdown(signum, frame):
-            print("Shutting down gracefully...")
-            os._exit(0)
-
-        signal.signal(signal.SIGINT, handle_shutdown)
-
-        engine_thread = Thread(target=run_engine_app, daemon=True)
-        tracking_thread = Thread(target=run_tracking_app, daemon=True)
-
-        engine_thread.start()
-        tracking_thread.start()
-
-
 @main.command()
 @click.option("--ui", is_flag=True, help="Start the UI server.")
 def server(ui):
-    import os
-
     def handle_shutdown(signum, frame):
         print("Shutting down gracefully...")
         os._exit(0)

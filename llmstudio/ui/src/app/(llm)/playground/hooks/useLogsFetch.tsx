@@ -8,7 +8,11 @@ export function useLogsFetch() {
   useEffect(() => {
     async function fetchLogs() {
       try {
-        const response = await fetch('http://localhost:8080/api/tracking/logs');
+        const response = await fetch(
+          `http://${process.env.LLMSTUDIO_TRACKING_HOST || 'localhost'}:${
+            process.env.LLMSTUDIO_TRACKING_PORT || '8080'
+          }/api/tracking/logs`
+        );
         const data = await response.json();
         setLogs(data);
       } catch (e) {

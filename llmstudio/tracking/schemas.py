@@ -58,7 +58,7 @@ class Project(ProjectBase):
 class LogDefaultBase(BaseModel):
     chat_input: str = None
     chat_output: str = None
-    context: dict = None
+    context: list[dict[str, str]] = None
     provider: str = None
     model: str = None
     parameters: dict = None

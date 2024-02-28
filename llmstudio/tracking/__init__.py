@@ -16,9 +16,6 @@ TRACKING_HEALTH_ENDPOINT = "/health"
 TRACKING_TITLE = "LLMstudio Tracking API"
 TRACKING_DESCRIPTION = "The tracking API for LLM interactions"
 TRACKING_VERSION = "0.0.1"
-TRACKING_HOST = os.getenv("TRACKING_HOST", "localhost")
-TRACKING_PORT = int(os.getenv("TRACKING_PORT", 8080))
-TRACKING_URL = f"http://{TRACKING_HOST}:{TRACKING_PORT}"
 TRACKING_BASE_ENDPOINT = "/api/tracking"
 
 
@@ -103,13 +100,15 @@ def create_tracking_app() -> FastAPI:
 
 
 def run_tracking_app():
-    print(f"Running Tracking on http://{TRACKING_HOST}:{TRACKING_PORT}")
+    print(
+        f"Running Tracking on http://{os.getenv('LLMSTUDIO_TRACKING_HOST')}:{int(os.getenv('LLMSTUDIO_TRACKING_PORT'))}"
+    )
     try:
         tracking = create_tracking_app()
         uvicorn.run(
             tracking,
-            host=TRACKING_HOST,
-            port=TRACKING_PORT,
+            host=os.getenv("LLMSTUDIO_TRACKING_HOST"),
+            port=int(os.getenv("LLMSTUDIO_TRACKING_PORT")),
         )
     except Exception as e:
         print(f"Error running the Tracking app: {e}")

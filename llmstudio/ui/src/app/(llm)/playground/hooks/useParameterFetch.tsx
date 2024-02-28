@@ -23,7 +23,9 @@ export function useParameterFetch() {
           provider: provider.replace(/\s+/g, '').toLowerCase(),
         });
         const response = await fetch(
-          `http://localhost:8000/api/engine/parameters?${queryParams}`
+          `http://${process.env.LLMSTUDIO_ENGINE_HOST || 'localhost'}:${
+            process.env.LLMSTUDIO_ENGINE_PORT || '8000'
+          }/api/engine/parameters?${queryParams}`
         );
         const data: ParameterType[] = await response.json();
         setParameters(data);

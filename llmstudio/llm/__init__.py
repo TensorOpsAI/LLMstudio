@@ -1,7 +1,10 @@
-import requests
+import os
+
 import aiohttp
+import requests
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
-from llmstudio.cli import start_server_if_not_running
+
+from llmstudio.cli import start_server
 
 
 class LLM:
@@ -14,11 +17,11 @@ class LLM:
         self.top_p = kwargs.get("top_p")
         self.top_k = kwargs.get("top_k")
         self.max_tokens = kwargs.get("max_tokens")
-        start_server_if_not_running()
+        start_server()
 
     def chat(self, input: str, is_stream: bool = False, **kwargs):
         response = requests.post(
-            f"http://localhost:8000/api/engine/chat/{self.provider}",
+            f"http://{os.getenv('LLMSTUDIO_TRACKING_HOST')}:{os.getenv('LLMSTUDIO_TRACKING_PORT')}/api/engine/chat/{self.provider}",
             json={
                 "model": self.model,
                 "api_key": self.api_key,
