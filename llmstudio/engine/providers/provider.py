@@ -41,6 +41,7 @@ class ChatRequest(BaseModel):
     is_stream: Optional[bool] = False
     has_end_token: Optional[bool] = False
     functions: Optional[List[Dict[str, Any]]] = None
+    session_id: Optional[str] = None
 
 
 class Provider:
@@ -123,6 +124,7 @@ class Provider:
         response = {
             **response.model_dump(),
             "id": str(uuid.uuid4()),
+            "session_id": request.session_id,
             "chat_input": (
                 request.chat_input
                 if isinstance(request.chat_input, str)
