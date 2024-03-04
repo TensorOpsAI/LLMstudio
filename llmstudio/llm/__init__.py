@@ -6,11 +6,13 @@ from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
 from llmstudio.cli import start_server
 
+start_server()
+
 
 class LLM:
-    def __init__(self, model_id: str, session_id: str = None, **kwargs):
+    def __init__(self, model_id: str, **kwargs):
         self.provider, self.model = model_id.split("/")
-        self.session_id = session_id
+        self.session_id = kwargs.get("session_id")
         self.api_key = kwargs.get("api_key")
         self.api_endpoint = kwargs.get("api_endpoint")
         self.api_version = kwargs.get("api_version")
@@ -18,11 +20,10 @@ class LLM:
         self.top_p = kwargs.get("top_p")
         self.top_k = kwargs.get("top_k")
         self.max_tokens = kwargs.get("max_tokens")
-        start_server()
 
     def chat(self, input: str, is_stream: bool = False, **kwargs):
         response = requests.post(
-            f"http://{os.getenv('LLMSTUDIO_TRACKING_HOST')}:{os.getenv('LLMSTUDIO_TRACKING_PORT')}/api/engine/chat/{self.provider}",
+            f"http://{os.getenv('LLMSTUDIO_ENGINE_HOST')}:{os.getenv('LLMSTUDIO_ENGINE_PORT')}/api/engine/chat/{self.provider}",
             json={
                 "model": self.model,
                 "session_id": self.session_id,
@@ -64,7 +65,7 @@ class LLM:
     async def async_non_stream(self, input: str, **kwargs):
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                f"http://localhost:8000/api/engine/chat/{self.provider}",
+                f"http://{os.getenv('LLMSTUDIO_ENGINE_HOST')}:{os.getenv('LLMSTUDIO_ENGINE_PORT')}/api/engine/chat/{self.provider}",
                 json={
                     "model": self.model,
                     "api_key": self.api_key,
@@ -83,7 +84,7 @@ class LLM:
     async def async_stream(self, input: str, **kwargs):
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                f"http://localhost:8000/api/engine/chat/{self.provider}",
+                f"http://{os.getenv('LLMSTUDIO_ENGINE_HOST')}:{os.getenv('LLMSTUDIO_ENGINE_PORT')}/api/engine/chat/{self.provider}",
                 json={
                     "model": self.model,
                     "api_key": self.api_key,
