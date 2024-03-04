@@ -19,6 +19,14 @@ import tiktoken
 from anthropic import Anthropic
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
+from openai.types.chat import (
+    ChatCompletion,
+    ChatCompletionMessage,
+    ChatCompletionMessageToolCall,
+)
+from openai.types.chat.chat_completion import Choice
+from openai.types.chat.chat_completion_message import FunctionCall
+from openai.types.chat.chat_completion_message_tool_call import Function
 from pydantic import BaseModel, ValidationError
 from tokenizers import Tokenizer
 
@@ -96,7 +104,7 @@ class Provider:
         token_count = 0
         chunks = []
 
-        async for chunk in self.parse_response(response):
+        async for chunk in self.parse_response(response, request=request):
             token_count += 1
             current_time = time.time()
             first_token_time = first_token_time or current_time
@@ -106,7 +114,11 @@ class Provider:
 
             chunks.append(chunk)
             if request.is_stream:
-                yield chunk
+                chunk = chunk[0] if isinstance(chunk, tuple) else chunk
+                if chunk.get("choices")[0].get("finish_reason") != "stop":
+                    yield chunk.get("choices")[0].get("delta").get("content")
+
+        chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
 
         response, output_string = self.join_chunks(chunks, request)
 
@@ -149,15 +161,6 @@ class Provider:
             yield response
 
     def join_chunks(self, chunks, request):
-        from openai.types.chat import (
-            ChatCompletion,
-            ChatCompletionMessage,
-            ChatCompletionMessageToolCall,
-        )
-        from openai.types.chat.chat_completion import Choice
-        from openai.types.chat.chat_completion_message import FunctionCall
-        from openai.types.chat.chat_completion_message_tool_call import Function
-
         from llmstudio.engine.providers.azure import AzureRequest
         from llmstudio.engine.providers.openai import OpenAIRequest
 
@@ -255,12 +258,17 @@ class Provider:
                 function_call_arguments,
             )
         elif chunks[-1].get("choices")[0].get("finish_reason") == "stop":
+            if isinstance(request, AzureRequest) or isinstance(request, OpenAIRequest):
+                start_index = 1
+            else:
+                start_index = 0
+
             stop_content = "".join(
                 filter(
                     None,
                     [
                         chunk.get("choices")[0].get("delta").get("content")
-                        for chunk in chunks[1:]
+                        for chunk in chunks[start_index:]
                     ],
                 )
             )

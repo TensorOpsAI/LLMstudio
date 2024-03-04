@@ -2,6 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+
 # BaseModels
 class LogDefaultBase(BaseModel):
     chat_input: str = None

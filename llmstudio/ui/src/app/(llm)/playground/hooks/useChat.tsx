@@ -11,9 +11,23 @@ export const useChat = (): (() => Promise<void>) => {
     setStatus('waiting');
     setOutput('');
 
+    console.log(
+      `http://${process.env.NEXT_PUBLIC_LLMSTUDIO_ENGINE_HOST}:${
+        process.env.NEXT_PUBLIC_LLMSTUDIO_ENGINE_PORT
+      }/api/engine/chat/${provider.replace(/\s+/g, '').toLowerCase()}`
+    );
+
+    console.log({
+      chat_input: input,
+      model: model,
+      is_stream: true,
+      has_end_token: true,
+      parameters: parameters,
+    });
+
     generateStream(
-      `http://${process.env.LLMSTUDIO_ENGINE_HOST || 'localhost'}:${
-        process.env.LLMSTUDIO_ENGINE_PORT || '8000'
+      `http://${process.env.NEXT_PUBLIC_LLMSTUDIO_ENGINE_HOST}:${
+        process.env.NEXT_PUBLIC_LLMSTUDIO_ENGINE_PORT
       }/api/engine/chat/${provider.replace(/\s+/g, '').toLowerCase()}`,
       {
         chat_input: input,

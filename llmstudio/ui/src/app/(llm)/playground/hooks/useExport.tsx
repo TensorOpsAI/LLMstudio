@@ -7,9 +7,7 @@ export const useExport = (): ((selected?: any[]) => void) => {
   const exportLogs = useCallback(
     (selected?: any[]): void => {
       fetch(
-        `http://${process.env.LLMSTUDIO_ENGINE_HOST || 'localhost'}:${
-          process.env.LLMSTUDIO_ENGINE_PORT || '8000'
-        }/api/export`,
+        `http://${process.env.NEXT_PUBLIC_LLMSTUDIO_ENGINE_HOST}:${process.env.NEXT_PUBLIC_LLMSTUDIO_ENGINE_PORT}/api/export`,
         {
           method: 'POST',
           headers: {

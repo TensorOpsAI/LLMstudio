@@ -9,9 +9,7 @@ export function useLogsFetch() {
     async function fetchLogs() {
       try {
         const response = await fetch(
-          `http://${process.env.LLMSTUDIO_TRACKING_HOST || 'localhost'}:${
-            process.env.LLMSTUDIO_TRACKING_PORT || '8080'
-          }/api/tracking/logs`
+          `http://${process.env.NEXT_PUBLIC_LLMSTUDIO_TRACKING_HOST}:${process.env.NEXT_PUBLIC_LLMSTUDIO_TRACKING_PORT}/api/tracking/logs`
         );
         const data = await response.json();
         setLogs(data);

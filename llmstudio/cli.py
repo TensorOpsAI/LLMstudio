@@ -20,7 +20,13 @@ def assign_port():
 
 
 os.environ["LLMSTUDIO_ENGINE_PORT"] = str(assign_port())
+os.environ["NEXT_PUBLIC_LLMSTUDIO_ENGINE_PORT"] = os.environ.get(
+    "LLMSTUDIO_ENGINE_PORT"
+)
 os.environ["LLMSTUDIO_TRACKING_PORT"] = str(assign_port())
+os.environ["NEXT_PUBLIC_LLMSTUDIO_TRACKING_PORT"] = os.environ.get(
+    "LLMSTUDIO_TRACKING_PORT"
+)
 os.environ["LLMSTUDIO_UI_PORT"] = str(assign_port())
 
 

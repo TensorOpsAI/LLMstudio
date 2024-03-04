@@ -8,7 +8,7 @@ from llmstudio.cli import start_server
 
 
 class LLM:
-    def __init__(self, model_id: str, session_id:str = None, **kwargs):
+    def __init__(self, model_id: str, session_id: str = None, **kwargs):
         self.provider, self.model = model_id.split("/")
         self.session_id = session_id
         self.api_key = kwargs.get("api_key")
@@ -20,7 +20,7 @@ class LLM:
         self.max_tokens = kwargs.get("max_tokens")
         start_server()
 
-    def chat(self, input: str,is_stream: bool = False, **kwargs):
+    def chat(self, input: str, is_stream: bool = False, **kwargs):
         response = requests.post(
             f"http://{os.getenv('LLMSTUDIO_TRACKING_HOST')}:{os.getenv('LLMSTUDIO_TRACKING_PORT')}/api/engine/chat/{self.provider}",
             json={

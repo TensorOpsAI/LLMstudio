@@ -59,10 +59,17 @@ def create_tracking_app() -> FastAPI:
     def read_logs(skip: int = 0, limit: int = 1000, db: Session = Depends(get_db)):
         logs = crud.get_logs(db, skip=skip, limit=limit)
         return logs
-    
-    @app.get(f"{TRACKING_BASE_ENDPOINT}/logs_by_session", response_model=list[schemas.LogDefault])
-    def read_logs_by_session(session_id: str, skip: int = 0, limit: int = 1000, db: Session = Depends(get_db)):
-        logs = crud.get_logs_by_session(db, session_id=session_id, skip=skip, limit=limit)
+
+    @app.get(
+        f"{TRACKING_BASE_ENDPOINT}/logs_by_session",
+        response_model=list[schemas.LogDefault],
+    )
+    def read_logs_by_session(
+        session_id: str, skip: int = 0, limit: int = 1000, db: Session = Depends(get_db)
+    ):
+        logs = crud.get_logs_by_session(
+            db, session_id=session_id, skip=skip, limit=limit
+        )
         return logs
 
     return app
@@ -82,5 +89,6 @@ def run_tracking_app():
     except Exception as e:
         print(f"Error running the Tracking app: {e}")
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     run_tracking_app()

@@ -13,9 +13,7 @@ export function useModelFetch() {
     async function fetchModels() {
       try {
         const response = await fetch(
-          `http://${process.env.LLMSTUDIO_ENGINE_HOST || 'localhost'}:${
-            process.env.LLMSTUDIO_ENGINE_PORT || '8000'
-          }/api/engine/models`
+          `http://${process.env.NEXT_PUBLIC_LLMSTUDIO_ENGINE_HOST}:${process.env.NEXT_PUBLIC_LLMSTUDIO_ENGINE_PORT}/api/engine/models`
         );
         const data = await response.json();
         const fetchedProviders: ModelType[] = Object.keys(data).map((key) => ({

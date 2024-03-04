@@ -56,7 +56,7 @@ class OpenAIProvider(Provider):
             raise HTTPException(status_code=e.status_code, detail=e.response.json())
 
     async def parse_response(
-        self, response: AsyncGenerator
+        self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:
         for chunk in response:
             yield chunk.model_dump()
