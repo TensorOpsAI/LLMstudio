@@ -15,9 +15,9 @@ class ChatLLMstudio(BaseChatModel):
     model_id: str
     llm: LLM = None
 
-    def __init__(self, model_id: str, **kwargs):
+    def __init__(self, model_id: str, session_id:str,**kwargs):
         super().__init__(model_id=model_id, **kwargs)
-        self.llm = LLM(model_id=self.model_id, **kwargs)
+        self.llm = LLM(model_id=self.model_id, session_id = session_id,**kwargs)
 
     @property
     def _llm_type(self):
