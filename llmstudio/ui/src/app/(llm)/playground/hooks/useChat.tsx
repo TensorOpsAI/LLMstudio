@@ -12,9 +12,9 @@ export const useChat = (): (() => Promise<void>) => {
     setOutput('');
 
     generateStream(
-      `http://localhost:8000/api/engine/chat/${provider
-        .replace(/\s+/g, '')
-        .toLowerCase()}`,
+      `http://${process.env.NEXT_PUBLIC_LLMSTUDIO_ENGINE_HOST}:${
+        process.env.NEXT_PUBLIC_LLMSTUDIO_ENGINE_PORT
+      }/api/engine/chat/${provider.replace(/\s+/g, '').toLowerCase()}`,
       {
         chat_input: input,
         model: model,

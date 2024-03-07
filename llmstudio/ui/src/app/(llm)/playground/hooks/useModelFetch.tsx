@@ -12,7 +12,9 @@ export function useModelFetch() {
   useEffect(() => {
     async function fetchModels() {
       try {
-        const response = await fetch('http://localhost:8000/api/engine/models');
+        const response = await fetch(
+          `http://${process.env.NEXT_PUBLIC_LLMSTUDIO_ENGINE_HOST}:${process.env.NEXT_PUBLIC_LLMSTUDIO_ENGINE_PORT}/api/engine/models`
+        );
         const data = await response.json();
         const fetchedProviders: ModelType[] = Object.keys(data).map((key) => ({
           name: data[key].name,

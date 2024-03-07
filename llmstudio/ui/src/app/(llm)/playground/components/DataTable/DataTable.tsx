@@ -30,6 +30,7 @@ import { DataTableToolbar } from '@/app/(llm)/playground/components/DataTable/To
 import { columns } from '@/app/(llm)/playground/components/DataTable/columns';
 import { useLogsFetch } from '@/app/(llm)/playground/hooks/useLogsFetch';
 import { useStore } from '@/app/(llm)/playground/store';
+import { Cedarville_Cursive } from 'next/font/google';
 
 export default function DataTable<TData, TValue>() {
   const [rowSelection, setRowSelection] = React.useState({});

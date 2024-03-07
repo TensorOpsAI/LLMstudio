@@ -7,6 +7,16 @@ providers:
     keys:
       - ANTHROPIC_API_KEY
     models:
+      claude-3-opus-20240229:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.000015
+        output_token_cost: 0.000075
+      claude-3-sonnet-2024022:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.000003
+        output_token_cost: 0.000015
       claude-2.1:
         mode: chat
         max_tokens: 200000
@@ -18,11 +28,6 @@ providers:
         input_token_cost: 0.000008
         output_token_cost: 0.000024
       claude-instant-1.2:
-        mode: chat
-        max_tokens: 100000
-        input_token_cost: 0.00000163
-        output_token_cost: 0.00000551
-      claude-instant-1:
         mode: chat
         max_tokens: 100000
         input_token_cost: 0.00000163
@@ -190,82 +195,6 @@ providers:
         default: 0
         min: 0
         max: 2
-        step: 0.01
-  cohere:
-    id: cohere
-    name: Cohere
-    chat: true
-    embed: true
-    keys:
-      - COHERE_API_KEY
-    models:
-      command-nightly:
-        mode: chat
-        max_tokens: 4096
-        input_token_cost: 0.000015
-        output_token_cost: 0.000015
-      command:
-        mode: chat
-        max_tokens: 4096
-        input_token_cost: 0.000015
-        output_token_cost: 0.000015
-      command-light:
-        mode: chat
-        max_tokens: 4096
-        input_token_cost: 0.000015
-        output_token_cost: 0.000015
-      command-medium-beta:
-        mode: chat
-        max_tokens: 4096
-        input_token_cost: 0.000015
-        output_token_cost: 0.000015
-      command-xlarge-beta:
-        mode: chat
-        max_tokens: 4096
-        input_token_cost: 0.000015
-        output_token_cost: 0.000015
-    parameters:
-      temperature:
-        name: "Temperature"
-        type: float
-        default: 0.75
-        min: 0
-        max: 5
-        step: 0.01
-      max_tokens:
-        name: "Maximum length"
-        type: int
-        default: 256
-        min: 1
-        max: 4096
-        step: 1
-      p:
-        name: "P"
-        type: float
-        default: 0
-        min: 0
-        max: 0.99
-        step: 0.01
-      k:
-        name: "K"
-        type: int
-        default: 0
-        min: 0
-        max: 500
-        step: 1
-      frequency_penalty:
-        name: "Frequency Penalty"
-        type: float
-        default: 0
-        min: 0
-        max: 10
-        step: 0.1
-      presence_penalty:
-        name: "Presence Penalty"
-        type: float
-        default: 0
-        min: 0
-        max: 1
         step: 0.01
   azure:
     id: azure

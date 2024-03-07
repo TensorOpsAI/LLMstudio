@@ -6,14 +6,17 @@ export const useExport = (): ((selected?: any[]) => void) => {
 
   const exportLogs = useCallback(
     (selected?: any[]): void => {
-      fetch(`http://localhost:8000/api/export`, {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json, text/plain',
-          'Content-Type': 'application/json;charset=UTF-8',
-        },
-        body: JSON.stringify(selected || logs),
-      })
+      fetch(
+        `http://${process.env.NEXT_PUBLIC_LLMSTUDIO_ENGINE_HOST}:${process.env.NEXT_PUBLIC_LLMSTUDIO_ENGINE_PORT}/api/export`,
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json, text/plain',
+            'Content-Type': 'application/json;charset=UTF-8',
+          },
+          body: JSON.stringify(selected || logs),
+        }
+      )
         .then((response) => response.blob())
         .then((blob) => {
           const url = URL.createObjectURL(blob);

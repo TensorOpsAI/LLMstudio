@@ -12,10 +12,10 @@ export interface Log {
     input_tokens: number;
     output_tokens: number;
     total_tokens: number;
-    cost: number;
-    latency: number;
-    time_to_first_token: number;
-    inter_token_latency: number;
+    cost_usd: number;
+    latency_s: number;
+    time_to_first_token_s: number;
+    inter_token_latency_s: number;
     tokens_per_second: number;
   };
 }

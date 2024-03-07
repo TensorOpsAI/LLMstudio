@@ -1,9 +1,13 @@
 import asyncio
 import json
+import time
+import uuid
 from typing import Any, AsyncGenerator, Coroutine, Generator, Optional
 
 import requests
 from fastapi import HTTPException
+from openai.types.chat import ChatCompletionChunk
+from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
 from pydantic import BaseModel, Field
 
 from llmstudio.engine.providers.provider import ChatRequest, Provider, provider
@@ -39,6 +43,7 @@ class OllamaProvider(Provider):
                 json={
                     "model": request.model,
                     "prompt": request.chat_input,
+                    "stream": True,
                     **request.parameters.dict(),
                 },
                 stream=True,
@@ -50,7 +55,7 @@ class OllamaProvider(Provider):
             )
 
     async def parse_response(
-        self, response: AsyncGenerator
+        self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:
         for line in response.iter_lines():
             if not line:
@@ -59,5 +64,31 @@ class OllamaProvider(Provider):
             if "error" in chunk:
                 raise HTTPException(status_code=500, detail=chunk["error"])
             if chunk.get("done"):
+                print("done")
+                yield ChatCompletionChunk(
+                    id=str(uuid.uuid4()),
+                    choices=[
+                        Choice(delta=ChoiceDelta(), finish_reason="stop", index=0)
+                    ],
+                    created=int(time.time()),
+                    model=kwargs.get("request").model,
+                    object="chat.completion.chunk",
+                ).model_dump()
                 break
-            yield chunk["response"]
+
+            if chunk["response"] is not None:
+                yield ChatCompletionChunk(
+                    id=str(uuid.uuid4()),
+                    choices=[
+                        Choice(
+                            delta=ChoiceDelta(
+                                content=chunk["response"], role="assistant"
+                            ),
+                            finish_reason=None,
+                            index=0,
+                        )
+                    ],
+                    created=int(time.time()),
+                    model=kwargs.get("request").model,
+                    object="chat.completion.chunk",
+                ).model_dump()

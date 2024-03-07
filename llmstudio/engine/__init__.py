@@ -18,10 +18,6 @@ ENGINE_HEALTH_ENDPOINT = "/health"
 ENGINE_TITLE = "LLMstudio Engine API"
 ENGINE_DESCRIPTION = "The core API for LLM interactions"
 ENGINE_VERSION = "0.1.0"
-ENGINE_HOST = os.getenv("ENGINE_HOST", "localhost")
-ENGINE_PORT = int(os.getenv("ENGINE_PORT", 8000))
-ENGINE_URL = f"http://{ENGINE_HOST}:{ENGINE_PORT}"
-LOG_LEVEL = os.getenv("LOG_LEVEL", "critical")
 
 
 # Models for Configuration
@@ -89,7 +85,7 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000"],
+        allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -168,13 +164,15 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
 
 
 def run_engine_app():
-    print(f"Running Engine on {ENGINE_HOST}:{ENGINE_PORT}")
+    print(
+        f"Running Engine on http://{os.getenv('LLMSTUDIO_ENGINE_HOST')}:{os.getenv('LLMSTUDIO_ENGINE_PORT')}"
+    )
     try:
         engine = create_engine_app()
         uvicorn.run(
             engine,
-            host=ENGINE_HOST,
-            port=ENGINE_PORT,
+            host=os.getenv("LLMSTUDIO_ENGINE_HOST"),
+            port=int(os.getenv("LLMSTUDIO_ENGINE_PORT")),
         )
     except Exception as e:
         print(f"Error running the Engine app: {e}")

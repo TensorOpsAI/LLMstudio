@@ -8,7 +8,66 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { DataTableColumnHeader } from '@/app/(llm)/playground/components/DataTable/ColumnHeader';
 import { DataTableRowActions } from '@/app/(llm)/playground/components/DataTable/RowActions';
 
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+
+import CodeBlock from '@/components/CodeBlock';
+import { Maximize2 } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+
 export const columns: ColumnDef<any>[] = [
+  {
+    accessorKey: 'context',
+    header: () => <></>,
+    cell: ({ row }) => (
+      <Sheet key={row.id}>
+        <SheetTrigger>
+          <Button variant='outline' size='icon'>
+            <Maximize2 className='h-4 w-4' />
+          </Button>
+        </SheetTrigger>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Context</SheetTitle>
+            <SheetDescription>
+              {row.original.context.map((item, index) => (
+                <div key={index} className='my-2'>
+                  <div>
+                    <strong>Role:</strong> {item.role}
+                  </div>
+                  {item.content && (
+                    <div>
+                      <strong>Content:</strong> {item.content}
+                    </div>
+                  )}
+                  {item.function_call && (
+                    <CodeBlock
+                      language='json'
+                      value={JSON.stringify(item.function_call, null, 2)}
+                      className='my-2'
+                    />
+                  )}
+                  {item.name && (
+                    <div>
+                      <strong>Function Name:</strong> {item.name}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </SheetDescription>
+          </SheetHeader>
+        </SheetContent>
+      </Sheet>
+    ),
+    enablePinning: true,
+  },
   {
     id: 'select',
     header: ({ table }) => (
@@ -30,8 +89,7 @@ export const columns: ColumnDef<any>[] = [
         className='translate-y-[2px]'
       />
     ),
-    enableSorting: false,
-    enableHiding: false,
+    enablePinning: true,
   },
   {
     accessorKey: 'log_id',
@@ -95,7 +153,7 @@ export const columns: ColumnDef<any>[] = [
     enableSorting: false,
   },
   {
-    accessorKey: 'cost',
+    accessorKey: 'cost_usd',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Cost' />
     ),
@@ -103,7 +161,7 @@ export const columns: ColumnDef<any>[] = [
       return (
         <div className='flex space-x-2'>
           <span className='max-w-[100px] truncate font-medium'>
-            ${row.original.metrics.cost.toFixed(6)}
+            ${row.original.metrics.cost_usd.toFixed(6)}
           </span>
         </div>
       );
@@ -140,7 +198,7 @@ export const columns: ColumnDef<any>[] = [
     },
   },
   {
-    accessorKey: 'latency',
+    accessorKey: 'latency_s',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Latency' />
     ),
@@ -148,7 +206,7 @@ export const columns: ColumnDef<any>[] = [
       return (
         <div className='flex space-x-2'>
           <span className='max-w-[100px] truncate font-medium'>
-            {row.original.metrics.latency.toFixed(3)}s
+            {row.original.metrics.latency_s.toFixed(3)}s
           </span>
         </div>
       );
@@ -163,7 +221,7 @@ export const columns: ColumnDef<any>[] = [
       return (
         <div className='flex space-x-2'>
           <span className='max-w-[100px] truncate font-medium'>
-            {row.original.metrics.time_to_first_token.toFixed(3)}s
+            {row.original.metrics.time_to_first_token_s.toFixed(3)}s
           </span>
         </div>
       );
@@ -178,7 +236,7 @@ export const columns: ColumnDef<any>[] = [
       return (
         <div className='flex space-x-2'>
           <span className='max-w-[100px] truncate font-medium'>
-            {row.original.metrics.inter_token_latency.toFixed(3)}s
+            {row.original.metrics.inter_token_latency_s.toFixed(3)}s
           </span>
         </div>
       );
