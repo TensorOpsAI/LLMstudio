@@ -17,9 +17,6 @@ export function useParameterFetch() {
   const { provider } = useStore();
 
   useEffect(() => {
-    console.log(process.env.NEXT_PUBLIC_LLMSTUDIO_ENGINE_HOST);
-    console.log(process.env.NEXT_PUBLIC_LLMSTUDIO_ENGINE_PORT);
-
     async function fetchParameters() {
       try {
         const queryParams = new URLSearchParams({

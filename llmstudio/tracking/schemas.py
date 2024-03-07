@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -9,7 +9,7 @@ class LogDefaultBase(BaseModel):
     chat_input: str = None
     chat_output: str = None
     session_id: Optional[str] = None
-    context: list[dict[str, str]] = None
+    context: List[Dict[str, Any]] = None
     provider: str = None
     model: str = None
     parameters: dict = None

@@ -6,11 +6,10 @@ from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
 from llmstudio.cli import start_server
 
-start_server()
-
 
 class LLM:
     def __init__(self, model_id: str, **kwargs):
+        start_server()
         self.provider, self.model = model_id.split("/")
         self.session_id = kwargs.get("session_id")
         self.api_key = kwargs.get("api_key")

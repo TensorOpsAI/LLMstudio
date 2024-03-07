@@ -325,10 +325,10 @@ class Provider:
             "input_tokens": input_tokens,
             "output_tokens": output_tokens,
             "total_tokens": input_tokens + output_tokens,
-            "cost": input_cost + output_cost,
-            "latency": total_time,
-            "time_to_first_token": first_token_time - start_time,
-            "inter_token_latency": sum(token_times) / len(token_times),
+            "cost_usd": input_cost + output_cost,
+            "latency_s": total_time,
+            "time_to_first_token_s": first_token_time - start_time,
+            "inter_token_latency_s": sum(token_times) / len(token_times),
             "tokens_per_second": token_count / total_time,
         }
 
@@ -353,7 +353,7 @@ class Provider:
             return output.choices[0].message.function_call.arguments
 
     def get_end_token_string(self, metrics: Dict[str, Any]) -> str:
-        return f"{self.END_TOKEN},input_tokens={metrics['input_tokens']},output_tokens={metrics['output_tokens']},cost={metrics['cost']},latency={metrics['latency']:.5f},time_to_first_token={metrics['time_to_first_token']:.5f},inter_token_latency={metrics['inter_token_latency']:.5f},tokens_per_second={metrics['tokens_per_second']:.2f}"
+        return f"{self.END_TOKEN},input_tokens={metrics['input_tokens']},output_tokens={metrics['output_tokens']},cost_usd={metrics['cost_usd']},latency_s={metrics['latency_s']:.5f},time_to_first_token_s={metrics['time_to_first_token_s']:.5f},inter_token_latency_s={metrics['inter_token_latency_s']:.5f},tokens_per_second={metrics['tokens_per_second']:.2f}"
 
     def _get_tokenizer(self) -> Tokenizer:
         return {

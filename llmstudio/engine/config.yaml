@@ -7,6 +7,16 @@ providers:
     keys:
       - ANTHROPIC_API_KEY
     models:
+      claude-3-opus-20240229:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.000015
+        output_token_cost: 0.000075
+      claude-3-sonnet-2024022:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.000003
+        output_token_cost: 0.000015
       claude-2.1:
         mode: chat
         max_tokens: 200000
