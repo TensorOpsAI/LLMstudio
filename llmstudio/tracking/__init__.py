@@ -1,9 +1,11 @@
 import os
 
-import requests
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Optional
+import calendar
+from sqlalchemy import extract, func
 from sqlalchemy.orm import Session
 
 from llmstudio.engine.providers import *

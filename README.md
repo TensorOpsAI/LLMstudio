@@ -91,7 +91,7 @@ Step into the future of AI with LLMstudio, by watching our [introduction video](
 ## 👨‍💻 Contributing
 
 - Head on to our [Contribution Guide](https://github.com/TensorOpsAI/LLMstudio/tree/main/CONTRIBUTING.md) to see how you can help LLMstudio.
-- Join our [Discord](https://discord.gg/4H4nufwPdg) to talk with other LLMstudio enthusiasts.
+- Join our [Discord](https://discord.gg/GkAfPZR9wy) to talk with other LLMstudio enthusiasts.
 
 ## Training
 

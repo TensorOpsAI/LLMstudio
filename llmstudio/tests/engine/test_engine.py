@@ -21,7 +21,7 @@ def test_load_engine_config(mocker):
                         "id": "default",
                         "name": "Default Provider",
                         "chat": True,
-                        "embed": False,
+                        "embed": True,
                     }
                 }
             },
@@ -45,7 +45,7 @@ def test_load_engine_config(mocker):
     assert default_provider.id == "default"
     assert default_provider.name == "Default Provider"
     assert default_provider.chat is True
-    assert default_provider.embed is False
+    assert default_provider.embed is True
 
     local_provider = config.providers["local_provider"]
     assert local_provider.id == "local"

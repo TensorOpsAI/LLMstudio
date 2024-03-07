@@ -4,7 +4,7 @@ import { Player } from '@lottiefiles/react-lottie-player';
 import { Toggle } from '@/components/Theme';
 
 import Link from 'next/link';
-import { Shapes, GitCompare, BookAIcon } from 'lucide-react';
+import { Shapes, GitCompare, BarChart3, BookAIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const links = [
@@ -18,6 +18,11 @@ const links = [
   //   route: '/compare',
   //   icon: GitCompare,
   // },
+  {
+    name: 'Dashboard',
+    route: '/dashboard',
+    icon: BarChart3,
+  },
   {
     name: 'Docs',
     route: 'https://docs.llmstudio.ai',
