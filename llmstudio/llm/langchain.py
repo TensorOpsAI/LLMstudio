@@ -46,7 +46,7 @@ class ChatLLMstudio(BaseChatModel):
         token_usage = response.get("usage", {})
         llm_output = {
             "token_usage": token_usage,
-            "model_name": "gpt-4-32k",  # self.model_name,
+            "model_name": response["model"],
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
         return ChatResult(generations=generations, llm_output=llm_output)
