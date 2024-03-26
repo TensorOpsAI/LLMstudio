@@ -1,10 +1,8 @@
 import json
-import os
 
 import requests
-from dotenv import load_dotenv
 
-load_dotenv(os.path.join(os.getcwd(), ".env"))
+from llmstudio.config import TRACKING_HOST, TRACKING_PORT
 
 
 class Tracker:
@@ -13,7 +11,7 @@ class Tracker:
 
     def log(self, data: dict):
         req = self._session.post(
-            f"http://{os.getenv('LLMSTUDIO_TRACKING_HOST')}:{os.getenv('LLMSTUDIO_TRACKING_PORT')}/api/tracking/logs",
+            f"http://{TRACKING_HOST}:{TRACKING_PORT}/api/tracking/logs",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             data=json.dumps(data),
             timeout=100,

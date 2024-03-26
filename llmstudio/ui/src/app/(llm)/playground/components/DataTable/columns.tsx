@@ -33,7 +33,7 @@ export const columns: ColumnDef<any>[] = [
             <Maximize2 className='h-4 w-4' />
           </Button>
         </SheetTrigger>
-        <SheetContent>
+        <SheetContent className='overflow-auto'>
           <SheetHeader>
             <SheetTitle>Context</SheetTitle>
             <SheetDescription>
@@ -93,11 +93,12 @@ export const columns: ColumnDef<any>[] = [
   },
   {
     accessorKey: 'log_id',
+    id: 'log_id',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='ID' />
     ),
     cell: ({ row }) => <div className='w-[15px]'>{row.original.log_id}</div>,
-    enableSorting: false,
+    enableSorting: true,
     enableHiding: false,
   },
   {

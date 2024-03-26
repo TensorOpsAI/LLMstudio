@@ -39,7 +39,12 @@ export default function DataTable<TData, TValue>() {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [sorting, setSorting] = React.useState<SortingState>([
+    {
+      id: 'log_id',
+      desc: true,
+    },
+  ]);
   useLogsFetch();
   const { logs } = useStore();
 

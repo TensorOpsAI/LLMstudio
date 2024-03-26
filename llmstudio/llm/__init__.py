@@ -1,10 +1,9 @@
-import os
-
 import aiohttp
 import requests
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
 from llmstudio.cli import start_server
+from llmstudio.config import ENGINE_HOST, ENGINE_PORT
 
 
 class LLM:
@@ -22,7 +21,7 @@ class LLM:
 
     def chat(self, input: str, is_stream: bool = False, **kwargs):
         response = requests.post(
-            f"http://{os.getenv('LLMSTUDIO_ENGINE_HOST')}:{os.getenv('LLMSTUDIO_ENGINE_PORT')}/api/engine/chat/{self.provider}",
+            f"http://{ENGINE_HOST}:{ENGINE_PORT}/api/engine/chat/{self.provider}",
             json={
                 "model": self.model,
                 "session_id": self.session_id,
@@ -64,7 +63,7 @@ class LLM:
     async def async_non_stream(self, input: str, **kwargs):
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                f"http://{os.getenv('LLMSTUDIO_ENGINE_HOST')}:{os.getenv('LLMSTUDIO_ENGINE_PORT')}/api/engine/chat/{self.provider}",
+                f"http://{ENGINE_HOST}:{ENGINE_PORT}/api/engine/chat/{self.provider}",
                 json={
                     "model": self.model,
                     "api_key": self.api_key,
@@ -78,12 +77,12 @@ class LLM:
             ) as response:
                 response.raise_for_status()
 
-                return await ChatCompletion(**response.json())
+                return ChatCompletion(**await response.json())
 
     async def async_stream(self, input: str, **kwargs):
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                f"http://{os.getenv('LLMSTUDIO_ENGINE_HOST')}:{os.getenv('LLMSTUDIO_ENGINE_PORT')}/api/engine/chat/{self.provider}",
+                f"http://{ENGINE_HOST}:{ENGINE_PORT}/api/engine/chat/{self.provider}",
                 json={
                     "model": self.model,
                     "api_key": self.api_key,
@@ -99,4 +98,4 @@ class LLM:
 
                 async for chunk in response.content.iter_any():
                     if chunk:
-                        yield ChatCompletionChunk(**chunk.decode("utf-8"))
+                        yield ChatCompletionChunk(**await chunk.decode("utf-8"))

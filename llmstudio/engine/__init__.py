@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import requests
 import uvicorn
 import yaml
 from fastapi import FastAPI, Request
@@ -11,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ValidationError
 
+from llmstudio.config import ENGINE_HOST, ENGINE_PORT
 from llmstudio.engine.providers import *
 
 ENGINE_BASE_ENDPOINT = "/api/engine"
@@ -160,19 +160,21 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
             iter([csv_content]), media_type="text/csv", headers=headers
         )
 
+    @app.on_event("startup")
+    async def startup_event():
+        print(f"Running LLMstudio Engine on http://{ENGINE_HOST}:{ENGINE_PORT} ")
+
     return app
 
 
 def run_engine_app():
-    print(
-        f"Running Engine on http://{os.getenv('LLMSTUDIO_ENGINE_HOST')}:{os.getenv('LLMSTUDIO_ENGINE_PORT')}"
-    )
     try:
         engine = create_engine_app()
         uvicorn.run(
             engine,
-            host=os.getenv("LLMSTUDIO_ENGINE_HOST"),
-            port=int(os.getenv("LLMSTUDIO_ENGINE_PORT")),
+            host=ENGINE_HOST,
+            port=ENGINE_PORT,
+            log_level="warning",
         )
     except Exception as e:
-        print(f"Error running the Engine app: {e}")
+        print(f"Error running LLMstudio Engine: {e}")

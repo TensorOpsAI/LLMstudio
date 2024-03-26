@@ -1,13 +1,10 @@
-import os
-
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Optional
-import calendar
 from sqlalchemy import extract, func
 from sqlalchemy.orm import Session
 
+from llmstudio.config import TRACKING_HOST, TRACKING_PORT
 from llmstudio.engine.providers import *
 from llmstudio.tracking import crud, models, schemas
 from llmstudio.tracking.database import SessionLocal, engine
@@ -37,7 +34,6 @@ def create_tracking_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Dependency
     def get_db():
         db = SessionLocal()
         try:
@@ -74,22 +70,24 @@ def create_tracking_app() -> FastAPI:
         )
         return logs
 
+    @app.on_event("startup")
+    async def startup_event():
+        print(f"Running LLMstudio Tracking on http://{TRACKING_HOST}:{TRACKING_PORT} ")
+
     return app
 
 
 def run_tracking_app():
-    print(
-        f"Running Tracking on http://{os.getenv('LLMSTUDIO_TRACKING_HOST')}:{int(os.getenv('LLMSTUDIO_TRACKING_PORT'))}"
-    )
     try:
         tracking = create_tracking_app()
         uvicorn.run(
             tracking,
-            host=os.getenv("LLMSTUDIO_TRACKING_HOST"),
-            port=int(os.getenv("LLMSTUDIO_TRACKING_PORT")),
+            host=TRACKING_HOST,
+            port=TRACKING_PORT,
+            log_level="warning",
         )
     except Exception as e:
-        print(f"Error running the Tracking app: {e}")
+        print(f"Error running LLMstudio Tracking: {e}")
 
 
 if __name__ == "__main__":
