@@ -1,11 +1,8 @@
 from sqlalchemy.orm import Session
-
-from llmstudio.tracking import models, schemas
-
+from llmstudio.tracking.logs import models, schemas
 
 def get_project_by_name(db: Session, name: str):
     return db.query(models.Project).filter(models.Project.name == name).first()
-
 
 def get_logs_by_session(db: Session, session_id: str, skip: int = 0, limit: int = 100):
     return (
@@ -15,7 +12,6 @@ def get_logs_by_session(db: Session, session_id: str, skip: int = 0, limit: int 
         .limit(limit)
         .all()
     )
-
 
 def add_log(db: Session, log: schemas.LogDefaultCreate):
     db_log = models.LogDefault(**log.dict())
