@@ -1,22 +1,17 @@
 import uvicorn
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import extract, func
-from sqlalchemy.orm import Session
-
+from fastapi import APIRouter
 from llmstudio.config import TRACKING_HOST, TRACKING_PORT
 from llmstudio.engine.providers import *
-from llmstudio.tracking import crud, models, schemas
-from llmstudio.tracking.database import SessionLocal, engine
-
-models.Base.metadata.create_all(bind=engine)
+from llmstudio.tracking.logs.endpoints import LogsRoutes
+from llmstudio.tracking.session.endpoints import SessionsRoutes
 
 TRACKING_HEALTH_ENDPOINT = "/health"
 TRACKING_TITLE = "LLMstudio Tracking API"
 TRACKING_DESCRIPTION = "The tracking API for LLM interactions"
 TRACKING_VERSION = "0.0.1"
 TRACKING_BASE_ENDPOINT = "/api/tracking"
-
 
 ## Tracking
 def create_tracking_app() -> FastAPI:
@@ -34,41 +29,17 @@ def create_tracking_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    def get_db():
-        db = SessionLocal()
-        try:
-            yield db
-        finally:
-            db.close()
 
     @app.get(TRACKING_HEALTH_ENDPOINT)
     def health_check():
         """Health check endpoint to ensure the API is running."""
         return {"status": "healthy", "message": "Tracking is up and running"}
 
-    @app.post(
-        f"{TRACKING_BASE_ENDPOINT}/logs",
-        response_model=schemas.LogDefault,
-    )
-    def add_log(log: schemas.LogDefaultCreate, db: Session = Depends(get_db)):
-        return crud.add_log(db=db, log=log)
-
-    @app.get(f"{TRACKING_BASE_ENDPOINT}/logs", response_model=list[schemas.LogDefault])
-    def read_logs(skip: int = 0, limit: int = 1000, db: Session = Depends(get_db)):
-        logs = crud.get_logs(db, skip=skip, limit=limit)
-        return logs
-
-    @app.get(
-        f"{TRACKING_BASE_ENDPOINT}/logs_by_session",
-        response_model=list[schemas.LogDefault],
-    )
-    def read_logs_by_session(
-        session_id: str, skip: int = 0, limit: int = 1000, db: Session = Depends(get_db)
-    ):
-        logs = crud.get_logs_by_session(
-            db, session_id=session_id, skip=skip, limit=limit
-        )
-        return logs
+    tracking_router = APIRouter(prefix=TRACKING_BASE_ENDPOINT)
+    LogsRoutes(tracking_router)
+    SessionsRoutes(tracking_router)
+    
+    app.include_router(tracking_router)
 
     @app.on_event("startup")
     async def startup_event():
