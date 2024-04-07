@@ -1,7 +1,7 @@
 import uvicorn
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import APIRouter
+
 from llmstudio.config import TRACKING_HOST, TRACKING_PORT
 from llmstudio.engine.providers import *
 from llmstudio.tracking.logs.endpoints import LogsRoutes
@@ -29,7 +29,6 @@ def create_tracking_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-
     @app.get(TRACKING_HEALTH_ENDPOINT)
     def health_check():
         """Health check endpoint to ensure the API is running."""
@@ -38,7 +37,7 @@ def create_tracking_app() -> FastAPI:
     tracking_router = APIRouter(prefix=TRACKING_BASE_ENDPOINT)
     LogsRoutes(tracking_router)
     SessionsRoutes(tracking_router)
-    
+
     app.include_router(tracking_router)
 
     @app.on_event("startup")
