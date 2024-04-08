@@ -7,10 +7,22 @@ def get_project_by_name(db: Session, name: str):
     return db.query(models.Project).filter(models.Project.name == name).first()
 
 
-def get_session_by_id(db: Session, session_id: str):
+def get_session_by_session_id(
+    db: Session, session_id: str, skip: int = 0, limit: int = 100
+):
     return (
         db.query(models.SessionDefault)
         .filter(models.SessionDefault.session_id == session_id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+
+def get_session_by_message_id(db: Session, message_id: int):
+    return (
+        db.query(models.SessionDefault)
+        .filter(models.SessionDefault.message_id == message_id)
         .first()
     )
 
@@ -24,18 +36,13 @@ def add_session(db: Session, session: schemas.SessionDefaultCreate):
     return db_session
 
 
-def update_session(db: Session, session: schemas.SessionDefaultCreate):
-    existing_session = get_session_by_id(db, session.session_id)
-    for key, value in session.dict().items():
-        setattr(existing_session, key, value)
-
+def update_session(db: Session, message_id: int, extras: dict):
+    existing_session = get_session_by_message_id(db, message_id)
+    existing_session.extras = extras
     db.commit()
     db.refresh(existing_session)
     return existing_session
 
 
 def upsert_session(db: Session, session: schemas.SessionDefaultCreate):
-    try:
-        return update_session(db, session)
-    except:
-        return add_session(db, session)
+    return add_session(db, session)
