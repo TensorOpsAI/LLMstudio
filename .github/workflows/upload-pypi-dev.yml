@@ -1,0 +1,36 @@
+name: Upload Python package to PyPI as dev pre-release
+
+on:
+  pull_request:
+    branches:
+      - develop
+    types: [closed]
+    paths:
+      - "llmstudio/**"
+
+jobs:
+  deploy:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+
+      - name: Configure Poetry
+        run: |
+          poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Build and publish to PyPI as development release
+        run: |
+          poetry version prerelease
+          poetry build
+          poetry publish --tag dev
