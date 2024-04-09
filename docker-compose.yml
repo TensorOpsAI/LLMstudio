@@ -1,13 +1,24 @@
 version: "3.8"
 
 services:
-  db:
-    image: postgres # this uses the 'latest' version
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: 1234 # only do this in development
-      POSTGRES_DB: llmstudio
+  llmstudio:
+    container_name: llmstudio
+    build: .
+    restart: always
     volumes:
-      - ./db:/var/lib/postgresql/data # save data between restarts
+      - ./shared_folder:${GENERAL_SHAREDFOLDER}
     ports:
-      - 5556:5432 # binds port 5556 on your computer to the postgres port!
+      - 3000:3000
+      - 8001:8001
+      - 8002:8002
+    env_file: ".env"
+  # db:
+  #   image: postgres # this uses the 'latest' version
+  #   environment:
+  #     POSTGRES_USER: user
+  #     POSTGRES_PASSWORD: 1234 # only do this in development
+  #     POSTGRES_DB: llmstudio
+  #   volumes:
+  #     - ./db:/var/lib/postgresql/data # save data between restarts
+  #   ports:
+  #     - 5556:5432 # binds port 5556 on your computer to the postgres port!

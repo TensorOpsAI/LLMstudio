@@ -3,5 +3,5 @@
 test:
 	pytest llmstudio/tests
 
-start-db:
+run-build:
 	docker compose up --build
