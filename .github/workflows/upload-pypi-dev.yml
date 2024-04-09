@@ -1,12 +1,17 @@
 name: Upload Python package to PyPI as dev pre-release
 
+# on:
+#   pull_request:
+#     branches:
+#       - develop
+#     types: [closed]
+#     paths:
+#       - "llmstudio/**"
+
 on:
-  pull_request:
+  push:
     branches:
       - develop
-    types: [closed]
-    paths:
-      - "llmstudio/**"
 
 jobs:
   deploy:
@@ -33,4 +38,4 @@ jobs:
         run: |
           poetry version prerelease
           poetry build
-          poetry publish --tag dev
+          poetry publish --pre
