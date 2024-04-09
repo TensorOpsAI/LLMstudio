@@ -1,17 +1,12 @@
 name: Upload Python package to PyPI as dev pre-release
 
-# on:
-#   pull_request:
-#     branches:
-#       - develop
-#     types: [closed]
-#     paths:
-#       - "llmstudio/**"
-
 on:
-  push:
+  pull_request:
     branches:
       - develop
+    types: [closed]
+    paths:
+      - "llmstudio/**"
 
 jobs:
   deploy:
@@ -38,4 +33,12 @@ jobs:
         run: |
           poetry version prerelease
           poetry build
-          poetry publish --pre
+          poetry publish
+
+      - name: Commit and push updated pyproject.toml
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add pyproject.toml
+          git commit -m "[fix] bump version in pyproject.toml"
+          git push
