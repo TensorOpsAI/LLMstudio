@@ -18,7 +18,7 @@ class Tracker:
         )
         return req
 
-    def add_session(self, data: dict):
+    def update_session(self, data: dict):
         req = self._session.post(
             f"http://{TRACKING_HOST}:{TRACKING_PORT}/api/tracking/session",
             headers={"accept": "application/json", "Content-Type": "application/json"},
