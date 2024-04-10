@@ -13,6 +13,7 @@ def get_session_by_session_id(
     return (
         db.query(models.SessionDefault)
         .filter(models.SessionDefault.session_id == session_id)
+        .order_by(models.SessionDefault.created_at.asc())
         .offset(skip)
         .limit(limit)
         .all()
