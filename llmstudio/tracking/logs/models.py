@@ -1,5 +1,4 @@
-from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, Integer, String
-from sqlalchemy.orm import relationship
+from sqlalchemy import JSON, Column, DateTime, Integer, String
 from sqlalchemy.sql import func
 
 from llmstudio.tracking.database import Base
