@@ -22,8 +22,8 @@ coverage.xml
 .hypothesis
 
 # **/dist/
-# **/db/
-# **/examples/
-# **/docs/
-# **/shared_folder/
+**/db/
+**/examples/
+**/docs/
+**/shared_folder/
 # **/*.egg*/

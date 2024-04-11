@@ -1,26 +1,21 @@
 FROM python:3.11-slim
 ENV PYTHONUNBUFFERED=1
 
-# Install Poetry
+# Install tools
 RUN apt clean && apt update && apt install curl zip unzip nodejs -y
-RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry python && \
-    cd /usr/local/bin && \
-    ln -s /opt/poetry/bin/poetry && \
-    poetry config virtualenvs.create false
 
-WORKDIR /code
-COPY . .
-
+# Install bun
 RUN curl -fsSL https://bun.sh/install | bash && \
     ln -s $HOME/.bun/bin/bun /usr/local/bin/bun
 
+# Install npm
 RUN curl -L https://npmjs.org/install.sh | sh
 
-RUN poetry install
-# RUN pip install llmstudio
-# RUN pip install psycopg2-binary
+# Install llmstudio
+RUN pip install llmstudio==0.3.4a0
+RUN pip install psycopg2-binary
 
-ENV PYTHONPATH=/code
+# EXPOSE PORTS (as in .env this might vary)
 EXPOSE 3000 8001 8002
 
-CMD llmstudio server --ui
+ENTRYPOINT [ "llmstudio", "server", "--ui" ]
