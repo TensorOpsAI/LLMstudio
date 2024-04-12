@@ -28,7 +28,7 @@ class Tracker:
         return req
 
     def get_session(self, session_id: str):
-        req = self._session.post(
+        req = self._session.get(
             f"http://{TRACKING_HOST}:{TRACKING_PORT}/api/tracking/session/{session_id}",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             timeout=100,

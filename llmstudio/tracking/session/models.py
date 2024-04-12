@@ -6,7 +6,7 @@ from llmstudio.tracking.database import Base
 
 class SessionDefault(Base):
     __tablename__ = "sessions"
-    message_id = Column(Integer, primary_key=True)
+    message_id = Column(Integer, primary_key=True, index=True)
     session_id = Column(String, index=True)
     chat_history = Column(JSON)
     extras = Column(JSON)
