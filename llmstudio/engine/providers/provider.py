@@ -214,7 +214,6 @@ class Provider:
                 if chunk.get("choices")
                 and chunk.get("choices")[0].get("delta")
                 and chunk.get("choices")[0].get("delta").get("function_call")
-                is not None
             ]
 
             if isinstance(request, AzureRequest):
