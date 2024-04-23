@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from llmstudio.tracking import models, schemas
+from llmstudio.tracking.logs import models, schemas
 
 
 def get_project_by_name(db: Session, name: str):
@@ -22,6 +22,7 @@ def add_log(db: Session, log: schemas.LogDefaultCreate):
     db.add(db_log)
     db.commit()
     db.refresh(db_log)
+
     return db_log
 
 
