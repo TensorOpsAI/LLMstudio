@@ -211,6 +211,9 @@ class Provider:
             function_calls = [
                 chunk.get("choices")[0].get("delta").get("function_call")
                 for chunk in chunks[1:-1]
+                if chunk.get("choices")
+                and chunk.get("choices")[0].get("delta")
+                and chunk.get("choices")[0].get("delta").get("function_call")
             ]
 
             if isinstance(request, AzureRequest):
