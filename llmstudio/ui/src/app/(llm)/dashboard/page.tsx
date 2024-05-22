@@ -1,7 +1,7 @@
 'use client';
 import { AreaChart, DonutChart, BarChart, Card, Title } from '@tremor/react';
 import { useRef } from 'react';
-import { useDashboardFetch } from '@/app/(llm)/Dashboard/hooks/useDashboardFetch';
+import { useDashboardFetch } from '@/app/(llm)/dashboard/hooks/useDashboardFetch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function Dashboard() {
