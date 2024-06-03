@@ -63,8 +63,8 @@ class VertexAIProvider(Provider):
         self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:
         for chunk in response:
-            print(type(chunk))
-        
+            
+            # Parse google chunk response into ChatCompletionChunk
             yield ChatCompletionChunk(
                         id=str(uuid.uuid4()),
                         choices=[
@@ -80,7 +80,8 @@ class VertexAIProvider(Provider):
                         model=kwargs.get("request").model,
                         object="chat.completion.chunk",
                     ).model_dump()
-            
+        
+        # Create the closing chunk
         yield ChatCompletionChunk(
                         id=str(uuid.uuid4()),
                         choices=[
