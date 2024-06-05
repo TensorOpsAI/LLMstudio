@@ -7,7 +7,6 @@ from fastapi import HTTPException
 from openai import AzureOpenAI, OpenAI
 from pydantic import BaseModel, Field
 
-
 from llmstudio.engine.providers.provider import ChatRequest, Provider, provider
 
 
