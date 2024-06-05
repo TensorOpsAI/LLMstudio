@@ -17,6 +17,11 @@ providers:
         max_tokens: 200000
         input_token_cost: 0.000003
         output_token_cost: 0.000015
+      claude-3-haiku-20240307:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.00000025
+        output_token_cost: 0.00000125
       claude-2.1:
         mode: chat
         max_tokens: 200000
@@ -110,7 +115,12 @@ providers:
     keys:
       - OPENAI_API_KEY
     models:
-      gpt-4-1106-preview:
+      gpt-4o:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0.000005
+        output_token_cost: 0.000015
+      gpt-4-turbo:
         mode: chat
         max_tokens: 128000
         input_token_cost: 0.00001
@@ -120,46 +130,11 @@ providers:
         max_tokens: 8192
         input_token_cost: 0.00003
         output_token_cost: 0.00006
-      gpt-4-0314:
-        mode: chat
-        max_tokens: 8192
-        input_token_cost: 0.00003
-        output_token_cost: 0.00006
-      gpt-4-0613:
-        mode: chat
-        max_tokens: 8192
-        input_token_cost: 0.00003
-        output_token_cost: 0.00006
       gpt-3.5-turbo:
         mode: chat
-        max_tokens: 4097
+        max_tokens: 16385
         input_token_cost: 0.0000015
         output_token_cost: 0.000002
-      gpt-3.5-turbo-0301:
-        mode: chat
-        max_tokens: 4097
-        input_token_cost: 0.0000015
-        output_token_cost: 0.000002
-      gpt-3.5-turbo-0613:
-        mode: chat
-        max_tokens: 4097
-        input_token_cost: 0.0000015
-        output_token_cost: 0.000002
-      gpt-3.5-turbo-1106:
-        mode: chat
-        max_tokens: 16385
-        input_token_cost: 0.0000010
-        output_token_cost: 0.0000020
-      gpt-3.5-turbo-16k:
-        mode: chat
-        max_tokens: 16385
-        input_token_cost: 0.000003
-        output_token_cost: 0.000004
-      gpt-3.5-turbo-16k-0613:
-        mode: chat
-        max_tokens: 16385
-        input_token_cost: 0.000003
-        output_token_cost: 0.000004
     parameters:
       temperature:
         name: "Temperature"
@@ -206,21 +181,26 @@ providers:
       - AZURE_API_ENDPOINT
       - AZURE_API_VERSION
     models:
-      gpt-4-1106-preview:
+      gpt-4o:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0.000005
+        output_token_cost: 0.000015
+      gpt-4-turbo:
         mode: chat
         max_tokens: 128000
         input_token_cost: 0.00001
         output_token_cost: 0.00003
-      gpt-3.5-turbo-16k:
+      gpt-4:
         mode: chat
-        max_tokens: 16385
+        max_tokens: 8192
         input_token_cost: 0.00003
         output_token_cost: 0.00006
-      gpt-3.5-turbo:
+      gpt-35-turbo:
         mode: chat
         max_tokens: 4097
-        input_token_cost: 0.0000015
-        output_token_cost: 0.000002
+        input_token_cost: 0.0000005
+        output_token_cost: 0.0000015
     parameters:
       temperature:
         name: "Temperature"
@@ -267,9 +247,35 @@ providers:
       models:
         gemini-1.5-flash:
           mode: chat
-          max_tokens: 128000
-          input_token_cost: 0.00000035
-          output_token_cost: 0.000000105
+          max_tokens: 1000000
+          input_token_cost:
+            - range: [0, 128000]
+              cost: 0.00000035
+            - range: [128001, null]
+              cost: 0.0000007
+          output_token_cost:
+            - range: [0, 128000]
+              cost: 0.00000105
+            - range: [128001, null]
+              cost: 0.0000021
+        gemini-1.5-pro:
+          mode: chat
+          max_tokens: 1000000
+          input_token_cost:
+            - range: [0, 128000]
+              cost: 0.0000035
+            - range: [128001, null]
+              cost: 0.000007
+          output_token_cost:
+            - range: [0, 128000]
+              cost: 0.0000105
+            - range: [128001, null]
+              cost: 0.000021
+        gemini-1.0-pro:
+          mode: chat
+          max_tokens: 1000000
+          input_token_cost: 0.0000005
+          output_token_cost: 0.0000015
       parameters:
         temperature:
           name: "Temperature"
