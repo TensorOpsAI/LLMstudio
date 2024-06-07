@@ -133,6 +133,11 @@ providers:
       gpt-3.5-turbo:
         mode: chat
         max_tokens: 16385
+        input_token_cost: 0.0000005
+        output_token_cost: 0.0000015
+      gpt-3.5-turbo-instruct:
+        mode: chat
+        max_tokens: 4096
         input_token_cost: 0.0000015
         output_token_cost: 0.000002
     parameters:
