@@ -72,8 +72,8 @@ class Provider:
 
         start_time = time.time()
         response = await self.generate_client(request)
-
         response_handler = self.handle_response(request, response, start_time)
+        
         if request.is_stream:
             return StreamingResponse(response_handler)
         else:
