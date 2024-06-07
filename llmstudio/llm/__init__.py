@@ -68,8 +68,15 @@ class LLM:
     def batch_chat(self, inputs: List[str], num_threads: int = 5) -> List[Any]:
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
             futures = [executor.submit(self.chat, input) for input in inputs]
-            responses = [future.result() for future in futures]
+            responses = [self._safe_future_result(future) for future in futures]
             return responses
+
+    def _safe_future_result(self, future):
+        try:
+            return future.result()
+        except Exception as e:
+            print(f"Error occurred: {e}")
+            return None
 
     async def async_non_stream(self, input: str, **kwargs):
         async with aiohttp.ClientSession() as session:
