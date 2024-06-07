@@ -5,6 +5,9 @@ from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from llmstudio.cli import start_server
 from llmstudio.config import ENGINE_HOST, ENGINE_PORT
 
+from concurrent.futures import ThreadPoolExecutor
+from typing import List, Any
+
 
 class LLM:
     def __init__(self, model_id: str, **kwargs):
@@ -61,6 +64,12 @@ class LLM:
             return self.async_stream(input)
         else:
             return await self.async_non_stream(input)
+        
+    def batch_chat(self, inputs: List[str], num_threads: int = 5) -> List[Any]:
+        with ThreadPoolExecutor(max_workers=num_threads) as executor:
+            futures = [executor.submit(self.chat, input) for input in inputs]
+            responses = [future.result() for future in futures]
+            return responses
 
     async def async_non_stream(self, input: str, **kwargs):
         async with aiohttp.ClientSession() as session:

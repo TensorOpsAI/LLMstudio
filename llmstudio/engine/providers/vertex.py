@@ -9,7 +9,6 @@ from fastapi import HTTPException
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
 from pydantic import BaseModel, Field
-from vertexai.generative_models import GenerationConfig, GenerativeModel
 
 from llmstudio.engine.providers.provider import ChatRequest, Provider, provider
 
