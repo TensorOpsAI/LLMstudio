@@ -111,13 +111,13 @@ class LLM:
                     else:
                         raise e from None
 
-    async def batch_chat_coroutine(self, inputs: List[Union[str, List[Dict[str, str]]]], num_coroutines: int = 5) -> List[str]:
+    async def batch_chat_coroutine(self, inputs: List[Union[str, List[Dict[str, str]]]], num_coroutines: int = 5, max_retries: int = 5) -> List[str]:
         semaphore = asyncio.Semaphore(num_coroutines)
-        responses = await asyncio.gather(*[self.chat_coroutine(input, semaphore=semaphore) for input in inputs])
+        responses = await asyncio.gather(*[self.chat_coroutine(input, semaphore=semaphore, max_retries=max_retries) for input in inputs])
         return responses
     
-    def run_batch_chat_coroutine(self, inputs: List[Union[str, List[Dict[str, str]]]], num_coroutines: int = 5) -> List[str]:
-        return asyncio.run(self.batch_chat_coroutine(inputs, num_coroutines))
+    def run_batch_chat_coroutine(self, inputs: List[Union[str, List[Dict[str, str]]]], num_coroutines: int = 5, max_retries: int = 5) -> List[str]:
+        return asyncio.run(self.batch_chat_coroutine(inputs, num_coroutines, max_retries))
     ###################################################################################
 
     async def async_non_stream(self, input: str, **kwargs):
