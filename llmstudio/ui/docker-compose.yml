@@ -3,14 +3,14 @@ version: '3.8'
 services:
   llmstudio:
     container_name: llmstudio
-    build: .
+    build:
+      context: .
+      args:
+        - NEXT_PUBLIC_LLMSTUDIO_ENGINE_HOST=4.180.10.0
+        - NEXT_PUBLIC_LLMSTUDIO_ENGINE_PORT=8001
+        - NEXT_PUBLIC_LLMSTUDIO_TRACKING_HOST=4.180.10.0
+        - NEXT_PUBLIC_LLMSTUDIO_TRACKING_PORT=8001
     restart: always
     ports:
       - 3000:3000
-    #env_file: ".envooo"
-    environment:
-      - NEXT_PUBLIC_LLMSTUDIO_ENGINE_HOST=4.180.10.0
-      - NEXT_PUBLIC_LLMSTUDIO_ENGINE_PORT=8001
-      - NEXT_PUBLIC_LLMSTUDIO_TRACKING_HOST=4.180.10.0
-      - NEXT_PUBLIC_LLMSTUDIO_TRACKING_PORT=8001
     entrypoint: 'bun run start'

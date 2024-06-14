@@ -1,26 +1,33 @@
-
-FROM oven/bun:canary-debian as base
+FROM oven/bun:1 as base
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-FROM base as deps
+FROM base as install
 
-COPY package.json ./
+COPY package.json bun.lockb ./
 RUN bun install
 
 FROM node:18 as build
 
+ARG NEXT_PUBLIC_LLMSTUDIO_ENGINE_HOST
+ARG NEXT_PUBLIC_LLMSTUDIO_ENGINE_PORT
+ARG NEXT_PUBLIC_LLMSTUDIO_TRACKING_HOST
+ARG NEXT_PUBLIC_LLMSTUDIO_TRACKING_PORT
+
+ENV NEXT_PUBLIC_LLMSTUDIO_ENGINE_HOST=$NEXT_PUBLIC_LLMSTUDIO_ENGINE_HOST
+ENV NEXT_PUBLIC_LLMSTUDIO_ENGINE_PORT=$NEXT_PUBLIC_LLMSTUDIO_ENGINE_PORT
+ENV NEXT_PUBLIC_LLMSTUDIO_TRACKING_HOST=$NEXT_PUBLIC_LLMSTUDIO_TRACKING_HOST
+ENV NEXT_PUBLIC_LLMSTUDIO_TRACKING_PORT=$NEXT_PUBLIC_LLMSTUDIO_TRACKING_PORT
+
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules
-
-# COPY .env ./
+COPY --from=install /app/node_modules ./node_modules
 COPY . .
 RUN npm run build -- --no-lint
 
-FROM base as final
+FROM base as release
 
 USER bun
 
