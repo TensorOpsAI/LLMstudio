@@ -44,7 +44,22 @@ class AzureProvider(Provider):
     ) -> Coroutine[Any, Any, Generator]:
         """Generate an AzureOpenAI client"""
         try:
-            if request.api_endpoint or self.API_ENDPOINT:
+            if request.base_url or self.BASE_URL:
+                client = OpenAI(
+                    api_key=request.api_key or self.API_KEY,
+                    base_url=request.base_url or self.BASE_URL,
+                )
+                return await asyncio.to_thread(
+                    client.chat.completions.create,
+                    model=request.model,
+                    messages=(
+                        [{"role": "user", "content": request.chat_input}]
+                        if isinstance(request.chat_input, str)
+                        else request.chat_input
+                    ),
+                    stream=True,
+                )
+            else:
                 client = AzureOpenAI(
                     api_key=request.api_key or self.API_KEY,
                     azure_endpoint=request.api_endpoint or self.API_ENDPOINT,
@@ -62,21 +77,6 @@ class AzureProvider(Provider):
                     function_call="auto" if request.functions else None,
                     stream=True,
                     **request.parameters.model_dump(),
-                )
-            elif request.base_url or self.BASE_URL:
-                client = OpenAI(
-                    api_key=request.api_key or self.API_KEY,
-                    base_url=request.base_url or self.BASE_URL,
-                )
-                return await asyncio.to_thread(
-                    client.chat.completions.create,
-                    model=request.model,
-                    messages=(
-                        [{"role": "user", "content": request.chat_input}]
-                        if isinstance(request.chat_input, str)
-                        else request.chat_input
-                    ),
-                    stream=True,
                 )
 
         except openai._exceptions.APIError as e:
