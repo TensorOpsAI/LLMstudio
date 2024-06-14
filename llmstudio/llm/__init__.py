@@ -108,13 +108,16 @@ class LLM:
 
                 except Exception as e:
                     self.failed_requests += 1
-                    if self.failed_requests >= 10:  # If 10 or more requests have failed
+                    print(self.failed_requests)
+                    print(e)
+                    if self.failed_requests >= 5:  # If 5 or more requests have failed
+                        print("Pausing...")
                         self.pause = True  # Set the pause flag
                     if i < max_retries - 1:  # i is zero indexed
                         wait_time = (2 ** i) + random.random()  # Exponential backoff with jitter
                         await asyncio.sleep(wait_time)
                     else:
-                        raise e from None
+                        return None
 
     async def batch_chat_coroutine(self, inputs: List[Union[str, List[Dict[str, str]]]], num_coroutines: int = 5, max_retries: int = 5) -> List[str]:
         semaphore = asyncio.Semaphore(num_coroutines)
@@ -125,46 +128,46 @@ class LLM:
         return asyncio.run(self.batch_chat_coroutine(inputs, num_coroutines, max_retries))
     ###################################################################################
 
-    failed_requests = 0
-    pause = False
+    # failed_requests = 0
+    # pause = False
 
-    async def chat_coroutine(self, input: Union[str, List[Dict[str, str]]], semaphore: asyncio.Semaphore, max_retries: int = 5):
-        async with semaphore:
-            for i in range(max_retries):
-                try:
-                    # If the pause flag is set, wait for a while
-                    if self.pause:
-                        await asyncio.sleep(60)  # Wait for 60 seconds
-                        self.pause = False  # Reset the pause flag
-                        self.failed_requests = 0  # Reset the failed requests counter
+    # async def chat_coroutine(self, input: Union[str, List[Dict[str, str]]], semaphore: asyncio.Semaphore, max_retries: int = 5):
+    #     async with semaphore:
+    #         for i in range(max_retries):
+    #             try:
+    #                 # If the pause flag is set, wait for a while
+    #                 if self.pause:
+    #                     await asyncio.sleep(60)  # Wait for 60 seconds
+    #                     self.pause = False  # Reset the pause flag
+    #                     self.failed_requests = 0  # Reset the failed requests counter
 
-                    # Proceed with the request
-                    response = await self.async_chat(input)
-                    return response
+    #                 # Proceed with the request
+    #                 response = await self.async_chat(input)
+    #                 return response
 
-                except Exception as e:
-                    self.failed_requests += 1
-                    if self.failed_requests >= 10:  # If 10 or more requests have failed
-                        self.pause = True  # Set the pause flag
-                    if i < max_retries - 1:  # i is zero indexed
-                        wait_time = (2 ** i) + random.random()  # Exponential backoff with jitter
-                        await asyncio.sleep(wait_time)
-                    else:
-                        raise e from None
+    #             except Exception as e:
+    #                 self.failed_requests += 1
+    #                 if self.failed_requests >= 10:  # If 10 or more requests have failed
+    #                     self.pause = True  # Set the pause flag
+    #                 if i < max_retries - 1:  # i is zero indexed
+    #                     wait_time = (2 ** i) + random.random()  # Exponential backoff with jitter
+    #                     await asyncio.sleep(wait_time)
+    #                 else:
+    #                     raise e from None
 
-    async def chat_coroutine(self, input: Union[str, List[Dict[str, str]]], semaphore: asyncio.Semaphore):
+    # async def chat_coroutine(self, input: Union[str, List[Dict[str, str]]], semaphore: asyncio.Semaphore):
         
-        async with semaphore:
-            response = await self.async_chat(input)
-            return response
+    #     async with semaphore:
+    #         response = await self.async_chat(input)
+    #         return response
 
-    async def batch_chat_coroutine(self, inputs: List[Union[str, List[Dict[str, str]]]], num_coroutines: int = 5) -> List[str]:
-        semaphore = asyncio.Semaphore(num_coroutines)
-        response_generator = await asyncio.gather(*[self.chat_coroutine(input, semaphore=semaphore) for input in inputs])
-        return response_generator
+    # async def batch_chat_coroutine(self, inputs: List[Union[str, List[Dict[str, str]]]], num_coroutines: int = 5) -> List[str]:
+    #     semaphore = asyncio.Semaphore(num_coroutines)
+    #     response_generator = await asyncio.gather(*[self.chat_coroutine(input, semaphore=semaphore) for input in inputs])
+    #     return response_generator
     
-    def run_batch_chat_coroutine(self, inputs: List[Union[str, List[Dict[str, str]]]], num_coroutines: int = 5) -> List[str]:
-        return asyncio.run(self.batch_chat_coroutine(inputs, num_coroutines))
+    # def run_batch_chat_coroutine(self, inputs: List[Union[str, List[Dict[str, str]]]], num_coroutines: int = 5) -> List[str]:
+    #     return asyncio.run(self.batch_chat_coroutine(inputs, num_coroutines))
 
 
     #############################################################
