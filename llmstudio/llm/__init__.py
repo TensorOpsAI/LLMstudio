@@ -72,13 +72,8 @@ class LLM:
             return self.async_stream(input)
         else:
             return await self.async_non_stream(input)
-<<<<<<< Updated upstream
     
     #################################### OLD BATCH ####################################
-=======
-        
-    ####################### OLD BATCH CHAT #######################
->>>>>>> Stashed changes
     def batch_chat(self, inputs: List[str], num_threads: int = 5) -> List[Any]:
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
             futures = [executor.submit(self.chat, input) for input in inputs]
@@ -91,7 +86,6 @@ class LLM:
         except Exception as e:
             print(f"Error occurred: {e}")
             return None
-<<<<<<< Updated upstream
     ###################################################################################
 
     #################################### NEW BATCH ####################################
@@ -130,10 +124,6 @@ class LLM:
     def run_batch_chat_coroutine(self, inputs: List[Union[str, List[Dict[str, str]]]], num_coroutines: int = 5, max_retries: int = 5) -> List[str]:
         return asyncio.run(self.batch_chat_coroutine(inputs, num_coroutines, max_retries))
     ###################################################################################
-=======
-    
-    ####################### NEW BATCH CHAT #######################
->>>>>>> Stashed changes
 
     failed_requests = 0
     pause = False
