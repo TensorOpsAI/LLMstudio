@@ -1,4 +1,4 @@
-version: "3.8"
+version: '3.8'
 
 services:
   llmstudio:
@@ -13,4 +13,4 @@ services:
       - NEXT_PUBLIC_LLMSTUDIO_ENGINE_PORT=8001
       - NEXT_PUBLIC_LLMSTUDIO_TRACKING_HOST=4.180.10.0
       - NEXT_PUBLIC_LLMSTUDIO_TRACKING_PORT=8001
-    entrypoint: "bun run start"
+    entrypoint: 'bun run start'

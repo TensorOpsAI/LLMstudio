@@ -1,5 +1,5 @@
 declare namespace JSX {
-    interface IntrinsicElements {
-        "dotlottie-player": any;
-    }
+  interface IntrinsicElements {
+    'dotlottie-player': any;
+  }
 }

@@ -20,7 +20,7 @@ export function useDashboardFetch() {
     average_latency: [],
     average_ttft: [],
     average_itl: [],
-    average_tps: []
+    average_tps: [],
   });
 
   useEffect(() => {
