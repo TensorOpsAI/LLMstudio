@@ -3,7 +3,6 @@ title: Quickstart
 description: "Let's have you setup LLMstudio"
 ---
 
-
 ## Installation
 
 <Steps>
@@ -14,6 +13,7 @@ description: "Let's have you setup LLMstudio"
     ```bash
     pip install llmstudio
     ```
+
   </Step>
   <Step >
     Install `bun` if you want to use the UI
@@ -36,6 +36,7 @@ description: "Let's have you setup LLMstudio"
     When the `--ui` flag is set, you'll be able to access the UI at [http://localhost:3000](http://localhost:3000)
 
     <Check>You are done setting up **LLMstudio**!</Check>
+
   </Step>
 </Steps>
 
@@ -49,25 +50,45 @@ model = LLM("anthropic/claude-2.1")
 model.chat("What are Large Language Models?")
 ```
 
-The output will be something like the following JSON.
+The output will be a ChatCompletion, using the OpenAI format.
 
-```json
-{'id': 'b6ef2e41-2759-410e-a555-ceddcd197139',
- 'chat_input': 'Describe Large Language Models in one short sentence',
- 'chat_output': ' Large language models are AI systems trained on vast amounts of text data to generate human-like text and power language applications.',
- 'timestamp': 1702325277.018998,
- 'provider': 'anthropic',
- 'model': 'claude-2.1',
- 'metrics': {'input_tokens': 8,
-  'output_tokens': 24,
-  'total_tokens': 32,
-  'cost': 0.00064,
-  'latency': 5.634583950042725,
-  'time_to_first_token': 3.776610851287842,
-  'inter_token_latency': 0.07244679202204166,
-  'tokens_per_second': 4.259409428058662},
- 'parameters': {'temperature': 1,
-  'max_tokens_to_sample': 256,
-  'top_p': 1,
-  'top_k': 5}}
+```python
+ChatCompletion(
+    id='9faa33e3-cda0-4d23-9217-c82ff7325b94',
+    choices=[
+        Choice(
+            finish_reason='stop',
+            index=0,
+            logprobs=None,
+            message=ChatCompletionMessage(
+                content="I am an artificial intelligence called OpenAI. I don't have a personal name because I am not a human.",
+                role='assistant',
+                function_call=None,
+                tool_calls=None
+            )
+        )
+    ],
+    created=1718623278,
+    model='gpt-4',
+    object='chat.completion',
+    system_fingerprint=None,
+    usage=None,
+    session_id=None,
+    chat_input="What's your name",
+    chat_output="I am an artificial intelligence called OpenAI. I don't have a personal name because I am not a human.",
+    context=[{'role': 'user', 'content': "What's your name"}],
+    provider='openai',
+    timestamp=1718623280.9204,
+    parameters={'temperature': None, 'max_tokens': None, 'top_p': None, 'frequency_penalty': 0, 'presence_penalty': 0},
+    metrics={
+        'input_tokens': 4,
+        'output_tokens': 23,
+        'total_tokens': 27,
+        'cost_usd': 0.0015,
+        'latency_s': 2.6993088722229004,
+        'time_to_first_token_s': 0.9924077987670898,
+        'inter_token_latency_s': 0.0711073378721873,
+        'tokens_per_second': 9.26162998879499
+    }
+)
 ```
