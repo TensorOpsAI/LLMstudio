@@ -1,21 +1,15 @@
-import aiohttp
-import requests
-from openai.types.chat import ChatCompletion, ChatCompletionChunk
-
-from llmstudio.cli import start_server
-from llmstudio.config import ENGINE_HOST, ENGINE_PORT
-
-from concurrent.futures import ThreadPoolExecutor
-from typing import List, Any, Union, Dict
-import random
-import asyncio
-
-
 # Batch Imports
 import asyncio
 import random
-from typing import List, Union, Dict
+from typing import Dict, List, Union
+
+import aiohttp
+import requests
+from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from tqdm.asyncio import tqdm_asyncio
+
+from llmstudio.cli import start_server
+from llmstudio.config import ENGINE_HOST, ENGINE_PORT
 
 
 class LLM:
@@ -39,6 +33,8 @@ class LLM:
         self.top_p = kwargs.get("top_p")
         self.top_k = kwargs.get("top_k")
         self.max_tokens = kwargs.get("max_tokens")
+        self.frequency_penalty = kwargs.get("frequency_penalty")
+        self.presence_penalty = kwargs.get("presence_penalty")
         # self.failed_requests = 0
         # self.pause = False
         self.tracker = self.BatchTracker()
@@ -56,10 +52,15 @@ class LLM:
                 "chat_input": input,
                 "is_stream": is_stream,
                 "parameters": {
-                    "temperature": self.temperature,
-                    "top_p": self.top_p,
-                    "top_k": self.top_k,
-                    "max_tokens": self.max_tokens,
+                    "temperature": kwargs.get("temperature") or self.temperature,
+                    "top_p": kwargs.get("top_p") or self.top_p,
+                    "top_k": kwargs.get("top_k") or self.top_k,
+                    "max_tokens": kwargs.get("max_tokens") or self.max_tokens,
+                    "max_output_tokens": kwargs.get("max_tokens") or self.max_tokens,
+                    "frequency_penalty": kwargs.get("frequency_penalty")
+                    or self.frequency_penalty,
+                    "presence_penalty": kwargs.get("presence_penalty")
+                    or self.presence_penalty,
                 },
                 **kwargs,
             },
@@ -85,17 +86,17 @@ class LLM:
         else:
             return await self.async_non_stream(input)
 
-##################################### 1st BATCH #####################################
+    ##################################### 1st BATCH #####################################
 
-    # async def chat_coroutine(self, 
-    #                          input: Union[str, List[Dict[str, str]]], 
-    #                          semaphore: asyncio.Semaphore, 
+    # async def chat_coroutine(self,
+    #                          input: Union[str, List[Dict[str, str]]],
+    #                          semaphore: asyncio.Semaphore,
     #                          max_retries: int = 5,
     #                          wait_time: int = 60,
     #                          fail_treshold: int = 5):
-        
+
     #     async with semaphore:
-            
+
     #         await asyncio.sleep(wait_time)
     #         for i in range(max_retries):
     #             try:
@@ -106,7 +107,7 @@ class LLM:
 
     #             except Exception as e:
     #                 self.failed_requests += 1
-    #                 if self.failed_requests >= fail_treshold:  # If 5 or more requests have failed
+    #                 if self.failed_requests >= wfail_treshold:  # If 5 or more requests have failed
     #                     self.pause = True  # Set the pause flag
     #                 if i < max_retries - 1:  # i is zero indexed
     #                     wait_time = (2 ** i) + random.random()  # Exponential backoff with jitter
@@ -114,15 +115,15 @@ class LLM:
     #                 else:
     #                     return None
 
-    # async def batch_chat_coroutine(self, inputs: List[Union[str, List[Dict[str, str]]]], 
-    #                                num_coroutines: int = 5, 
+    # async def batch_chat_coroutine(self, inputs: List[Union[str, List[Dict[str, str]]]],
+    #                                num_coroutines: int = 5,
     #                                max_retries: int = 5,
     #                                wait_time: int = 60,
     #                                fail_treshold: int = 5) -> List[str]:
     #     semaphore = asyncio.Semaphore(num_coroutines)
     #     responses = await tqdm_asyncio.gather(*[self.chat_coroutine(input, semaphore=semaphore, max_retries=max_retries, wait_time=wait_time, fail_treshold=fail_treshold) for input in inputs])
     #     return responses
-    
+
     # def batch_chat(self, inputs: List[Union[str, List[Dict[str, str]]]], num_coroutines: int = 5, max_retries: int = 5, wait_time: int = 60, fail_treshold: int = 5) -> List[str]:
     #     return asyncio.run(self.batch_chat_coroutine(inputs, num_coroutines, max_retries, wait_time=wait_time, fail_treshold=fail_treshold))
     #####################################################################################
@@ -155,9 +156,9 @@ class LLM:
     #         self._timer = None
 
     # ###
-    # async def chat_coroutine(self, 
-    #                          input: Union[str, List[Dict[str, str]]], 
-    #                          semaphore: TimedBlockSemaphore, 
+    # async def chat_coroutine(self,
+    #                          input: Union[str, List[Dict[str, str]]],
+    #                          semaphore: TimedBlockSemaphore,
     #                          max_retries: int = 5,
     #                          st: int = 60,
     #                          fail_treshold: int = 5):
@@ -184,19 +185,19 @@ class LLM:
     #                     return None
     #     finally:
     #         semaphore.release()
-    
-    # async def batch_chat_coroutine(self, inputs: List[Union[str, List[Dict[str, str]]]], 
-    #                                num_coroutines: int = 5, 
+
+    # async def batch_chat_coroutine(self, inputs: List[Union[str, List[Dict[str, str]]]],
+    #                                num_coroutines: int = 5,
     #                                max_retries: int = 5,
     #                                stop_time: int = 60,
     #                                fail_treshold: int = 5) -> List[str]:
     #     semaphore = self.TimedBlockSemaphore(num_coroutines)
     #     responses = await asyncio.gather(*[self.chat_coroutine(input, semaphore=semaphore, max_retries=max_retries, st=stop_time, fail_treshold=fail_treshold) for input in inputs])
     #     return responses
-    
+
     # def batch_chat(self, inputs: List[Union[str, List[Dict[str, str]]]], num_coroutines: int = 5, max_retries: int = 5, stop_time: int = 60, fail_treshold: int = 5) -> List[str]:
     #     return asyncio.run(self.batch_chat_coroutine(inputs, num_coroutines, max_retries, stop_time=stop_time, fail_treshold=fail_treshold))
-    
+
     #####################################################################################
 
     ##################################### 3rd BATCH #####################################
@@ -219,7 +220,9 @@ class LLM:
             for i in range(max_retries):
                 try:
                     # Proceed with the request
-                    self.tracker.total_requests += 1  # Increment the total requests counter
+                    self.tracker.total_requests += (
+                        1  # Increment the total requests counter
+                    )
                     response = await self.async_chat(input)
                     
                     # TODO
@@ -251,7 +254,9 @@ class LLM:
                     
                     # Perform exponential backoff with jitter
                     if i < max_retries - 1:  # i is zero indexed
-                        wait_time = (2 ** i) + random.random()  # Exponential backoff with jitter
+                        wait_time = (
+                            2**i
+                        ) + random.random()  # Exponential backoff with jitter
                         await asyncio.sleep(wait_time)
 
                     # Decrement the error count if the coroutine had an error
@@ -300,7 +305,7 @@ class LLM:
 
         return asyncio.run(self.batch_chat_coroutine(inputs, num_coroutines, max_retries))
     #####################################################################################
-    
+
     async def async_non_stream(self, input: str, **kwargs):
         async with aiohttp.ClientSession() as session:
             async with session.post(

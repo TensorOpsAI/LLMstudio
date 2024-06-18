@@ -164,7 +164,9 @@ class Provider:
         from llmstudio.engine.providers.azure import AzureRequest
         from llmstudio.engine.providers.openai import OpenAIRequest
 
-        if chunks[-1].get("choices")[0].get("finish_reason") == "tool_calls":
+        finish_reason = chunks[-1].get("choices")[0].get("finish_reason")
+
+        if finish_reason == "tool_calls":
             tool_calls = [
                 chunk.get("choices")[0].get("delta").get("tool_calls")[0]
                 for chunk in chunks[1:-1]
@@ -207,7 +209,7 @@ class Provider:
                 ),
                 tool_call_arguments,
             )
-        elif chunks[-1].get("choices")[0].get("finish_reason") == "function_call":
+        elif finish_reason == "function_call":
             function_calls = [
                 chunk.get("choices")[0].get("delta").get("function_call")
                 for chunk in chunks[1:-1]
@@ -260,7 +262,7 @@ class Provider:
                 ),
                 function_call_arguments,
             )
-        elif chunks[-1].get("choices")[0].get("finish_reason") == "stop":
+        elif finish_reason == "stop" or finish_reason == "length":
             if isinstance(request, AzureRequest) or isinstance(request, OpenAIRequest):
                 start_index = 1
             else:
