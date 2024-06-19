@@ -13,19 +13,18 @@ from llmstudio.config import ENGINE_HOST, ENGINE_PORT
 
 
 class LLM:
-    
     class BatchTracker:
         def __init__(self, given_max_tokens):
             self.total_requests = 0
             self.sample_size = 10
             self.finished_requests = 0
             self.current_requests_with_errors = 0
-  
+
             self.computed_max_tokens = 0
             self.given_max_tokens = given_max_tokens
 
         def process_finished_request(self, has_error):
-            
+
             # Increment finished requests counter
             self.finished_requests += 1
 
@@ -43,21 +42,21 @@ class LLM:
         def update_computed_max_tokens(self, tokens):
             if self.finished_requests < self.sample_size:
                 self.computed_max_tokens = max(self.computed_max_tokens, tokens)
-            
+
         def get_max_tokens(self):
 
             # If user provided max tokes, use that value
             if self.given_max_tokens != None:
                 return self.given_max_tokens
-            
+
             # If we are still computing max tokens, give a default value (DISCUSS WITH CLAUDIO AND GABRIEL)
             elif self.finished_requests < self.sample_size:
                 return 1024
-            
+
             # If we finished computing max tokens, return that value
             elif self.finished_requests >= self.sample_size:
                 return self.computed_max_tokens
-            
+
     def __init__(self, model_id: str, **kwargs):
         start_server()
         self.provider, self.model = model_id.split("/")
@@ -257,18 +256,22 @@ class LLM:
 
                 # Everytime we do a request, we incement this value to track how many requests we did by the end
                 tracker.increment_total_requests()
-                
+
                 try:
-                    print('-----------------------')
-                    print(f'Finished Requests: {tracker.finished_requests}')
-                    print(f'Current Max Tokens: {tracker.get_max_tokens()}')
-                    print(f'Current requests with errors: {tracker.current_requests_with_errors}')
-                    print('-----------------------')
+                    print("-----------------------")
+                    print(f"Finished Requests: {tracker.finished_requests}")
+                    print(f"Current Max Tokens: {tracker.get_max_tokens()}")
+                    print(
+                        f"Current requests with errors: {tracker.current_requests_with_errors}"
+                    )
+                    print("-----------------------")
                     # Try getting a response
-                    response = await self.async_chat(input, max_tokens = tracker.get_max_tokens())
+                    response = await self.async_chat(
+                        input, max_tokens=tracker.get_max_tokens()
+                    )
 
                     # Update the max tokens used so far.
-                    tracker.update_max_total_tokens(response.metrics['total_tokens'])
+                    tracker.update_max_total_tokens(response.metrics["total_tokens"])
 
                     # Update tracker (incement finished requests, decrement current error requests if req had an error)
                     tracker.process_finished_request(has_error)
@@ -280,7 +283,7 @@ class LLM:
                     if not has_error:
                         has_error = True
                         tracker.increment_current_requests_wit_errors()  # Increment the count when an error occurs
-                        
+
                     # Perform exponential backoff with jitter
                     if i < max_retries - 1:  # i is zero indexed
                         wait_time = (
@@ -327,7 +330,13 @@ class LLM:
         # Get all responses in the same order of the input
         responses = await asyncio.gather(
             *[
-                self.chat_coroutine(tracker=tracker, input=input, semaphore=semaphore, max_retries=max_retries, error_threshold=error_threshold)
+                self.chat_coroutine(
+                    tracker=tracker,
+                    input=input,
+                    semaphore=semaphore,
+                    max_retries=max_retries,
+                    error_threshold=error_threshold,
+                )
                 for input in inputs
             ],
         )
@@ -339,7 +348,7 @@ class LLM:
         num_coroutines: int = 10,
         max_retries: int = 5,
         error_threshold: int = 5,
-        max_tokens = None
+        max_tokens=None,
     ) -> List[str]:
 
         tracker = self.BatchTracker(given_max_tokens=max_tokens)
@@ -348,7 +357,9 @@ class LLM:
             error_threshold = num_coroutines
 
         return asyncio.run(
-            self.batch_chat_coroutine(tracker, inputs, num_coroutines, max_retries, error_threshold)
+            self.batch_chat_coroutine(
+                tracker, inputs, num_coroutines, max_retries, error_threshold
+            )
         )
 
     #####################################################################################
@@ -359,11 +370,25 @@ class LLM:
                 f"http://{ENGINE_HOST}:{ENGINE_PORT}/api/engine/chat/{self.provider}",
                 json={
                     "model": self.model,
+                    "session_id": self.session_id,
                     "api_key": self.api_key,
-                    "api_secret": self.api_endpoint,
-                    "api_region": self.api_version,
+                    "api_endpoint": self.api_endpoint,
+                    "api_version": self.api_version,
+                    "base_url": self.base_url,
                     "chat_input": input,
                     "is_stream": False,
+                    "parameters": {
+                        "temperature": kwargs.get("temperature") or self.temperature,
+                        "top_p": kwargs.get("top_p") or self.top_p,
+                        "top_k": kwargs.get("top_k") or self.top_k,
+                        "max_tokens": kwargs.get("max_tokens") or self.max_tokens,
+                        "max_output_tokens": kwargs.get("max_tokens")
+                        or self.max_tokens,
+                        "frequency_penalty": kwargs.get("frequency_penalty")
+                        or self.frequency_penalty,
+                        "presence_penalty": kwargs.get("presence_penalty")
+                        or self.presence_penalty,
+                    },
                     **kwargs,
                 },
                 headers={"Content-Type": "application/json"},
@@ -378,13 +403,28 @@ class LLM:
                 f"http://{ENGINE_HOST}:{ENGINE_PORT}/api/engine/chat/{self.provider}",
                 json={
                     "model": self.model,
+                    "session_id": self.session_id,
                     "api_key": self.api_key,
-                    "api_secret": self.api_endpoint,
-                    "api_region": self.api_version,
+                    "api_endpoint": self.api_endpoint,
+                    "api_version": self.api_version,
+                    "base_url": self.base_url,
                     "chat_input": input,
                     "is_stream": True,
+                    "parameters": {
+                        "temperature": kwargs.get("temperature") or self.temperature,
+                        "top_p": kwargs.get("top_p") or self.top_p,
+                        "top_k": kwargs.get("top_k") or self.top_k,
+                        "max_tokens": kwargs.get("max_tokens") or self.max_tokens,
+                        "max_output_tokens": kwargs.get("max_tokens")
+                        or self.max_tokens,
+                        "frequency_penalty": kwargs.get("frequency_penalty")
+                        or self.frequency_penalty,
+                        "presence_penalty": kwargs.get("presence_penalty")
+                        or self.presence_penalty,
+                    },
                     **kwargs,
                 },
+                stream=True,
                 headers={"Content-Type": "application/json"},
             ) as response:
                 response.raise_for_status()
