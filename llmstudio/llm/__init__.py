@@ -14,6 +14,23 @@ import time
 
 
 class LLM:
+
+    class DynamicSemaphore:
+        def __init__(self, initial_permits):
+            self._permits = initial_permits
+            self._semaphore = asyncio.Semaphore(initial_permits)
+
+        def increase_permits(self, additional_permits):
+            for _ in range(additional_permits):
+                self._semaphore.release()
+            self._permits += additional_permits
+
+        async def acquire(self):
+            await self._semaphore.acquire()
+
+        def release(self):
+            self._semaphore.release()
+    
     class BatchTracker:
         def __init__(self, given_max_tokens):
             self.total_requests = 0
@@ -44,6 +61,8 @@ class LLM:
 
         def increment_current_requests_with_errors(self):
             self.current_requests_with_errors += 1
+        
+        def increment_total_error_requests(self):
             self.total_error_requests += 1
 
         def update_computed_max_tokens(self, tokens):
@@ -265,13 +284,13 @@ class LLM:
                 tracker.increment_total_requests()
 
                 try:
-                    # print(f'-----------------------\n'
-                    #       f'Finished Requests: {tracker.finished_requests}\n'
-                    #       f'Total Requests: {tracker.total_requests}\n'
-                    #       f'Current Max Tokens: {tracker.get_max_tokens()}\n'
-                    #       f'Current Computed Max Tokens: {tracker.computed_max_tokens}\n'
-                    #       f'Current requests with errors: {tracker.current_requests_with_errors}\n'
-                    #       f'-----------------------', end="\r")
+                    print(f'-----------------------\n'
+                          f'Finished Requests: {tracker.finished_requests}\n'
+                          f'Total Requests: {tracker.total_requests}\n'
+                          f'Current Max Tokens: {tracker.get_max_tokens()}\n'
+                          f'Current Computed Max Tokens: {tracker.computed_max_tokens}\n'
+                          f'Current requests with errors: {tracker.current_requests_with_errors}\n'
+                          f'-----------------------', end="\r")
                     # Try getting a response
                     response = await self.async_chat(input, max_tokens=tracker.get_max_tokens())
 
@@ -284,11 +303,15 @@ class LLM:
                     return response
 
                 except Exception as e:
+                    
+                    # Update total error count
+                    tracker.increment_total_error_requests()
 
                     # Update error rate if the coroutine faces an error.
                     if not has_error:
                         has_error = True
                         tracker.increment_current_requests_with_errors()  # Increment the count when an error occurs
+                    
                         
                     # Perform exponential backoff with jitter
                     if i < max_retries - 1:  # i is zero indexed
@@ -344,7 +367,7 @@ class LLM:
                     error_threshold=error_threshold,
                 )
                 for input in inputs
-            ], desc = f'Test description {tracker.total_requests}'
+            ], desc = f'Geting batch chat responses:'
         )
         return responses
 
@@ -372,8 +395,6 @@ class LLM:
 
         return responses, tracker.total_tokens, tracker.total_requests, tracker.total_error_requests, elapsed_time
     
-        
-
     #####################################################################################
 
     async def async_non_stream(self, input: str, **kwargs):
