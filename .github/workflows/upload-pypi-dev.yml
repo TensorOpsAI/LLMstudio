@@ -1,20 +1,17 @@
 name: Upload Python package to PyPI as dev pre-release
 
 on:
-  pull_request:
-    branches:
-      - develop
-    types: [closed]
-    paths:
-      - "llmstudio/**"
+  workflow_dispatch:
 
 jobs:
   deploy:
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          ref: develop
+          token: ${{ secrets.GH_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -40,5 +37,5 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add pyproject.toml
-          git commit -m "[fix] bump version in pyproject.toml"
+          git commit -m "[fix] bump prerelease version in pyproject.toml"
           git push
