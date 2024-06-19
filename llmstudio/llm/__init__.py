@@ -13,14 +13,51 @@ from llmstudio.config import ENGINE_HOST, ENGINE_PORT
 
 
 class LLM:
-
+    
     class BatchTracker:
-        def __init__(self):
-            self.current_errors = 0
-            self.target_error_rate = 0.05
-            self.error_threshold = self.target_error_rate
-            self.error_rate_smoothing = 0.01 
+        def __init__(self, given_max_tokens):
+            self.total_requests = 0
+            self.sample_size = 10
+            self.finished_requests = 0
+            self.current_requests_with_errors = 0
+  
+            self.computed_max_tokens = 0
+            self.given_max_tokens = given_max_tokens
 
+        def process_finished_request(self, has_error):
+            
+            # Increment finished requests counter
+            self.finished_requests += 1
+
+            # Decrement error counter if request had an error
+            if has_error == True:
+                if self.current_requests_with_errors > 0:
+                    self.current_requests_with_errors -= 1
+
+        def increment_total_requests(self):
+            self.total_requests += 1
+
+        def increment_current_requests_wit_errors(self):
+            self.current_requests_with_errors += 1
+
+        def update_computed_max_tokens(self, tokens):
+            if self.finished_requests < self.sample_size:
+                self.computed_max_tokens = max(self.computed_max_tokens, tokens)
+            
+        def get_max_tokens(self):
+
+            # If user provided max tokes, use that value
+            if self.given_max_tokens != None:
+                return self.given_max_tokens
+            
+            # If we are still computing max tokens, give a default value (DISCUSS WITH CLAUDIO AND GABRIEL)
+            elif self.finished_requests < self.sample_size:
+                return 1024
+            
+            # If we finished computing max tokens, return that value
+            elif self.finished_requests >= self.sample_size:
+                return self.computed_max_tokens
+            
     def __init__(self, model_id: str, **kwargs):
         start_server()
         self.provider, self.model = model_id.split("/")
@@ -35,9 +72,6 @@ class LLM:
         self.max_tokens = kwargs.get("max_tokens")
         self.frequency_penalty = kwargs.get("frequency_penalty")
         self.presence_penalty = kwargs.get("presence_penalty")
-        # self.failed_requests = 0
-        # self.pause = False
-        self.tracker = self.BatchTracker()
 
     def chat(self, input: str, is_stream: bool = False, **kwargs):
         response = requests.post(
@@ -201,57 +235,52 @@ class LLM:
     #####################################################################################
 
     ##################################### 3rd BATCH #####################################
-    
-    async def chat_coroutine(self, 
-                             input: Union[str, List[Dict[str, str]]], 
-                             semaphore: asyncio.Semaphore,
-                             num_coroutines,
-                             max_retries):
-        
+
+    async def chat_coroutine(
+        self,
+        tracker,
+        input: Union[str, List[Dict[str, str]]],
+        semaphore: asyncio.Semaphore,
+        max_retries,
+        error_threshold,
+    ):
+
         async with semaphore:
-            print('New coroutine added')
-            
+            await asyncio.sleep(random.uniform(0, 2))
             # Make new coroutines wait while the error rate is too high
-            while self.tracker.current_errors > (num_coroutines * self.tracker.error_threshold):
+            while tracker.current_requests_with_errors > error_threshold:
                 await asyncio.sleep(1)  # Sleep for 1 second
 
-            has_error = False # This flag is so one coroutine can ony increment the error count one time
+            has_error = False  # This flag is so one coroutine can only increment the error count one time
 
             for i in range(max_retries):
-                try:
-                    # Proceed with the request
-                    self.tracker.total_requests += (
-                        1  # Increment the total requests counter
-                    )
-                    response = await self.async_chat(input)
-                    
-                    # TODO
-                    # Track tokens consume with max_tokens
 
-                    # If thread had a error previously but was now successfull, decrease error count
-                    if self.tracker.current_errors > 0 and has_error == True: 
-                        self.tracker.current_errors -= 1
-                        has_error = False
-                    
+                # Everytime we do a request, we incement this value to track how many requests we did by the end
+                tracker.increment_total_requests()
+                
+                try:
+                    print('-----------------------')
+                    print(f'Finished Requests: {tracker.finished_requests}')
+                    print(f'Current Max Tokens: {tracker.get_max_tokens()}')
+                    print(f'Current requests with errors: {tracker.current_requests_with_errors}')
+                    print('-----------------------')
+                    # Try getting a response
+                    response = await self.async_chat(input, max_tokens = tracker.get_max_tokens())
+
+                    # Update the max tokens used so far.
+                    tracker.update_max_total_tokens(response.metrics['total_tokens'])
+
+                    # Update tracker (incement finished requests, decrement current error requests if req had an error)
+                    tracker.process_finished_request(has_error)
                     return response
 
-                
-                except Exception as e:
-                    print('Got error')
+                except Exception:
 
-                    # Update error treshold if the coroutine faces an error.
+                    # Update error rate if the coroutine faces an error.
                     if not has_error:
-                        self.tracker.current_errors += 1  # Increment the count when an error occurs
                         has_error = True
-
-                        # Compute error difference
-                        current_error_rate = self.tracker.current_errors / num_coroutines
-                        error_difference = current_error_rate - self.tracker.target_error_rate
-
-                        # Update error treshold
-                        self.error_threshold += self.error_rate_smoothing * error_difference  # Adjust error threshold based on error difference
-                        self.error_threshold = max(0.0, min(1.0, self.error_threshold))
-                    
+                        tracker.increment_current_requests_wit_errors()  # Increment the count when an error occurs
+                        
                     # Perform exponential backoff with jitter
                     if i < max_retries - 1:  # i is zero indexed
                         wait_time = (
@@ -259,12 +288,11 @@ class LLM:
                         ) + random.random()  # Exponential backoff with jitter
                         await asyncio.sleep(wait_time)
 
-                    # Decrement the error count if the coroutine had an error
                     else:
-                        if self.tracker.current_errors > 0 and has_error == True:  # Decrement the count if this coroutine had an error
-                            self.tracker.current_errors -= 1
+                        # Update tracker (incement finished requests, decrement current error requests)
+                        tracker.process_finished_request(has_error)
                         return None
-                    
+
     # async def print_stats(self):
     #     while True:
     #         await asyncio.sleep(60)
@@ -273,8 +301,8 @@ class LLM:
     #         self.tracker.total_requests = 0
     #         self.tracker.tokens_consumed = 0
 
-    # async def batch_chat_coroutine(self, inputs: List[Union[str, List[Dict[str, str]]]], 
-    #                                num_coroutines: int = 5, 
+    # async def batch_chat_coroutine(self, inputs: List[Union[str, List[Dict[str, str]]]],
+    #                                num_coroutines: int = 5,
     #                                max_retries: int = 5) -> List[str]:
     #     semaphore = asyncio.Semaphore(num_coroutines)
     #     tasks = []
@@ -283,27 +311,46 @@ class LLM:
     #         await asyncio.sleep(random.uniform(0.1, 1.0))  # Add a random delay before starting the next coroutine
     #     responses = await tqdm_asyncio.gather(*tasks)
     #     return responses, self.tracker.total_requests, self.tracker.error_requests
-    
-    async def batch_chat_coroutine(self, inputs: List[Union[str, List[Dict[str, str]]]], num_coroutines, max_retries) -> List[str]:
+
+    async def batch_chat_coroutine(
+        self,
+        tracker,
+        inputs: List[Union[str, List[Dict[str, str]]]],
+        num_coroutines,
+        max_retries,
+        error_threshold,
+    ) -> List[str]:
 
         # Set semaphore
         semaphore = asyncio.Semaphore(num_coroutines)
 
         # Get all responses in the same order of the input
-        responses = await tqdm_asyncio.gather(*[self.chat_coroutine(input, semaphore=semaphore, max_retries=max_retries) for input in inputs])
+        responses = await asyncio.gather(
+            *[
+                self.chat_coroutine(tracker=tracker, input=input, semaphore=semaphore, max_retries=max_retries, error_threshold=error_threshold)
+                for input in inputs
+            ],
+        )
         return responses
-    
-    def batch_chat(self, inputs: List[Union[str, List[Dict[str, str]]]],
-                   max_retries: int = 5,
-                   num_coroutines: int = 5,    
-                   target_error_rate: float = 0.05,
-                   error_smoothing: float = 0.01) -> List[str]:
-        
-        # Set tracker values
-        self.tracker.target_error_rate = target_error_rate
-        self.tracker.error_rate_smoothing = error_smoothing
 
-        return asyncio.run(self.batch_chat_coroutine(inputs, num_coroutines, max_retries))
+    def batch_chat(
+        self,
+        inputs: List[Union[str, List[Dict[str, str]]]],
+        num_coroutines: int = 10,
+        max_retries: int = 5,
+        error_threshold: int = 5,
+        max_tokens = None
+    ) -> List[str]:
+
+        tracker = self.BatchTracker(given_max_tokens=max_tokens)
+
+        if error_threshold > num_coroutines:
+            error_threshold = num_coroutines
+
+        return asyncio.run(
+            self.batch_chat_coroutine(tracker, inputs, num_coroutines, max_retries, error_threshold)
+        )
+
     #####################################################################################
 
     async def async_non_stream(self, input: str, **kwargs):
