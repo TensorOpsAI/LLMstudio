@@ -46,7 +46,7 @@ export const useStore = create<Store>()((set, get) => ({
   input: '',
   output: '',
   provider: 'Open AI',
-  model: 'gpt-4-1106-preview',
+  model: 'gpt-4o',
   parameters: {},
   setStatus: (status) => set({ status: status }),
   setLogs: (logs: Log[]) => set({ logs: logs }),

@@ -37,7 +37,7 @@ export const columns: ColumnDef<any>[] = [
           <SheetHeader>
             <SheetTitle>Context</SheetTitle>
             <SheetDescription>
-              {row.original.context.map((item, index) => (
+              {row.original.context.map((item: any, index: any) => (
                 <div key={index} className='my-2'>
                   <div>
                     <strong>Role:</strong> {item.role}

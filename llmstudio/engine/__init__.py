@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import uvicorn
 import yaml
@@ -21,11 +21,18 @@ ENGINE_VERSION = "0.1.0"
 
 
 # Models for Configuration
+
+
+class CostRange(BaseModel):
+    range: List[Optional[int]]
+    cost: float
+
+
 class ModelConfig(BaseModel):
     mode: str
     max_tokens: int
-    input_token_cost: float
-    output_token_cost: float
+    input_token_cost: Union[float, List[CostRange]]
+    output_token_cost: Union[float, List[CostRange]]
 
 
 class ProviderConfig(BaseModel):

@@ -1,6 +1,7 @@
 name: Upload Python package to PyPI as dev pre-release
 
 on:
+  workflow_dispatch:
   pull_request:
     branches:
       - develop
@@ -10,11 +11,12 @@ on:
 
 jobs:
   deploy:
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GH_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v2

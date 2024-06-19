@@ -320,8 +320,8 @@ class Provider:
         input_tokens = len(self.tokenizer.encode(self.input_to_string(input)))
         output_tokens = len(self.tokenizer.encode(self.output_to_string(output)))
 
-        input_cost = model_config.input_token_cost * input_tokens
-        output_cost = model_config.output_token_cost * output_tokens
+        input_cost = self.calculate_cost(input_tokens, model_config.input_token_cost)
+        output_cost = self.calculate_cost(output_tokens, model_config.output_token_cost)
 
         total_time = end_time - start_time
         return {
@@ -334,6 +334,19 @@ class Provider:
             "inter_token_latency_s": sum(token_times) / len(token_times),
             "tokens_per_second": token_count / total_time,
         }
+
+    def calculate_cost(
+        self, token_count: int, token_cost: Union[float, List[Dict[str, Any]]]
+    ) -> float:
+        if isinstance(token_cost, list):
+            for cost_range in token_cost:
+                if token_count >= cost_range.range[0] and (
+                    token_count <= cost_range.range[1] or cost_range.range[1] is None
+                ):
+                    return cost_range.cost * token_count
+        else:
+            return token_cost * token_count
+        return 0
 
     def input_to_string(self, input):
         if isinstance(input, str):

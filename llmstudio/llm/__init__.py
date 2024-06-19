@@ -14,6 +14,7 @@ class LLM:
         self.api_key = kwargs.get("api_key")
         self.api_endpoint = kwargs.get("api_endpoint")
         self.api_version = kwargs.get("api_version")
+        self.base_url = kwargs.get("base_url")
         self.temperature = kwargs.get("temperature")
         self.top_p = kwargs.get("top_p")
         self.top_k = kwargs.get("top_k")
@@ -28,6 +29,7 @@ class LLM:
                 "api_key": self.api_key,
                 "api_endpoint": self.api_endpoint,
                 "api_version": self.api_version,
+                "base_url": self.base_url,
                 "chat_input": input,
                 "is_stream": is_stream,
                 "parameters": {
