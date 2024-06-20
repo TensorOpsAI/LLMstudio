@@ -5,16 +5,17 @@ from typing import Dict, List, Union
 
 import aiohttp
 import requests
+from IPython.display import clear_output
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from tqdm.asyncio import tqdm_asyncio
 
 from llmstudio.cli import start_server
 from llmstudio.config import ENGINE_HOST, ENGINE_PORT
-import time
 
 
 class LLM:
 
+    ########################################## BATCH STUFF ##########################################
     class DynamicSemaphore:
         def __init__(self, initial_permits):
             self._permits = initial_permits
@@ -36,31 +37,34 @@ class LLM:
             self._semaphore.release()
 
         def try_increment(self, error_threshold, increment):
-            if self.requests_since_last_increase >= self._permits and self.error_requests_since_last_increase <= error_threshold:
+            if (
+                self.requests_since_last_increase >= self._permits
+                and self.error_requests_since_last_increase <= error_threshold
+            ):
                 self.increase_permits(increment)
                 self.requests_since_last_increase = 0
                 self.error_requests_since_last_increase = 0
-        
+
         def increment_requests_since_last_increase(self):
             self.requests_since_last_increase += 1
-        
+
         def increment_error_requests_since_last_increase(self):
             self.error_requests_since_last_increase += 1
 
         def get_permits(self):
             return self._permits
-    
+
     class BatchTracker:
-        def __init__(self, given_max_tokens):
+        def __init__(self, given_max_tokens, total_inputs):
+            self.total_inputs = total_inputs
+            self.given_max_tokens = given_max_tokens
             self.total_requests = 0
             self.total_tokens = 0
             self.total_error_requests = 0
             self.sample_size = 10
             self.finished_requests = 0
             self.current_requests_with_errors = 0
-
             self.computed_max_tokens = 0
-            self.given_max_tokens = given_max_tokens
 
         def process_finished_request(self, has_error):
 
@@ -80,7 +84,7 @@ class LLM:
 
         def increment_current_requests_with_errors(self):
             self.current_requests_with_errors += 1
-        
+
         def increment_total_error_requests(self):
             self.total_error_requests += 1
 
@@ -94,13 +98,15 @@ class LLM:
             if self.given_max_tokens != None:
                 return self.given_max_tokens
 
-            # If we are still computing max tokens, give a default value (DISCUSS WITH CLAUDIO AND GABRIEL)
+            # If we are still computing max tokens, use models default value
             elif self.finished_requests < self.sample_size:
                 return 1024
 
             # If we finished computing max tokens, return that value
             elif self.finished_requests >= self.sample_size:
-                return self.computed_max_tokens
+                return int(self.computed_max_tokens + (self.computed_max_tokens * 0.10))
+
+    #################################################################################################
 
     def __init__(self, model_id: str, **kwargs):
         start_server()
@@ -164,121 +170,7 @@ class LLM:
         else:
             return await self.async_non_stream(input)
 
-    ##################################### 1st BATCH #####################################
-
-    # async def chat_coroutine(self,
-    #                          input: Union[str, List[Dict[str, str]]],
-    #                          semaphore: asyncio.Semaphore,
-    #                          max_retries: int = 5,
-    #                          wait_time: int = 60,
-    #                          fail_treshold: int = 5):
-
-    #     async with semaphore:
-
-    #         await asyncio.sleep(wait_time)
-    #         for i in range(max_retries):
-    #             try:
-
-    #                 # Proceed with the request
-    #                 response = await self.async_chat(input)
-    #                 return response
-
-    #             except Exception as e:
-    #                 self.failed_requests += 1
-    #                 if self.failed_requests >= wfail_treshold:  # If 5 or more requests have failed
-    #                     self.pause = True  # Set the pause flag
-    #                 if i < max_retries - 1:  # i is zero indexed
-    #                     wait_time = (2 ** i) + random.random()  # Exponential backoff with jitter
-    #                     await asyncio.sleep(wait_time)
-    #                 else:
-    #                     return None
-
-    # async def batch_chat_coroutine(self, inputs: List[Union[str, List[Dict[str, str]]]],
-    #                                num_coroutines: int = 5,
-    #                                max_retries: int = 5,
-    #                                wait_time: int = 60,
-    #                                fail_treshold: int = 5) -> List[str]:
-    #     semaphore = asyncio.Semaphore(num_coroutines)
-    #     responses = await tqdm_asyncio.gather(*[self.chat_coroutine(input, semaphore=semaphore, max_retries=max_retries, wait_time=wait_time, fail_treshold=fail_treshold) for input in inputs])
-    #     return responses
-
-    # def batch_chat(self, inputs: List[Union[str, List[Dict[str, str]]]], num_coroutines: int = 5, max_retries: int = 5, wait_time: int = 60, fail_treshold: int = 5) -> List[str]:
-    #     return asyncio.run(self.batch_chat_coroutine(inputs, num_coroutines, max_retries, wait_time=wait_time, fail_treshold=fail_treshold))
-    #####################################################################################
-
-    ##################################### 2nd BATCH #####################################
-    # class TimedBlockSemaphore:
-    #     def __init__(self, count):
-    #         self._semaphore = asyncio.Semaphore(count)
-    #         self._block_event = asyncio.Event()
-    #         self._block_event.set()  # Initially not blocked
-    #         self._timer = None
-    #         self.failed_requests = 0
-
-    #     async def acquire(self):
-    #         await self._block_event.wait()  # Wait until not blocked
-    #         await self._semaphore.acquire()
-
-    #     def release(self):
-    #         self._semaphore.release()
-
-    #     def block_for(self, seconds):
-    #         if self._timer is not None:
-    #             self._timer.cancel()  # Cancel existing timer
-    #         self._block_event.clear()  # Block new acquisitions
-    #         self._timer = asyncio.get_event_loop().call_later(seconds, self._unblock)
-
-    #     def _unblock(self):
-    #         self._block_event.set()  # Allow acquisitions
-    #         self.failed_requests = 0
-    #         self._timer = None
-
-    # ###
-    # async def chat_coroutine(self,
-    #                          input: Union[str, List[Dict[str, str]]],
-    #                          semaphore: TimedBlockSemaphore,
-    #                          max_retries: int = 5,
-    #                          st: int = 60,
-    #                          fail_treshold: int = 5):
-    #     await semaphore.acquire()
-    #     try:
-
-    #         for i in range(max_retries):
-    #             try:
-    #                 # Proceed with the request
-    #                 print(input)
-    #                 response = await self.chat(input)
-    #                 return response
-
-    #             except Exception as e:
-    #                 semaphore.failed_requests += 1
-    #                 print(f'Failed requests:{semaphore.failed_requests}')
-    #                 if semaphore.failed_requests >= fail_treshold:  # If 5 or more requests have failed
-    #                     semaphore.block_for(st)  # Block the semaphore
-    #                     print(f'Blocking semaphore for:{st} seconds')
-    #                 if i < max_retries - 1:  # i is zero indexed
-    #                     wait_time= (2 ** i) + random.random()  # Exponential backoff with jitter
-    #                     await asyncio.sleep(wait_time)
-    #                 else:
-    #                     return None
-    #     finally:
-    #         semaphore.release()
-
-    # async def batch_chat_coroutine(self, inputs: List[Union[str, List[Dict[str, str]]]],
-    #                                num_coroutines: int = 5,
-    #                                max_retries: int = 5,
-    #                                stop_time: int = 60,
-    #                                fail_treshold: int = 5) -> List[str]:
-    #     semaphore = self.TimedBlockSemaphore(num_coroutines)
-    #     responses = await asyncio.gather(*[self.chat_coroutine(input, semaphore=semaphore, max_retries=max_retries, st=stop_time, fail_treshold=fail_treshold) for input in inputs])
-    #     return responses
-
-    # def batch_chat(self, inputs: List[Union[str, List[Dict[str, str]]]], num_coroutines: int = 5, max_retries: int = 5, stop_time: int = 60, fail_treshold: int = 5) -> List[str]:
-    #     return asyncio.run(self.batch_chat_coroutine(inputs, num_coroutines, max_retries, stop_time=stop_time, fail_treshold=fail_treshold))
-
-    #####################################################################################
-
-    ##################################### 3rd BATCH #####################################
+    ##################################### BATCH #####################################
 
     async def chat_coroutine(
         self,
@@ -288,29 +180,32 @@ class LLM:
         max_retries,
         error_threshold,
         increment,
+        verbose,
     ):
 
         async with semaphore:
             # Make new coroutines wait while the error rate is too high
             while tracker.current_requests_with_errors > error_threshold:
                 await asyncio.sleep(1)  # Sleep for 1 second
-            
+
             has_error = False  # This flag is so one coroutine can only increment the error count one time
 
             for i in range(max_retries):
 
                 # Everytime we do a request, we incement this value to track how many requests we did by the end
-                tracker.increment_total_requests()
 
                 try:
                     # Try getting a response
-                    response = await self.async_chat(input, max_tokens=tracker.get_max_tokens())
+                    response = await self.async_chat(
+                        input, max_tokens=tracker.get_max_tokens()
+                    )
+                    tracker.increment_total_requests()
 
                     # Update the max tokens used so far.
-                    tracker.update_computed_max_tokens(response.metrics['total_tokens'])
+                    tracker.update_computed_max_tokens(response.metrics["total_tokens"])
                     tracker.increment_total_tokens(tracker.get_max_tokens())
 
-                    # Update tracker (incement finished requests, decrement current error requests if req had an error)
+                    # Update tracker (increment finished requests, decrement current error requests if req had an error)
                     tracker.process_finished_request(has_error)
                     semaphore.increment_requests_since_last_increase()
 
@@ -318,10 +213,9 @@ class LLM:
                     semaphore.try_increment(error_threshold, increment)
                     return response
 
-                except Exception as e:
+                except Exception:
 
-                    print(e)
-                    
+                    tracker.increment_total_requests()
                     # Update total error counts
                     tracker.increment_total_error_requests()
 
@@ -330,7 +224,7 @@ class LLM:
                         has_error = True
                         tracker.increment_current_requests_with_errors()  # Increment the count when an error occurs
                         semaphore.increment_error_requests_since_last_increase()
-                        
+
                     # Perform exponential backoff with jitter
                     if i < max_retries - 1:  # i is zero indexed
                         wait_time = (
@@ -343,34 +237,17 @@ class LLM:
                         tracker.process_finished_request(has_error)
                         return None
                 finally:
-                    print(f'-----------------------\n'
-                            f'Finished Requests: {tracker.finished_requests}\n'
-                            f'Total Requests: {tracker.total_requests}\n'
-                            f'Current Max Tokens: {tracker.get_max_tokens()}\n'
-                            f'Current Computed Max Tokens: {tracker.computed_max_tokens}\n'
-                            f'Current requests with errors: {tracker.current_requests_with_errors}\n'
-                            f'Current semaphore permits: {semaphore.get_permits()}\n'
-                            f'Current semaphore error requests since last increase: {semaphore.error_requests_since_last_increase}\n'
-                            f'-----------------------', end="\r")
-
-    # async def print_stats(self):
-    #     while True:
-    #         await asyncio.sleep(60)
-    #         print(f"Requests sent in the last minute: {self.tracker.total_requests}")
-    #         print(f"Tokens consumed in the last minute: {self.tracker.tokens_consumed}")
-    #         self.tracker.total_requests = 0
-    #         self.tracker.tokens_consumed = 0
-
-    # async def batch_chat_coroutine(self, inputs: List[Union[str, List[Dict[str, str]]]],
-    #                                num_coroutines: int = 5,
-    #                                max_retries: int = 5) -> List[str]:
-    #     semaphore = asyncio.Semaphore(num_coroutines)
-    #     tasks = []
-    #     for input in inputs:
-    #         tasks.append(self.chat_coroutine(input, semaphore=semaphore, num_coroutines=num_coroutines, max_retries=max_retries))
-    #         await asyncio.sleep(random.uniform(0.1, 1.0))  # Add a random delay before starting the next coroutine
-    #     responses = await tqdm_asyncio.gather(*tasks)
-    #     return responses, self.tracker.total_requests, self.tracker.error_requests
+                    if verbose > 0:
+                        clear_output()
+                        print(
+                            f"Finished requests: {tracker.finished_requests}/{tracker.total_inputs}"
+                        )
+                        print(
+                            f"Requests on retry: {tracker.current_requests_with_errors}"
+                        )
+                        print(f"Total requests: {tracker.total_requests}")
+                        print(f"Total error requests: {tracker.total_error_requests}")
+                        print(f"Paralel request ammount: {semaphore.get_permits()}")
 
     async def batch_chat_coroutine(
         self,
@@ -380,52 +257,114 @@ class LLM:
         max_retries,
         error_threshold,
         increment,
+        verbose,
     ) -> List[str]:
 
         # Set semaphore
         semaphore = self.DynamicSemaphore(num_coroutines)
 
         # Get all responses in the same order of the input
-        responses = await asyncio.gather(
-            *[
-                self.chat_coroutine(
-                    tracker=tracker,
-                    input=input,
-                    semaphore=semaphore,
-                    max_retries=max_retries,
-                    error_threshold=error_threshold,
-                    increment=increment,
-                )
-                for input in inputs
-            ],
-        )
-        return responses
+        if verbose > 0:
+            responses = await asyncio.gather(
+                *[
+                    self.chat_coroutine(
+                        tracker=tracker,
+                        input=input,
+                        semaphore=semaphore,
+                        max_retries=max_retries,
+                        error_threshold=error_threshold,
+                        increment=increment,
+                        verbose=verbose,
+                    )
+                    for input in inputs
+                ],
+            )
+            return responses
+
+        else:
+            responses = await tqdm_asyncio.gather(
+                *[
+                    self.chat_coroutine(
+                        tracker=tracker,
+                        input=input,
+                        semaphore=semaphore,
+                        max_retries=max_retries,
+                        error_threshold=error_threshold,
+                        increment=increment,
+                        verbose=verbose,
+                    )
+                    for input in inputs
+                ],
+                desc="Getting chat responses: ",
+            )
+            return responses
 
     def batch_chat(
         self,
         inputs: List[Union[str, List[Dict[str, str]]]],
-        num_coroutines: int = 10,
+        num_coroutines: int = 20,
         max_retries: int = 5,
         error_threshold: int = 5,
         max_tokens=None,
         increment: int = 5,
+        verbose: int = 0,
     ) -> List[str]:
 
-        tracker = self.BatchTracker(given_max_tokens=max_tokens)
+        """
+        Perform chat requests in bulk with retry logic scaling up to API rate limits.
 
+        Parameters
+        ----------
+        inputs : list of str or list of dict
+            The inputs for the chat requests.
+        num_coroutines : int, default=20
+            Starting number of coroutines to use for the batch operation. Try choosing a value close to your models TPM rate limit.
+        max_retries : int, default=5
+            The maximum number of retries for each chat operation.
+        error_threshold : int, default=5
+            The maximum number of errors allowed before the batch operation considers it is being throttled.
+        max_tokens : int, optional
+            The maximum tokens per chat operation defaults to the highest token count in the first 10 requests, increased by 10%.
+        increment : int, default=5
+            The increment for the semaphore permits.
+        verbose : int, default=0
+            The level of verbosity. If greater than 0, progress information is printed.
+
+        Returns
+        -------
+        list of str
+            The responses from the chat operations.
+
+        """
+
+        # Error treshold can not be higher than the number of coroutines
         if error_threshold > num_coroutines:
-            error_threshold = num_coroutines
+            raise Exception(
+                "error_treshold can not be higher than the num_couroutines."
+            )
 
-        # Start the timer
-        start_time = time.time()
+        if num_coroutines > len(inputs):
+            raise Exception(
+                "num_coroutines can not be higher than the amount of inputs."
+            )
 
-        responses = asyncio.run(self.batch_chat_coroutine(tracker, inputs, num_coroutines, max_retries, error_threshold, increment))
-        
-        end_time = time.time()
-        elapsed_time = end_time - start_time
+        tracker = self.BatchTracker(
+            given_max_tokens=max_tokens, total_inputs=len(inputs)
+        )
 
-        return responses, tracker.total_tokens, tracker.total_requests, tracker.total_error_requests, elapsed_time
-    
+        responses = asyncio.run(
+            self.batch_chat_coroutine(
+                tracker,
+                inputs,
+                num_coroutines,
+                max_retries,
+                error_threshold,
+                increment,
+                verbose,
+            )
+        )
+        return responses
+
     #####################################################################################
 
     async def async_non_stream(self, input: str, **kwargs):
