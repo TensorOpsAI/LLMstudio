@@ -376,10 +376,12 @@ class Provider:
         return {
             "anthropic": Anthropic().get_tokenizer(),
             "cohere": PreTrainedTokenizerFast(
-                tokenizer_file=Path(
-                    os.path.join(
-                        os.path.dirname(__file__),
-                        "tokenizers/cohere-command-nightly.json",
+                tokenizer_file=str(
+                    Path(
+                        os.path.join(
+                            os.path.dirname(__file__),
+                            "tokenizers/cohere-command-nightly.json",
+                        )
                     )
                 )
             ),
