@@ -29,6 +29,7 @@ from openai.types.chat.chat_completion_message import FunctionCall
 from openai.types.chat.chat_completion_message_tool_call import Function
 from pydantic import BaseModel, ValidationError
 from tokenizers import Tokenizer
+from transformers import PreTrainedTokenizerFast
 
 from llmstudio.tracking.tracker import tracker
 
@@ -374,7 +375,6 @@ class Provider:
     def _get_tokenizer(self) -> Tokenizer:
         return {
             "anthropic": Anthropic().get_tokenizer(),
-            "cohere": Tokenizer.from_pretrained("Cohere/command-nightly"),
         }.get(self.config.id, tiktoken.get_encoding("cl100k_base"))
 
     def save_log(self, response: Dict[str, Any]):

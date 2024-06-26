@@ -4,38 +4,19 @@ Prompt Engineering at your fingertips
 
 ![LLMstudio logo](https://imgur.com/Xqsj6V2.gif)
 
-> [!IMPORTANT]
-> LLMstudio is now supporting OpenAI v1.0 + just added support to Anthropic
-
 ## 🌟 Features
 
 ![LLMstudio UI](https://imgur.com/wrwiIUs.png)
 
-1.  **Python Client Gateway**:
-    - Access models from known providers such as OpenAI, VertexAI and Bedrock. All in one platform.
-    - Speed up development with tracking and robustness features from LLMstudio.
-    - Continue using popular libraries like LangChain through their LLMstudio-wrapped versions.
-2.  **Prompt Editing UI**:
-    - An intuitive interface designed for prompt engineering.
-    - Quickly iterate between prompts until you reach your desired results.
-    - Access the history of your previous prompts and their results.
-3.  **History Management**:
-    - Track past runs, available for both on the UI and the Client.
-    - Log the cost, latency and output of each prompt.
-    - Export the history to a CSV.
-4.  **Context Limit Adaptability**:
-    - Automatic switch to a larger-context fallback model if the current model's context limit is exceeded.
-    - Always use the lowest context model and only use the higher context ones when necessary to save costs.
-    - For instance, exceeding 4k tokens in gpt-3.5-turbo triggers a switch to gpt-3.5-turbo-16k.
-
-### 👀 Coming soon:
-
-- Side-by-side comparison of multiple LLMs using the same prompt.
-- Automated testing and validation for your LLMs. (Create Unit-tests for your LLMs which are evaluated automatically)
-- API key administration. (Define quota limits)
-- Projects and sessions. (Organize your History and API keys by project)
-- Resilience against service provider rate limits.
-- Organized tracking of groups of related prompts (Chains, Agents)
+- **LLM Proxy Access**: Seamless access to all the latest LLMs by OpenAI, Anthropic, Google.
+- **Custom and Local LLM Support**: Use custom or local open-source LLMs through Ollama.
+- **Prompt Playground UI**: A user-friendly interface for engineering and fine-tuning your prompts.
+- **Python SDK**: Easily integrate LLMstudio into your existing workflows.
+- **Monitoring and Logging**: Keep track of your usage and performance for all requests.
+- **LangChain Integration**: LLMstudio integrates with your already existing LangChain projects.
+- **Batch Calling**: Send multiple requests at once for improved efficiency.
+- **Smart Routing and Fallback**: Ensure 24/7 availability by routing your requests to trusted LLMs.
+- **Type Casting (soon)**: Convert data types as needed for your specific use case.
 
 ## 🚀 Quickstart
 
@@ -70,23 +51,10 @@ llmstudio server --ui
 
 When the `--ui` flag is set, you'll be able to access the UI at [http://localhost:3000](http://localhost:3000)
 
-## 🤔 About LLMstudio
-
-Powered by TensorOps, LLMstudio redefines your experience with OpenAI, Vertex Ai and more language model providers. More than just a tool, it’s an evolving environment where teams can experiment, modify, and optimize their interactions with advanced language models.
-
-Benefits include:
-
-- **Streamlined Prompt Engineering**: Simplify and enhance your prompt design process.
-- **Execution History**: Keep a detailed log of past executions, track progress, and make iterative improvements effortlessly.
-- **Effortless Data Export**: Share your team's endeavors by exporting data to shareable CSV files.
-
-Step into the future of AI with LLMstudio, by watching our [introduction video](https://www.youtube.com/watch?v=I9h701fbD18)
-
 ## 📖 Documentation
 
 - [Visit our docs to learn how the SDK works](https://docs.LLMstudio.ai) (coming soon)
 - Checkout our [notebook examples](https://github.com/TensorOpsAI/LLMstudio/tree/main/examples) to follow along with interactive tutorials
-- Checkout out [LLMstudio Architecture Roadmap](https://github.com/TensorOpsAI/LLMstudio/blob/main/docs/LLMstudio-architecture/LLMstudio-architecture-roadmap.md)
 
 ## 👨‍💻 Contributing
 
