@@ -375,16 +375,6 @@ class Provider:
     def _get_tokenizer(self) -> Tokenizer:
         return {
             "anthropic": Anthropic().get_tokenizer(),
-            "cohere": PreTrainedTokenizerFast(
-                tokenizer_file=str(
-                    Path(
-                        os.path.join(
-                            os.path.dirname(__file__),
-                            "tokenizers/cohere-command-nightly.json",
-                        )
-                    )
-                )
-            ),
         }.get(self.config.id, tiktoken.get_encoding("cl100k_base"))
 
     def save_log(self, response: Dict[str, Any]):
