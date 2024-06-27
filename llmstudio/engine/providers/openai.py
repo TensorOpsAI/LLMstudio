@@ -22,6 +22,7 @@ class OpenAIRequest(ChatRequest):
     parameters: Optional[OpenAIParameters] = OpenAIParameters()
     functions: Optional[List[Dict[str, Any]]] = None
     chat_input: Any
+    response_format: Optional[Dict[str, str]] = None
 
 
 @provider
@@ -50,6 +51,7 @@ class OpenAIProvider(Provider):
                 functions=request.functions,
                 function_call="auto" if request.functions else None,
                 stream=True,
+                response_format=request.response_format,
                 **request.parameters.model_dump(),
             )
         except openai._exceptions.APIError as e:

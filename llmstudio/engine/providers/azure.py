@@ -25,6 +25,7 @@ class AzureRequest(ChatRequest):
     parameters: Optional[AzureParameters] = AzureParameters()
     functions: Optional[List[Dict[str, Any]]] = None
     chat_input: Any
+    response_format: Optional[Dict[str, str]] = None,
 
 
 @provider
@@ -76,6 +77,7 @@ class AzureProvider(Provider):
                     functions=request.functions,
                     function_call="auto" if request.functions else None,
                     stream=True,
+                    response_format=request.response_format,
                     **request.parameters.model_dump(),
                 )
 
