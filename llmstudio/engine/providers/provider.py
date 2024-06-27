@@ -50,6 +50,7 @@ class ChatRequest(BaseModel):
     has_end_token: Optional[bool] = False
     functions: Optional[List[Dict[str, Any]]] = None
     session_id: Optional[str] = None
+    num_retries: Optional[int] = 0
 
 
 class Provider:
@@ -70,6 +71,7 @@ class Provider:
 
         self.validate_model(request)
 
+        #TODO retry logic
         start_time = time.time()
         response = await self.generate_client(request)
         response_handler = self.handle_response(request, response, start_time)
