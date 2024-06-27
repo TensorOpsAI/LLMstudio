@@ -25,7 +25,7 @@ class AzureRequest(ChatRequest):
     parameters: Optional[AzureParameters] = AzureParameters()
     functions: Optional[List[Dict[str, Any]]] = None
     chat_input: Any
-    response_format: Optional[Dict[str, str]] = None,
+    response_format: Optional[Dict[str, str]] = None
 
 
 @provider
