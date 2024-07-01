@@ -50,7 +50,7 @@ class ChatRequest(BaseModel):
     has_end_token: Optional[bool] = False
     functions: Optional[List[Dict[str, Any]]] = None
     session_id: Optional[str] = None
-    num_retries: Optional[int] = 0
+    retries: Optional[int] = 0
 
 
 class Provider:
@@ -59,6 +59,7 @@ class Provider:
     def __init__(self, config):
         self.config = config
         self.tokenizer: Tokenizer = self._get_tokenizer()
+        self.count = 0
 
     async def chat(
         self, request: ChatRequest
@@ -71,15 +72,25 @@ class Provider:
 
         self.validate_model(request)
 
-        #TODO retry logic
-        start_time = time.time()
-        response = await self.generate_client(request)
-        response_handler = self.handle_response(request, response, start_time)
+        # TODO retry logic
+        for _ in range(request.retries + 1):
+            try:
+                start_time = time.time()
+                response = await self.generate_client(request)
+                response_handler = self.handle_response(request, response, start_time)
 
-        if request.is_stream:
-            return StreamingResponse(response_handler)
-        else:
-            return JSONResponse(content=await response_handler.__anext__())
+                if request.is_stream:
+                    return StreamingResponse(response_handler)
+                else:
+                    return JSONResponse(content=await response_handler.__anext__())
+            except HTTPException as e:
+                if e.status_code != 429:  # If the error is not a 429, re-raise it.
+                    raise
+                # If the error is a 429, we just continue to the next iteration of the loop, which will retry the request.
+
+        raise HTTPException(
+            status_code=429, detail="Too many requests"
+        )  # If we've exhausted all retries and still have a 429, raise a final error.
 
     def validate_request(self, request: ChatRequest):
         pass
