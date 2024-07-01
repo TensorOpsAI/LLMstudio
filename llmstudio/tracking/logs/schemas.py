@@ -12,6 +12,7 @@ class LogDefaultBase(BaseModel):
     context: List[Dict[str, Any]] = None
     provider: str = None
     model: str = None
+    deployment: str = None
     parameters: dict = None
     metrics: dict = None
 

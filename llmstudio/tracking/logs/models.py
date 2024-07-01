@@ -17,5 +17,6 @@ class LogDefault(Base):
     context = Column(JSON)
     provider = Column(String)
     model = Column(String)
+    deployment = Column(String)
     parameters = Column(JSON)
     metrics = Column(JSON)

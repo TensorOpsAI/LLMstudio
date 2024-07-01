@@ -120,6 +120,7 @@ class Provider:
                     yield chunk.get("choices")[0].get("delta").get("content")
 
         chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
+        model = next(chunk["model"] for chunk in chunks if chunk.get("model"))
 
         response, output_string = self.join_chunks(chunks, request)
 
@@ -150,7 +151,16 @@ class Provider:
                 else request.chat_input
             ),
             "provider": self.config.id,
-            "model": request.model,
+            "model": (
+                request.model
+                if model and model.startswith(request.model)
+                else (model or request.model)
+            ),
+            "deployment": (
+                model
+                if model and model.startswith(request.model)
+                else (request.model if model != request.model else None)
+            ),
             "timestamp": time.time(),
             "parameters": request.parameters.model_dump(),
             "metrics": metrics,
