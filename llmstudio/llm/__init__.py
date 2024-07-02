@@ -1,4 +1,3 @@
-# Batch Imports
 import asyncio
 from typing import Dict, List, Union
 
@@ -140,7 +139,6 @@ class LLM:
 
         async with semaphore:
             try:
-                # Try getting a response
                 response = await self.async_chat(
                     input, max_tokens=semaphore.get_max_tokens(), retries=retries
                 )
@@ -155,7 +153,6 @@ class LLM:
                 semaphore.requests_since_last_increase += 1
                 semaphore.try_increase_permits(error_threshold, increment)
                 if verbose > 0:
-                    # clear_output()
                     print(
                         f"Finished requests: {semaphore.finished_requests}/{semaphore.batch_size}"
                     )
@@ -178,7 +175,6 @@ class LLM:
         verbose,
     ) -> List[str]:
 
-        # Set semaphore
         semaphore = self.DynamicSemaphore(
             coroutines, len(inputs), given_max_tokens=max_tokens
         )
