@@ -119,7 +119,8 @@ class LLM:
     def generate_chat(self, response):
         for chunk in response.iter_content(chunk_size=None):
             if chunk:
-                yield ChatCompletionChunk(**chunk.decode("utf-8"))
+                yield chunk.decode("utf-8")
+                # yield ChatCompletionChunk(**chunk.decode("utf-8"))
 
     async def async_chat(self, input: str, is_stream=False, retries: int = 0, **kwargs):
         if is_stream:
@@ -307,4 +308,5 @@ class LLM:
 
                 async for chunk in response.content.iter_any():
                     if chunk:
-                        yield ChatCompletionChunk(**await chunk.decode("utf-8"))
+                        yield chunk.decode("utf-8")
+                        # yield ChatCompletionChunk(**await chunk.decode("utf-8"))
