@@ -3,6 +3,7 @@ from typing import Dict, List, Union
 
 import aiohttp
 import requests
+from IPython.display import clear_output
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from pydantic import BaseModel, ValidationError
 from tqdm.asyncio import tqdm_asyncio
@@ -154,6 +155,7 @@ class LLM:
                 semaphore.requests_since_last_increase += 1
                 semaphore.try_increase_permits(error_threshold, increment)
                 if verbose > 0:
+                    clear_output()
                     print(
                         f"Finished requests: {semaphore.finished_requests}/{semaphore.batch_size}"
                     )
@@ -216,7 +218,7 @@ class LLM:
         self,
         inputs: List[Union[str, List[Dict[str, str]]]],
         coroutines: int = 20,
-        retries: int = 0,
+        retries: int = 5,
         error_threshold: int = 5,
         increment: int = 5,
         max_tokens=None,
