@@ -1,6 +1,11 @@
+import asyncio
+from typing import Dict, List, Union
+
 import aiohttp
 import requests
+from IPython.display import clear_output
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
+from tqdm.asyncio import tqdm_asyncio
 
 from llmstudio.cli import start_server
 from llmstudio.config import ENGINE_HOST, ENGINE_PORT
@@ -19,8 +24,62 @@ class LLM:
         self.top_p = kwargs.get("top_p")
         self.top_k = kwargs.get("top_k")
         self.max_tokens = kwargs.get("max_tokens")
+        self.frequency_penalty = kwargs.get("frequency_penalty")
+        self.presence_penalty = kwargs.get("presence_penalty")
 
-    def chat(self, input: str, is_stream: bool = False, **kwargs):
+    class DynamicSemaphore:
+        def __init__(self, initial_permits, batch_size, given_max_tokens):
+            self.batch_size = batch_size
+            self.given_max_tokens = given_max_tokens
+            self.initial_permits = initial_permits
+            self._permits = initial_permits
+            self._semaphore = asyncio.Semaphore(initial_permits)
+            self.computed_max_tokens = 0
+            self.requests_since_last_increase = 0
+            self.error_requests_since_last_increase = 0
+            self.finished_requests = 0
+            self.error_requests = 0
+
+        def increase_permits(self, additional_permits):
+            for _ in range(additional_permits):
+                self._semaphore.release()
+            self._permits += additional_permits
+
+        async def __aenter__(self):
+            await self._semaphore.acquire()
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            self._semaphore.release()
+
+        def try_increase_permits(self, error_threshold, increment):
+            if (
+                self.requests_since_last_increase >= self._permits
+                and self.error_requests_since_last_increase <= error_threshold
+            ):
+                self.increase_permits(increment)
+                self.requests_since_last_increase = 0
+                self.error_requests_since_last_increase = 0
+
+        def update_computed_max_tokens(self, tokens):
+            if self.finished_requests < self.initial_permits:
+                self.computed_max_tokens = max(self.computed_max_tokens, tokens)
+
+        def get_max_tokens(self):
+
+            # If user provided max tokes, use that value
+            if self.given_max_tokens != None:
+                return self.given_max_tokens
+
+            # If we are still computing max tokens, use models default value
+            elif self.finished_requests < self.initial_permits:
+                return 10
+
+            # If we finished computing max tokens, return that value
+            elif self.finished_requests >= self.initial_permits:
+                return int(self.computed_max_tokens + (self.computed_max_tokens * 0.10))
+
+    def chat(self, input: str, is_stream: bool = False, retries: int = 0, **kwargs):
         response = requests.post(
             f"http://{ENGINE_HOST}:{ENGINE_PORT}/api/engine/chat/{self.provider}",
             json={
@@ -32,11 +91,17 @@ class LLM:
                 "base_url": self.base_url,
                 "chat_input": input,
                 "is_stream": is_stream,
+                "retries": retries,
                 "parameters": {
-                    "temperature": self.temperature,
-                    "top_p": self.top_p,
-                    "top_k": self.top_k,
-                    "max_tokens": self.max_tokens,
+                    "temperature": kwargs.get("temperature") or self.temperature,
+                    "top_p": kwargs.get("top_p") or self.top_p,
+                    "top_k": kwargs.get("top_k") or self.top_k,
+                    "max_tokens": kwargs.get("max_tokens") or self.max_tokens,
+                    "max_output_tokens": kwargs.get("max_tokens") or self.max_tokens,
+                    "frequency_penalty": kwargs.get("frequency_penalty")
+                    or self.frequency_penalty,
+                    "presence_penalty": kwargs.get("presence_penalty")
+                    or self.presence_penalty,
                 },
                 **kwargs,
             },
@@ -54,13 +119,127 @@ class LLM:
     def generate_chat(self, response):
         for chunk in response.iter_content(chunk_size=None):
             if chunk:
-                yield ChatCompletionChunk(**chunk.decode("utf-8"))
+                yield chunk.decode("utf-8")
+                # yield ChatCompletionChunk(**chunk.decode("utf-8"))
 
-    async def async_chat(self, input: str, is_stream=False, **kwargs):
+    async def async_chat(self, input: str, is_stream=False, retries: int = 0, **kwargs):
         if is_stream:
             return self.async_stream(input)
         else:
-            return await self.async_non_stream(input)
+            return await self.async_non_stream(input, retries=retries)
+
+    async def chat_coroutine(
+        self,
+        input: Union[str, List[Dict[str, str]]],
+        semaphore,
+        retries,
+        error_threshold,
+        increment,
+        verbose,
+    ):
+
+        async with semaphore:
+            try:
+                response = await self.async_chat(
+                    input, max_tokens=semaphore.get_max_tokens(), retries=retries
+                )
+                semaphore.update_computed_max_tokens(response.metrics["total_tokens"])
+                return response
+            except Exception as e:
+                semaphore.error_requests += 1
+                semaphore.error_requests_since_last_increase += 1
+                return e
+            finally:
+                semaphore.finished_requests += 1
+                semaphore.requests_since_last_increase += 1
+                semaphore.try_increase_permits(error_threshold, increment)
+                if verbose > 0:
+                    print(
+                        f"Finished requests: {semaphore.finished_requests}/{semaphore.batch_size}"
+                    )
+                    print(
+                        f"Amount of parallel requests being allowed: {semaphore._permits}"
+                    )
+                    print(f"Max tokens being used: {semaphore.get_max_tokens()}")
+                    print(
+                        f"Requests finished with an error: {semaphore.error_requests}"
+                    )
+
+    async def batch_chat_coroutine(
+        self,
+        inputs: List[Union[str, List[Dict[str, str]]]],
+        coroutines,
+        retries,
+        error_threshold,
+        increment,
+        max_tokens,
+        verbose,
+    ) -> List[str]:
+
+        semaphore = self.DynamicSemaphore(
+            coroutines, len(inputs), given_max_tokens=max_tokens
+        )
+
+        if verbose > 0:
+            responses = await asyncio.gather(
+                *[
+                    self.chat_coroutine(
+                        input=input,
+                        semaphore=semaphore,
+                        retries=retries,
+                        error_threshold=error_threshold,
+                        increment=increment,
+                        verbose=verbose,
+                    )
+                    for input in inputs
+                ],
+            )
+            return responses
+        else:
+            responses = await tqdm_asyncio.gather(
+                *[
+                    self.chat_coroutine(
+                        input=input,
+                        semaphore=semaphore,
+                        retries=retries,
+                        error_threshold=error_threshold,
+                        increment=increment,
+                        verbose=verbose,
+                    )
+                    for input in inputs
+                ],
+                desc="Getting chat responses: ",
+            )
+            return responses
+
+    def batch_chat(
+        self,
+        inputs: List[Union[str, List[Dict[str, str]]]],
+        coroutines: int = 20,
+        retries: int = 0,
+        error_threshold: int = 5,
+        increment: int = 5,
+        max_tokens=None,
+        verbose=0,
+    ) -> List[str]:
+
+        if coroutines > len(inputs):
+            raise Exception(
+                "num_coroutines can not be higher than the amount of inputs."
+            )
+
+        responses = asyncio.run(
+            self.batch_chat_coroutine(
+                inputs,
+                coroutines,
+                retries,
+                error_threshold,
+                increment,
+                max_tokens,
+                verbose,
+            )
+        )
+        return responses
 
     async def async_non_stream(self, input: str, **kwargs):
         async with aiohttp.ClientSession() as session:
@@ -68,11 +247,25 @@ class LLM:
                 f"http://{ENGINE_HOST}:{ENGINE_PORT}/api/engine/chat/{self.provider}",
                 json={
                     "model": self.model,
+                    "session_id": self.session_id,
                     "api_key": self.api_key,
-                    "api_secret": self.api_endpoint,
-                    "api_region": self.api_version,
+                    "api_endpoint": self.api_endpoint,
+                    "api_version": self.api_version,
+                    "base_url": self.base_url,
                     "chat_input": input,
                     "is_stream": False,
+                    "parameters": {
+                        "temperature": kwargs.get("temperature") or self.temperature,
+                        "top_p": kwargs.get("top_p") or self.top_p,
+                        "top_k": kwargs.get("top_k") or self.top_k,
+                        "max_tokens": kwargs.get("max_tokens") or self.max_tokens,
+                        "max_output_tokens": kwargs.get("max_tokens")
+                        or self.max_tokens,
+                        "frequency_penalty": kwargs.get("frequency_penalty")
+                        or self.frequency_penalty,
+                        "presence_penalty": kwargs.get("presence_penalty")
+                        or self.presence_penalty,
+                    },
                     **kwargs,
                 },
                 headers={"Content-Type": "application/json"},
@@ -87,17 +280,33 @@ class LLM:
                 f"http://{ENGINE_HOST}:{ENGINE_PORT}/api/engine/chat/{self.provider}",
                 json={
                     "model": self.model,
+                    "session_id": self.session_id,
                     "api_key": self.api_key,
-                    "api_secret": self.api_endpoint,
-                    "api_region": self.api_version,
+                    "api_endpoint": self.api_endpoint,
+                    "api_version": self.api_version,
+                    "base_url": self.base_url,
                     "chat_input": input,
                     "is_stream": True,
+                    "parameters": {
+                        "temperature": kwargs.get("temperature") or self.temperature,
+                        "top_p": kwargs.get("top_p") or self.top_p,
+                        "top_k": kwargs.get("top_k") or self.top_k,
+                        "max_tokens": kwargs.get("max_tokens") or self.max_tokens,
+                        "max_output_tokens": kwargs.get("max_tokens")
+                        or self.max_tokens,
+                        "frequency_penalty": kwargs.get("frequency_penalty")
+                        or self.frequency_penalty,
+                        "presence_penalty": kwargs.get("presence_penalty")
+                        or self.presence_penalty,
+                    },
                     **kwargs,
                 },
+                stream=True,
                 headers={"Content-Type": "application/json"},
             ) as response:
                 response.raise_for_status()
 
                 async for chunk in response.content.iter_any():
                     if chunk:
-                        yield ChatCompletionChunk(**await chunk.decode("utf-8"))
+                        yield chunk.decode("utf-8")
+                        # yield ChatCompletionChunk(**await chunk.decode("utf-8"))
