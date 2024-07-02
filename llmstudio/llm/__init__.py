@@ -3,7 +3,6 @@ from typing import Dict, List, Union
 
 import aiohttp
 import requests
-from IPython.display import clear_output
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from pydantic import BaseModel, ValidationError
 from tqdm.asyncio import tqdm_asyncio
