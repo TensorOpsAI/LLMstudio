@@ -29,7 +29,6 @@ from openai.types.chat.chat_completion_message import FunctionCall
 from openai.types.chat.chat_completion_message_tool_call import Function
 from pydantic import BaseModel, ValidationError
 from tokenizers import Tokenizer
-from transformers import PreTrainedTokenizerFast
 
 from llmstudio.tracking.tracker import tracker
 
@@ -73,7 +72,6 @@ class Provider:
 
         self.validate_model(request)
 
-        # TODO retry logic
         for _ in range(request.retries + 1):
             try:
                 start_time = time.time()
@@ -85,13 +83,10 @@ class Provider:
                 else:
                     return JSONResponse(content=await response_handler.__anext__())
             except HTTPException as e:
-                if e.status_code != 429:  # If the error is not a 429, re-raise it.
+                if e.status_code != 429:
                     raise
-                # If the error is a 429, we just continue to the next iteration of the loop, which will retry the request.
 
-        raise HTTPException(
-            status_code=429, detail="Too many requests"
-        )  # If we've exhausted all retries and still have a 429, raise a final error.
+        raise HTTPException(status_code=429, detail="Too many requests")
 
     def validate_request(self, request: ChatRequest):
         pass

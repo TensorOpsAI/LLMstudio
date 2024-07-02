@@ -302,7 +302,6 @@ class LLM:
                     },
                     **kwargs,
                 },
-                stream=True,
                 headers={"Content-Type": "application/json"},
             ) as response:
                 response.raise_for_status()
