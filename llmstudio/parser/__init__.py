@@ -6,7 +6,6 @@ from pydantic import BaseModel, ValidationError
 class Parser:
     def parse_response(self, json_str: str, response_model: BaseModel):
         try:
-            # Trim the string to start at the first curly bracket and end at the last curly bracket
             start_index = json_str.find("{")
             end_index = json_str.rfind("}")
             trimmed_str = json_str[start_index : end_index + 1]
