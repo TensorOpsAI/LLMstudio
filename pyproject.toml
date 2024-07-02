@@ -28,6 +28,7 @@ sqlalchemy = "^2.0.27"
 anthropic = "^0.16.0"
 langchain-experimental = "^0.0.61"
 google-generativeai = "^0.5.4"
+ipython = "^8.26.0"
 transformers = "^4.29.1"
 
 [tool.poetry.dev-dependencies]
