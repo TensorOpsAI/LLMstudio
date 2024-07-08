@@ -2,7 +2,6 @@ import json
 
 from pydantic import BaseModel, ValidationError
 
-
 class Parser:
     def parse_response(self, json_str: str, response_model: BaseModel):
         try:
