@@ -12,8 +12,6 @@ from llmstudio.cli import start_server
 from llmstudio.config import ENGINE_HOST, ENGINE_PORT
 from llmstudio.llm.semaphore import DynamicSemaphore
 
-from llmstudio.llm.dynamicSemaphore import DynamicSemaphore
-
 
 class LLM:
     def __init__(self, model_id: str, **kwargs):
@@ -74,10 +72,11 @@ class LLM:
     async def cache_chat(
         self, input: str, is_stream: bool = False, retries: int = 0, **kwargs
     ):
+
         if self.message_cache:
             message = await self.message_cache.get_message(input)
             if message:
-                print("Got message from memory")
+                print("Got message from")
                 return message
 
         response = requests.post(
