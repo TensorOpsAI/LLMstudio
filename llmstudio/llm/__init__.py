@@ -11,6 +11,8 @@ from llmstudio.cli import start_server
 from llmstudio.config import ENGINE_HOST, ENGINE_PORT
 from llmstudio.llm.semaphore import DynamicSemaphore
 
+from llmstudio.llm.dynamicSemaphore import DynamicSemaphore
+
 
 class LLM:
     def __init__(self, model_id: str, **kwargs):
@@ -67,6 +69,55 @@ class LLM:
         else:
             # TODO
             return ChatCompletion(**response.json())
+
+    async def cache_chat(
+        self, input: str, is_stream: bool = False, retries: int = 0, **kwargs
+    ):
+
+        if self.message_cache:
+            message = await self.message_cache.get_message(input)
+            if message:
+                print("Got message from")
+                return message
+
+        response = requests.post(
+            f"http://{ENGINE_HOST}:{ENGINE_PORT}/api/engine/chat/{self.provider}",
+            json={
+                "model": self.model,
+                "session_id": self.session_id,
+                "api_key": self.api_key,
+                "api_endpoint": self.api_endpoint,
+                "api_version": self.api_version,
+                "base_url": self.base_url,
+                "chat_input": input,
+                "is_stream": is_stream,
+                "retries": retries,
+                "parameters": {
+                    "temperature": kwargs.get("temperature") or self.temperature,
+                    "top_p": kwargs.get("top_p") or self.top_p,
+                    "top_k": kwargs.get("top_k") or self.top_k,
+                    "max_tokens": kwargs.get("max_tokens") or self.max_tokens,
+                    "max_output_tokens": kwargs.get("max_tokens") or self.max_tokens,
+                    "frequency_penalty": kwargs.get("frequency_penalty")
+                    or self.frequency_penalty,
+                    "presence_penalty": kwargs.get("presence_penalty")
+                    or self.presence_penalty,
+                },
+                **kwargs,
+            },
+            stream=is_stream,
+            headers={"Content-Type": "application/json"},
+        )
+
+        response.raise_for_status()
+
+        if is_stream:
+            return self.generate_chat(response)
+        else:
+            chat_completion = ChatCompletion(**response.json())
+            if self.message_cache:
+                await self.message_cache.add_message(input, chat_completion)
+            return chat_completion
 
     async def cache_chat(
         self, input: str, is_stream: bool = False, retries: int = 0, **kwargs
