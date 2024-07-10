@@ -1,12 +1,15 @@
-from pydantic import BaseModel
-from collections import OrderedDict
 import asyncio
 import hashlib
+from collections import OrderedDict
+
+from pydantic import BaseModel
+
 
 class Message:
     def __init__(self, prompt: any, response: any):
         self.prompt = prompt
         self.response = response
+
 
 class MessageCache:
     def __init__(self, cache_limit, save_input=True, save_output=True):
@@ -21,10 +24,12 @@ class MessageCache:
 
     def hash_key(self, prompt):
         return hashlib.sha256(prompt.encode()).hexdigest()
-        
+
     async def add_message(self, prompt, response):
         async with self._lock:
-            hashed_key = self.hash_key(prompt)  # Changed key to prompt as key is not defined
+            hashed_key = self.hash_key(
+                prompt
+            )  # Changed key to prompt as key is not defined
             if len(self._cache) >= self.cache_limit:
                 print("Removed old message from cache")
                 self._cache.popitem(last=False)
@@ -59,5 +64,3 @@ class MessageCache:
     async def cache_size(self):
         async with self._lock:
             return len(self._cache)
-            
-
