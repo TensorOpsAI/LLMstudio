@@ -11,8 +11,6 @@ from llmstudio.cli import start_server
 from llmstudio.config import ENGINE_HOST, ENGINE_PORT
 from llmstudio.llm.semaphore import DynamicSemaphore
 
-from llmstudio.llm.dynamicSemaphore import DynamicSemaphore
-
 
 class LLM:
     def __init__(self, model_id: str, **kwargs):
