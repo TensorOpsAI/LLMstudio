@@ -25,7 +25,7 @@ def test_load_engine_config(mocker):
                     }
                 }
             }
-        ]
+        ],
     )
     config = _load_engine_config()
     assert "default_provider" in config.providers
