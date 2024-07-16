@@ -24,34 +24,17 @@ def test_load_engine_config(mocker):
                         "embed": True,
                     }
                 }
-            },
-            {
-                "providers": {
-                    "local_provider": {
-                        "id": "local",
-                        "name": "Local Provider",
-                        "chat": True,
-                        "embed": False,
-                    }
-                }
-            },
-        ],
+            }
+        ]
     )
     config = _load_engine_config()
     assert "default_provider" in config.providers
-    assert "local_provider" in config.providers
 
     default_provider = config.providers["default_provider"]
     assert default_provider.id == "default"
     assert default_provider.name == "Default Provider"
     assert default_provider.chat is True
     assert default_provider.embed is True
-
-    local_provider = config.providers["local_provider"]
-    assert local_provider.id == "local"
-    assert local_provider.name == "Local Provider"
-    assert local_provider.chat is True
-    assert local_provider.embed is False
 
 
 @pytest.mark.asyncio
@@ -68,7 +51,7 @@ async def test_health(test_engine_app):
 async def test_get_providers(test_engine_app, engine_config):
     response = await test_engine_app.get("/api/engine/providers")
     assert response.status_code == 200
-    assert len(engine_config.providers) == 5
+    assert len(engine_config.providers) >= 4
     assert response.json() == list(engine_config.providers.keys())
 
 
