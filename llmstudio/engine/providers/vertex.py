@@ -25,6 +25,7 @@ class VertexAIParameters(BaseModel):
 class VertexAIRequest(ChatRequest):
     parameters: Optional[VertexAIParameters] = VertexAIParameters()
     functions: Optional[List[Dict[str, Any]]] = None
+    functions: Optional[Any] = None
     chat_input: Any
 
 
@@ -42,11 +43,21 @@ class VertexAIProvider(Provider):
     ) -> Coroutine[Any, Any, Generator]:
         """Initialize Vertex AI"""
         try:
+            print('Functions recieves in vertex.py skd:', request.functions)
+            print('Type of functions in vertex.py skd:', type(request.functions))
             # Init genai
             genai.configure(api_key=request.api_key or self.GOOGLE_API_KEY)
 
             # Define model
-            model = genai.GenerativeModel(request.model)
+            if request.functions:
+                print('hello')
+                model = genai.GenerativeModel(request.model, tools=request.functions)
+                teste = model.generate_content('What is 9 times 10?')
+                print('bb')
+                print(teste)
+
+            else:
+                model = genai.GenerativeModel(request.model)
 
             # Generate content
             return await asyncio.to_thread(

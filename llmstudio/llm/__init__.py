@@ -30,6 +30,7 @@ class LLM:
         self.presence_penalty = kwargs.get("presence_penalty")
 
     def chat(self, input: str, is_stream: bool = False, retries: int = 0, **kwargs):
+        print(f'Functions in init.py sdk: ', kwargs.get('functions'))
         response = requests.post(
             f"http://{ENGINE_HOST}:{ENGINE_PORT}/api/engine/chat/{self.provider}",
             json={
