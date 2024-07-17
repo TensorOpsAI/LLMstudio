@@ -11,7 +11,7 @@ from llmstudio.engine import (
 
 @pytest.fixture
 def providers_list():
-    return ["Anthropic", "Azure", "Cohere", "Ollama", "OpenAI"]
+    return ["Anthropic", "Azure", "Ollama", "OpenAI"]
 
 
 @pytest.fixture
