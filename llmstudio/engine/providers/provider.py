@@ -82,9 +82,11 @@ class Provider:
                     return StreamingResponse(response_handler)
                 else:
                     return JSONResponse(content=await response_handler.__anext__())
-            except HTTPException as e:
-                if e.status_code != 429:
-                    raise
+            # except HTTPException as e:  
+            #     if e.status_code != 429:
+            #         raise
+            except Exception as e:
+                print(f"An error occurred: {e}")
 
         raise HTTPException(status_code=429, detail="Too many requests")
 
@@ -182,6 +184,7 @@ class Provider:
     def join_chunks(self, chunks, request):
         from llmstudio.engine.providers.azure import AzureRequest
         from llmstudio.engine.providers.openai import OpenAIRequest
+        from llmstudio.engine.providers.vertex import VertexAIRequest
 
         finish_reason = chunks[-1].get("choices")[0].get("finish_reason")
 
@@ -239,7 +242,7 @@ class Provider:
 
             if isinstance(request, AzureRequest):
                 function_call_name = function_calls[0].get("name")
-            elif isinstance(request, OpenAIRequest):
+            elif isinstance(request, OpenAIRequest) or isinstance(request, VertexAIRequest):
                 function_call_name = (
                     chunks[0]
                     .get("choices")[0]
@@ -253,7 +256,7 @@ class Provider:
                     part = chunk.get("arguments", "")
                     if part:
                         function_call_arguments += part
-                elif isinstance(request, OpenAIRequest):
+                elif isinstance(request, OpenAIRequest) or isinstance(request, VertexAIRequest):
                     function_call_arguments += chunk.get("arguments")
 
             return (
