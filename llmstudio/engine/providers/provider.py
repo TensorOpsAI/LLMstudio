@@ -83,7 +83,7 @@ class Provider:
                     return StreamingResponse(response_handler)
                 else:
                     return JSONResponse(content=await response_handler.__anext__())
-            # except HTTPException as e:  
+            # except HTTPException as e:
             #     if e.status_code != 429:
             #         raise
             except Exception as e:
@@ -243,7 +243,9 @@ class Provider:
 
             if isinstance(request, AzureRequest):
                 function_call_name = function_calls[0].get("name")
-            elif isinstance(request, OpenAIRequest) or isinstance(request, VertexAIRequest):
+            elif isinstance(request, OpenAIRequest) or isinstance(
+                request, VertexAIRequest
+            ):
                 function_call_name = (
                     chunks[0]
                     .get("choices")[0]
@@ -257,7 +259,9 @@ class Provider:
                     part = chunk.get("arguments", "")
                     if part:
                         function_call_arguments += part
-                elif isinstance(request, OpenAIRequest) or isinstance(request, VertexAIRequest):
+                elif isinstance(request, OpenAIRequest) or isinstance(
+                    request, VertexAIRequest
+                ):
                     function_call_arguments += chunk.get("arguments")
 
             return (

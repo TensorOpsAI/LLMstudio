@@ -40,7 +40,7 @@ class OpenAIProvider(Provider):
         """Generate an OpenAI client"""
         try:
             client = OpenAI(api_key=request.api_key or self.API_KEY)
-            print(f'openai.py - request: {request}')
+            print(f"openai.py - request: {request}")
             return await asyncio.to_thread(
                 client.chat.completions.create,
                 model=request.model,
