@@ -47,23 +47,54 @@ class VertexAIProvider(Provider):
         try:
             # Init genai
             genai.configure(api_key=request.api_key or self.GOOGLE_API_KEY)
-            print(f'vertex.py - request: {request.chat_input}')
-
-            # Define model
-            if request.functions:
-                model = genai.GenerativeModel(request.model, tools=request.functions)
+            print(f'vertex.py - request: {request}')
+            
+            # Check if chat_input is a string or a list
+            if isinstance(request.chat_input, str):
+                message = request.chat_input
             else:
-                model = genai.GenerativeModel(request.model)
-                model.generate_content
+                # Parse the list into the desired template
+                message = self.parse_chat_input(request.chat_input)
 
+            model = genai.GenerativeModel(request.model, tools=[request.functions])
+            print(f'vertex.py - message: {message}')
             # Generate content
             return await asyncio.to_thread(
-                model.generate_content, request.chat_input, stream=True
+                model.generate_content, message, stream=True
             )
 
         except Exception as e:
             # Handle any other exceptions that might occur
             raise HTTPException(status_code=500, detail=str(e))
+
+    def parse_chat_input(self, chat_input: List[Dict[str, Any]]) -> str:
+        question = ""
+        tools = []
+
+        for entry in chat_input:
+            if entry['role'] == 'user':
+                question = entry['content']
+            elif entry['role'] == 'function':
+                tools.append({
+                    'tool_name': entry['name'],
+                    'tool_description': 'Description not provided',  # Adjust if you have descriptions
+                    'tool_response': entry['content']
+                })
+
+        tools_str = "\n".join(
+            [f"Tool{i+1}: {tool['tool_name']}, Description{i+1}:{tool['tool_description']}, Response{i+1}:{tool['tool_response']}"
+             for i, tool in enumerate(tools)]
+        )
+
+        return f"""
+        Please answer the following question: {question}
+
+        This is the tool responses I got so far: 
+
+        {tools_str}
+
+        Call any other tool if you think is necessary. Otherwise please answer the question based on the tool responses you got.
+        """
 
     def parse_string_to_dict(self, args):
         response_dict = {}

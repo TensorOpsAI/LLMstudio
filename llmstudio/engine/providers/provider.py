@@ -67,6 +67,7 @@ class Provider:
         """Makes a chat connection with the provider's API"""
         try:
             request = self.validate_request(request)
+            # print(f'providers.py - request {request}')
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
 
