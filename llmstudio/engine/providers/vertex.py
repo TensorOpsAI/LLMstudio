@@ -68,12 +68,12 @@ class VertexAIProvider(Provider):
                 message = self.genereate_tool_messege(request.chat_input)
             # Check if the request.chat_input is in the specified format
             elif isinstance(request.chat_input, list) and all(
-                isinstance(item, dict) and 'role' in item and 'content' in item
+                isinstance(item, dict) and "role" in item and "content" in item
                 for item in request.chat_input
             ):
-                message = request.chat_input[0]['content']
+                message = request.chat_input[0]["content"]
             else:
-                raise('Got a request with an invalid format')
+                raise ("Got a request with an invalid format")
 
             if request.functions:
                 model = genai.GenerativeModel(request.model, tools=[request.functions])
