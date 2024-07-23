@@ -62,9 +62,18 @@ class VertexAIProvider(Provider):
             # Check if chat_input is a string or a list
             if isinstance(request.chat_input, str):
                 message = request.chat_input
-            else:
+            # Check if the request has functions
+            elif request.functions:
                 # Parse the list into the desired template
-                message = self.parse_chat_input(request.chat_input)
+                message = self.genereate_tool_messege(request.chat_input)
+            # Check if the request.chat_input is in the specified format
+            elif isinstance(request.chat_input, list) and all(
+                isinstance(item, dict) and 'role' in item and 'content' in item
+                for item in request.chat_input
+            ):
+                message = request.chat_input[0]['content']
+            else:
+                raise('Got a request with an invalid format')
 
             if request.functions:
                 model = genai.GenerativeModel(request.model, tools=[request.functions])
@@ -78,7 +87,7 @@ class VertexAIProvider(Provider):
             # Handle any other exceptions that might occur
             raise HTTPException(status_code=500, detail=str(e))
 
-    def parse_chat_input(self, chat_input: List[Dict[str, Any]]) -> str:
+    def genereate_tool_messege(self, chat_input: List[Dict[str, Any]]) -> str:
         question = next(
             (entry["content"] for entry in chat_input if entry["role"] == "user"), ""
         )
