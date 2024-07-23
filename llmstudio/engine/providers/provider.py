@@ -83,12 +83,15 @@ class Provider:
                     return StreamingResponse(response_handler)
                 else:
                     return JSONResponse(content=await response_handler.__anext__())
-            # except HTTPException as e:
-            #     if e.status_code != 429:
-            #         raise
+            except HTTPException as e:
+                if e.status_code == 429:
+                    continue  # Retry on rate limit error
+                else:
+                    raise e  # Raise other HTTP exceptions
             except Exception as e:
-                print(f"An error occurred: {e}")
-
+                raise HTTPException(
+                    status_code=500, detail=str(e)
+                )  # Raise other exceptions as HTTP 500
         raise HTTPException(status_code=429, detail="Too many requests")
 
     def validate_request(self, request: ChatRequest):

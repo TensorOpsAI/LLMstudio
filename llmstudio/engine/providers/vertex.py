@@ -3,7 +3,16 @@ import json
 import os
 import time
 import uuid
-from typing import Any, AsyncGenerator, Coroutine, Dict, Generator, List, Optional
+from typing import (
+    Any,
+    AsyncGenerator,
+    Coroutine,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Union,
+)
 
 import google.generativeai as genai
 from fastapi import HTTPException
@@ -30,8 +39,7 @@ class VertexAIParameters(BaseModel):
 class VertexAIRequest(ChatRequest):
     parameters: Optional[VertexAIParameters] = VertexAIParameters()
     functions: Optional[List[Dict[str, Any]]] = None
-    functions: Optional[Any] = None
-    chat_input: Any
+    chat_input: Union[str, List[Dict[str, Any]]]
 
 
 @provider
@@ -50,7 +58,6 @@ class VertexAIProvider(Provider):
         try:
             # Init genai
             genai.configure(api_key=request.api_key or self.GOOGLE_API_KEY)
-            print(f"vertex.py - request: {request}")
 
             # Check if chat_input is a string or a list
             if isinstance(request.chat_input, str):
@@ -60,7 +67,7 @@ class VertexAIProvider(Provider):
                 message = self.parse_chat_input(request.chat_input)
 
             model = genai.GenerativeModel(request.model, tools=[request.functions])
-            print(f"vertex.py - message: {message}")
+
             # Generate content
             return await asyncio.to_thread(model.generate_content, message, stream=True)
 
@@ -69,26 +76,22 @@ class VertexAIProvider(Provider):
             raise HTTPException(status_code=500, detail=str(e))
 
     def parse_chat_input(self, chat_input: List[Dict[str, Any]]) -> str:
-        question = ""
-        tools = []
-
-        for entry in chat_input:
-            if entry["role"] == "user":
-                question = entry["content"]
-            elif entry["role"] == "function":
-                tools.append(
-                    {
-                        "tool_name": entry["name"],
-                        "tool_description": "Description not provided",  # Adjust if you have descriptions
-                        "tool_response": entry["content"],
-                    }
-                )
+        question = next(
+            (entry["content"] for entry in chat_input if entry["role"] == "user"), ""
+        )
+        tools = [
+            {
+                "tool_name": entry["name"],
+                "tool_description": "Description not provided",
+                "tool_response": entry["content"],
+            }
+            for entry in chat_input
+            if entry["role"] == "function"
+        ]
 
         tools_str = "\n".join(
-            [
-                f"Tool{i+1}: {tool['tool_name']}, Description{i+1}:{tool['tool_description']}, Response{i+1}:{tool['tool_response']}"
-                for i, tool in enumerate(tools)
-            ]
+            f"Tool{i+1}: {tool['tool_name']}, Description{i+1}:{tool['tool_description']}, Response{i+1}:{tool['tool_response']}"
+            for i, tool in enumerate(tools)
         )
 
         return f"""
@@ -101,20 +104,17 @@ class VertexAIProvider(Provider):
         Call any other tool if you think is necessary. Otherwise please answer the question based on the tool responses you got.
         """
 
-    def parse_string_to_dict(self, args):
-        response_dict = {}
-        for i in args:
-            key = i
-            value = args[i].ListFields()[0][1]
-
-            # Check if the value is a number
-            if isinstance(value, (int, float)):
-                # Convert to int if it has no decimal part, otherwise keep as float
-                value = int(value) if value == int(value) else float(value)
-            response_dict[key] = value
-
-        response_json = json.dumps(response_dict).replace(" ", "")
-        return response_json
+    @staticmethod
+    def parse_string_to_dict(args):
+        return json.dumps(
+            {
+                key: int(value.ListFields()[0][1])
+                if isinstance(value.ListFields()[0][1], (int, float))
+                and value.ListFields()[0][1] == int(value.ListFields()[0][1])
+                else value.ListFields()[0][1]
+                for key, value in args.items()
+            }
+        ).replace(" ", "")
 
     async def parse_response(
         self, response: AsyncGenerator, **kwargs
@@ -126,11 +126,11 @@ class VertexAIProvider(Provider):
                 name = chunk.parts[0].__dict__["_pb"].function_call.name
                 args = chunk.parts[0].__dict__["_pb"].function_call.args.fields
                 openai_args = self.parse_string_to_dict(args)
-                id = str(uuid.uuid4())
+                str(uuid.uuid4())
 
                 # First chunk
-                first_chunk = ChatCompletionChunk(
-                    id=id,
+                yield ChatCompletionChunk(
+                    id=str(uuid.uuid4()),
                     choices=[
                         Choice(
                             delta=ChoiceDelta(
@@ -146,12 +146,11 @@ class VertexAIProvider(Provider):
                     created=int(time.time()),
                     model=kwargs.get("request").model,
                     object="chat.completion.chunk",
-                )
-                yield first_chunk.model_dump()
+                ).model_dump()
 
                 # Midle chunk with arguments
-                middle_chunk = ChatCompletionChunk(
-                    id=id,
+                yield ChatCompletionChunk(
+                    id=str(uuid.uuid4()),
                     choices=[
                         Choice(
                             delta=ChoiceDelta(
@@ -167,11 +166,10 @@ class VertexAIProvider(Provider):
                     created=int(time.time()),
                     model=kwargs.get("request").model,
                     object="chat.completion.chunk",
-                )
-                yield middle_chunk.model_dump()
+                ).model_dump()
 
-                final_chunk = ChatCompletionChunk(
-                    id=id,
+                yield ChatCompletionChunk(
+                    id=str(uuid.uuid4()),
                     choices=[
                         Choice(
                             delta=ChoiceDelta(), finish_reason="function_call", index=0
@@ -180,8 +178,7 @@ class VertexAIProvider(Provider):
                     created=int(time.time()),
                     model=kwargs.get("request").model,
                     object="chat.completion.chunk",
-                )
-                yield final_chunk.model_dump()
+                ).model_dump()
 
             # Check if it is a normal call
             elif chunk.parts[0].text:
