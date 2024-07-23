@@ -66,7 +66,10 @@ class VertexAIProvider(Provider):
                 # Parse the list into the desired template
                 message = self.parse_chat_input(request.chat_input)
 
-            model = genai.GenerativeModel(request.model, tools=[request.functions])
+            if request.functions:
+                model = genai.GenerativeModel(request.model, tools=[request.functions])
+            else:
+                model = genai.GenerativeModel(request.model)
 
             # Generate content
             return await asyncio.to_thread(model.generate_content, message, stream=True)

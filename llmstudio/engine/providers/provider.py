@@ -87,8 +87,10 @@ class Provider:
                 if e.status_code == 429:
                     continue  # Retry on rate limit error
                 else:
+                    print(e)
                     raise e  # Raise other HTTP exceptions
             except Exception as e:
+                print(e)
                 raise HTTPException(
                     status_code=500, detail=str(e)
                 )  # Raise other exceptions as HTTP 500
