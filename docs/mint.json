@@ -44,6 +44,38 @@
       "pages": ["quickstart", "support"]
     },
     {
+      "group": "SDK",
+      "pages": [
+        {
+          "group": "LLM",
+          "pages":[{
+            "group": "Providers",
+            "pages":[
+              "sdk/LLM/providers/openai",
+              "sdk/LLM/providers/vertexai",
+              "sdk/LLM/providers/anthropic",
+              "sdk/LLM/providers/ollama",
+              "sdk/LLM/providers/azure"
+            ]
+          }, 
+          "sdk/LLM/chat",
+          "sdk/LLM/batch_chat"]
+        },
+        {
+          "group": "Langchain",
+          "pages":[{
+            "group": "Providers",
+            "pages":[
+              "sdk/LLM/providers/openai",
+              "sdk/LLM/providers/vertexai"
+            ]
+          }, 
+          "sdk/LLM/chat",
+          "sdk/LLM/batch_chat"]
+        }
+      ]
+    },
+    {
       "group": "Endpoint Examples",
       "pages": [
         {
@@ -68,3 +100,4 @@
     "baseUrl": "http://localhost:8000"
   }
 }
+  
