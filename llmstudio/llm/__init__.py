@@ -4,18 +4,18 @@ from typing import Dict, List, Union
 import aiohttp
 import requests
 from IPython.display import clear_output
-from openai.types.chat import ChatCompletion, ChatCompletionChunk
-from pydantic import BaseModel, ValidationError
+from openai.types.chat import ChatCompletion
 from tqdm.asyncio import tqdm_asyncio
 
-from llmstudio.cli import start_server
 from llmstudio.config import ENGINE_HOST, ENGINE_PORT
 from llmstudio.llm.semaphore import DynamicSemaphore
+from llmstudio.server import ensure_servers_running
+
+ensure_servers_running(start_ui=False)
 
 
 class LLM:
     def __init__(self, model_id: str, **kwargs):
-        start_server()
         self.provider, self.model = model_id.split("/")
         self.session_id = kwargs.get("session_id")
         self.api_key = kwargs.get("api_key")
