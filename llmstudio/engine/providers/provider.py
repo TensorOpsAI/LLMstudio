@@ -50,6 +50,7 @@ class ChatRequest(BaseModel):
     has_end_token: Optional[bool] = False
     functions: Optional[List[Dict[str, Any]]] = None
     session_id: Optional[str] = None
+    retries: Optional[int] = 0
 
 
 class Provider:
@@ -58,6 +59,7 @@ class Provider:
     def __init__(self, config):
         self.config = config
         self.tokenizer: Tokenizer = self._get_tokenizer()
+        self.count = 0
 
     async def chat(
         self, request: ChatRequest
@@ -70,14 +72,21 @@ class Provider:
 
         self.validate_model(request)
 
-        start_time = time.time()
-        response = await self.generate_client(request)
+        for _ in range(request.retries + 1):
+            try:
+                start_time = time.time()
+                response = await self.generate_client(request)
+                response_handler = self.handle_response(request, response, start_time)
 
-        response_handler = self.handle_response(request, response, start_time)
-        if request.is_stream:
-            return StreamingResponse(response_handler)
-        else:
-            return JSONResponse(content=await response_handler.__anext__())
+                if request.is_stream:
+                    return StreamingResponse(response_handler)
+                else:
+                    return JSONResponse(content=await response_handler.__anext__())
+            except HTTPException as e:
+                if e.status_code != 429:
+                    raise
+
+        raise HTTPException(status_code=429, detail="Too many requests")
 
     def validate_request(self, request: ChatRequest):
         pass
@@ -119,6 +128,7 @@ class Provider:
                     yield chunk.get("choices")[0].get("delta").get("content")
 
         chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
+        model = next(chunk["model"] for chunk in chunks if chunk.get("model"))
 
         response, output_string = self.join_chunks(chunks, request)
 
@@ -149,7 +159,16 @@ class Provider:
                 else request.chat_input
             ),
             "provider": self.config.id,
-            "model": request.model,
+            "model": (
+                request.model
+                if model and model.startswith(request.model)
+                else (model or request.model)
+            ),
+            "deployment": (
+                model
+                if model and model.startswith(request.model)
+                else (request.model if model != request.model else None)
+            ),
             "timestamp": time.time(),
             "parameters": request.parameters.model_dump(),
             "metrics": metrics,
@@ -164,7 +183,9 @@ class Provider:
         from llmstudio.engine.providers.azure import AzureRequest
         from llmstudio.engine.providers.openai import OpenAIRequest
 
-        if chunks[-1].get("choices")[0].get("finish_reason") == "tool_calls":
+        finish_reason = chunks[-1].get("choices")[0].get("finish_reason")
+
+        if finish_reason == "tool_calls":
             tool_calls = [
                 chunk.get("choices")[0].get("delta").get("tool_calls")[0]
                 for chunk in chunks[1:-1]
@@ -207,7 +228,7 @@ class Provider:
                 ),
                 tool_call_arguments,
             )
-        elif chunks[-1].get("choices")[0].get("finish_reason") == "function_call":
+        elif finish_reason == "function_call":
             function_calls = [
                 chunk.get("choices")[0].get("delta").get("function_call")
                 for chunk in chunks[1:-1]
@@ -260,7 +281,7 @@ class Provider:
                 ),
                 function_call_arguments,
             )
-        elif chunks[-1].get("choices")[0].get("finish_reason") == "stop":
+        elif finish_reason == "stop" or finish_reason == "length":
             if isinstance(request, AzureRequest) or isinstance(request, OpenAIRequest):
                 start_index = 1
             else:
@@ -320,8 +341,8 @@ class Provider:
         input_tokens = len(self.tokenizer.encode(self.input_to_string(input)))
         output_tokens = len(self.tokenizer.encode(self.output_to_string(output)))
 
-        input_cost = model_config.input_token_cost * input_tokens
-        output_cost = model_config.output_token_cost * output_tokens
+        input_cost = self.calculate_cost(input_tokens, model_config.input_token_cost)
+        output_cost = self.calculate_cost(output_tokens, model_config.output_token_cost)
 
         total_time = end_time - start_time
         return {
@@ -334,6 +355,19 @@ class Provider:
             "inter_token_latency_s": sum(token_times) / len(token_times),
             "tokens_per_second": token_count / total_time,
         }
+
+    def calculate_cost(
+        self, token_count: int, token_cost: Union[float, List[Dict[str, Any]]]
+    ) -> float:
+        if isinstance(token_cost, list):
+            for cost_range in token_cost:
+                if token_count >= cost_range.range[0] and (
+                    token_count <= cost_range.range[1] or cost_range.range[1] is None
+                ):
+                    return cost_range.cost * token_count
+        else:
+            return token_cost * token_count
+        return 0
 
     def input_to_string(self, input):
         if isinstance(input, str):
@@ -361,7 +395,6 @@ class Provider:
     def _get_tokenizer(self) -> Tokenizer:
         return {
             "anthropic": Anthropic().get_tokenizer(),
-            "cohere": Tokenizer.from_pretrained("Cohere/command-nightly"),
         }.get(self.config.id, tiktoken.get_encoding("cl100k_base"))
 
     def save_log(self, response: Dict[str, Any]):

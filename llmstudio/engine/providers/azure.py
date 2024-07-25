@@ -7,7 +7,6 @@ from fastapi import HTTPException
 from openai import AzureOpenAI, OpenAI
 from pydantic import BaseModel, Field
 
-
 from llmstudio.engine.providers.provider import ChatRequest, Provider, provider
 
 
@@ -26,6 +25,7 @@ class AzureRequest(ChatRequest):
     parameters: Optional[AzureParameters] = AzureParameters()
     functions: Optional[List[Dict[str, Any]]] = None
     chat_input: Any
+    response_format: Optional[Dict[str, str]] = None
 
 
 @provider
@@ -45,7 +45,22 @@ class AzureProvider(Provider):
     ) -> Coroutine[Any, Any, Generator]:
         """Generate an AzureOpenAI client"""
         try:
-            if request.api_endpoint or self.API_ENDPOINT:
+            if request.base_url or self.BASE_URL:
+                client = OpenAI(
+                    api_key=request.api_key or self.API_KEY,
+                    base_url=request.base_url or self.BASE_URL,
+                )
+                return await asyncio.to_thread(
+                    client.chat.completions.create,
+                    model=request.model,
+                    messages=(
+                        [{"role": "user", "content": request.chat_input}]
+                        if isinstance(request.chat_input, str)
+                        else request.chat_input
+                    ),
+                    stream=True,
+                )
+            else:
                 client = AzureOpenAI(
                     api_key=request.api_key or self.API_KEY,
                     azure_endpoint=request.api_endpoint or self.API_ENDPOINT,
@@ -62,22 +77,8 @@ class AzureProvider(Provider):
                     functions=request.functions,
                     function_call="auto" if request.functions else None,
                     stream=True,
+                    response_format=request.response_format,
                     **request.parameters.model_dump(),
-                )
-            elif request.base_url or self.BASE_URL:
-                client = OpenAI(
-                    api_key=request.api_key or self.API_KEY,
-                    base_url=request.base_url or self.BASE_URL,
-                )
-                return await asyncio.to_thread(
-                    client.chat.completions.create,
-                    model=request.model,
-                    messages=(
-                        [{"role": "user", "content": request.chat_input}]
-                        if isinstance(request.chat_input, str)
-                        else request.chat_input
-                    ),
-                    stream=True,
                 )
 
         except openai._exceptions.APIError as e:
