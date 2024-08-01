@@ -73,7 +73,9 @@ class VertexAIProvider(Provider):
             ):
                 message = request.chat_input[0]["content"]
             else:
-                raise ("Got a request with an invalid format")
+                raise HTTPException(
+                    status_code=400, detail="Got a request with an invalid format"
+                )
 
             if request.functions:
                 model = genai.GenerativeModel(request.model, tools=[request.functions])

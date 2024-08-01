@@ -67,7 +67,6 @@ class Provider:
         """Makes a chat connection with the provider's API"""
         try:
             request = self.validate_request(request)
-            # print(f'providers.py - request {request}')
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
 
@@ -87,7 +86,6 @@ class Provider:
                 if e.status_code == 429:
                     continue  # Retry on rate limit error
                 else:
-                    print(e)
                     raise e  # Raise other HTTP exceptions
             except Exception as e:
                 print(e)
