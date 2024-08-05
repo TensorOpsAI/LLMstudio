@@ -2,7 +2,7 @@ import asyncio
 import json
 import time
 import uuid
-from typing import Any, AsyncGenerator, Coroutine, Generator, Optional
+from typing import Any, Coroutine, Generator, Optional
 
 import requests
 from fastapi import HTTPException

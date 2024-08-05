@@ -47,15 +47,12 @@ class ChatRequest(BaseModel):
     chat_input: Any
     parameters: Optional[BaseModel] = None
     is_stream: Optional[bool] = False
-    has_end_token: Optional[bool] = False
     functions: Optional[List[Dict[str, Any]]] = None
     session_id: Optional[str] = None
     retries: Optional[int] = 0
 
 
 class Provider:
-    END_TOKEN = "<END_TOKEN>"
-
     def __init__(self, config):
         self.config = config
         self.tokenizer: Tokenizer = self._get_tokenizer()
@@ -115,6 +112,19 @@ class Provider:
 
     def handle_response_stream(self, request: ChatRequest, response, start_time: float):
         """Handles the streaming response from an API"""
+        for chunk in self._process_response(request, response, start_time, stream=True):
+            yield chunk.get("choices")[0].get("delta", {}).get("content", "")
+
+    async def handle_response(
+        self, request: ChatRequest, response: AsyncGenerator, start_time: float
+    ) -> Dict[str, Any]:
+        """Handles the non-streaming response from an API"""
+        for processed_response in self._process_response(request, response, start_time):
+            return processed_response
+
+    def _process_response(
+        self, request: ChatRequest, response, start_time: float, stream=False
+    ):
         first_token_time = None
         previous_token_time = None
         token_times = []
@@ -131,11 +141,11 @@ class Provider:
 
             chunks.append(chunk)
             chunk = chunk[0] if isinstance(chunk, tuple) else chunk
-            if chunk.get("choices")[0].get("finish_reason") != "stop":
-                yield chunk.get("choices")[0].get("delta").get("content")
+            if stream and chunk.get("choices")[0].get("finish_reason") != "stop":
+                yield chunk
 
         chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
-        model = next(chunk["model"] for chunk in chunks if chunk.get("model"))
+        model = next((chunk["model"] for chunk in chunks if chunk.get("model")), None)
 
         response, output_string = self.join_chunks(chunks, request)
 
@@ -150,7 +160,7 @@ class Provider:
             token_count,
         )
 
-        response = {
+        processed_response = {
             **response.model_dump(),
             "id": str(uuid.uuid4()),
             "session_id": request.session_id,
@@ -181,83 +191,9 @@ class Provider:
             "metrics": metrics,
         }
 
-        self.save_log(response)
-
-        if not request.is_stream:
-            yield response
-
-    async def handle_response(
-        self, request: ChatRequest, response: AsyncGenerator, start_time: float
-    ) -> Dict[str, Any]:
-        """Handles the non-streaming response from an API"""
-        first_token_time = None
-        previous_token_time = None
-        token_times = []
-        token_count = 0
-        chunks = []
-
-        import time
-
-        for chunk in self.parse_response(response, request=request):
-            token_count += 1
-            current_time = time.time()
-            first_token_time = first_token_time or current_time
-            if previous_token_time is not None:
-                token_times.append(current_time - previous_token_time)
-            previous_token_time = current_time
-
-            chunks.append(chunk)
-
-        chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
-        model = next(chunk["model"] for chunk in chunks if chunk.get("model"))
-
-        response, output_string = self.join_chunks(chunks, request)
-
-        metrics = self.calculate_metrics(
-            request.chat_input,
-            response,
-            request.model,
-            start_time,
-            time.time(),
-            first_token_time,
-            token_times,
-            token_count,
-        )
-
-        response = {
-            **response.model_dump(),
-            "id": str(uuid.uuid4()),
-            "session_id": request.session_id,
-            "chat_input": (
-                request.chat_input
-                if isinstance(request.chat_input, str)
-                else request.chat_input[-1]["content"]
-            ),
-            "chat_output": output_string,
-            "context": (
-                [{"role": "user", "content": request.chat_input}]
-                if isinstance(request.chat_input, str)
-                else request.chat_input
-            ),
-            "provider": self.config.id,
-            "model": (
-                request.model
-                if model and model.startswith(request.model)
-                else (model or request.model)
-            ),
-            "deployment": (
-                model
-                if model and model.startswith(request.model)
-                else (request.model if model != request.model else None)
-            ),
-            "timestamp": time.time(),
-            "parameters": request.parameters.model_dump(),
-            "metrics": metrics,
-        }
-
-        self.save_log(response)
-
-        return response
+        self.save_log(processed_response)
+        if not stream:
+            yield processed_response
 
     def join_chunks(self, chunks, request):
         from llmstudio.engine.providers.azure import AzureRequest
@@ -472,25 +408,10 @@ class Provider:
         elif output.choices[0].finish_reason == "function_call":
             return output.choices[0].message.function_call.arguments
 
-    def get_end_token_string(self, metrics: Dict[str, Any]) -> str:
-        return f"{self.END_TOKEN},input_tokens={metrics['input_tokens']},output_tokens={metrics['output_tokens']},cost_usd={metrics['cost_usd']},latency_s={metrics['latency_s']:.5f},time_to_first_token_s={metrics['time_to_first_token_s']:.5f},inter_token_latency_s={metrics['inter_token_latency_s']:.5f},tokens_per_second={metrics['tokens_per_second']:.2f}"
-
     def _get_tokenizer(self) -> Tokenizer:
         return {
             "anthropic": Anthropic().get_tokenizer(),
         }.get(self.config.id, tiktoken.get_encoding("cl100k_base"))
 
     def save_log(self, response: Dict[str, Any]):
-        local = False  # NB: Make this dynamic
-        if local:
-            file_name = Path(
-                os.path.join(os.path.dirname(__file__), "..", "logs.jsonl")
-            )
-            if not os.path.exists(file_name):
-                with open(file_name, "w") as f:
-                    pass
-
-            with open(file_name, "a") as f:
-                f.write(json.dumps(response) + "\n")
-        else:
-            tracker.log(response)
+        tracker.log(response)
