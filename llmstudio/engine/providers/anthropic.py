@@ -15,10 +15,10 @@ from llmstudio.engine.providers.provider import ChatRequest, Provider, provider
 
 
 class ClaudeParameters(BaseModel):
-    temperature: Optional[float] = Field(1, ge=0, le=1)
-    max_tokens: Optional[int] = Field(4096, ge=1)
-    top_p: Optional[float] = Field(1, ge=0, le=1)
-    top_k: Optional[int] = Field(5, ge=0, le=500)
+    temperature: Optional[float] = Field(default=0, ge=0, le=1)
+    max_tokens: Optional[int] = Field(default=4096, ge=1)
+    top_p: Optional[float] = Field(default=1, ge=0, le=1)
+    top_k: Optional[int] = Field(default=5, ge=0, le=500)
 
 
 class AnthropicRequest(ChatRequest):
@@ -48,7 +48,7 @@ class AnthropicProvider(Provider):
                     if isinstance(request.chat_input, str)
                     else request.chat_input
                 ),
-                **request.parameters.dict(),
+                **request.parameters.model_dump(),
             )
         except anthropic._exceptions.APIError as e:
             raise HTTPException(status_code=e.status_code, detail=e.response.json())
