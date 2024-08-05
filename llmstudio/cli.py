@@ -11,7 +11,7 @@ from llmstudio.config import (
     UI_HOST,
     UI_PORT,
 )
-from llmstudio.server import ensure_servers_running, is_server_running, setup_servers
+from llmstudio.server import start_server
 
 
 def handle_shutdown(signum, frame):
@@ -29,7 +29,7 @@ def main():
 def server(ui):
     signal.signal(signal.SIGINT, handle_shutdown)
 
-    ensure_servers_running(start_ui=ui)
+    start_server(ui=ui)
 
     print("Servers are running. Press CTRL+C to stop.")
 
