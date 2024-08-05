@@ -53,9 +53,7 @@ class AnthropicProvider(Provider):
         except anthropic._exceptions.APIError as e:
             raise HTTPException(status_code=e.status_code, detail=e.response.json())
 
-    async def parse_response(
-        self, response: AsyncGenerator, **kwargs
-    ) -> AsyncGenerator[str, None]:
+    def parse_response(self, response, **kwargs):
         with response as stream:
             for chunk in stream:
                 if isinstance(

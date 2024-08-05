@@ -122,17 +122,17 @@ class VertexAIProvider(Provider):
     def parse_string_to_dict(args):
         return json.dumps(
             {
-                key: int(value.ListFields()[0][1])
-                if isinstance(value.ListFields()[0][1], (int, float))
-                and value.ListFields()[0][1] == int(value.ListFields()[0][1])
-                else value.ListFields()[0][1]
+                key: (
+                    int(value.ListFields()[0][1])
+                    if isinstance(value.ListFields()[0][1], (int, float))
+                    and value.ListFields()[0][1] == int(value.ListFields()[0][1])
+                    else value.ListFields()[0][1]
+                )
                 for key, value in args.items()
             }
         ).replace(" ", "")
 
-    async def parse_response(
-        self, response: AsyncGenerator, **kwargs
-    ) -> AsyncGenerator[str, None]:
+    def parse_response(self, response, **kwargs):
         for chunk in response:
 
             # Check if it is a function call

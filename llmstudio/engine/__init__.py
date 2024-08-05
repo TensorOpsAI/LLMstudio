@@ -125,6 +125,7 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
 
     # Function to create a chat handler for a provider
     def create_chat_handler(provider_config):
+        @app.post(f"{ENGINE_BASE_ENDPOINT}/chat/{provider_config.id}")
         async def chat_handler(request: Request):
             """Endpoint for chat functionality."""
             provider_class = provider_registry.get(f"{provider_config.name}Provider")
@@ -136,9 +137,7 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
     # Dynamic route creation based on the 'chat' boolean
     for provider_name, provider_config in config.providers.items():
         if provider_config.chat:
-            app.post(f"{ENGINE_BASE_ENDPOINT}/chat/{provider_name}")(
-                create_chat_handler(provider_config)
-            )
+            create_chat_handler(provider_config)
 
     @app.get(f"{ENGINE_BASE_ENDPOINT}/parameters")
     def get_parameters(provider: str, model: Optional[str] = None):
