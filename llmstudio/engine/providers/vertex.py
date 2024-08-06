@@ -92,10 +92,10 @@ class VertexAIProvider(Provider):
 
     def generate_prompt_with_functions(self, conversation, system_message):
         # Create the prompt
-        prompt = (
-            f"Here are your system instructions: {system_message}\n"
-            if system_message
-            else ""
+        prompt = ""
+        if system_message:
+            prompt += f"Here are your system instructions: {system_message}\n"
+        prompt += (
             "Based on the conversation so far, please answer the last questions the user made. "
             "Here is the conversation:\n"
             f"{conversation}\n\n"
