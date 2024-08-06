@@ -27,9 +27,9 @@ def is_server_running(host, port, path="/health"):
     return False
 
 
-def start_server_component(host, port, run_func, server_name):
+def start_server_component(host, port, run_func, server_name, daemon=True):
     if not is_server_running(host, port):
-        thread = threading.Thread(target=run_func, daemon=True)
+        thread = threading.Thread(target=run_func, daemon=daemon)
         thread.start()
         return thread
     else:
@@ -53,9 +53,10 @@ def setup_servers(engine, tracking, ui):
             TRACKING_HOST, TRACKING_PORT, run_tracking_app, "Tracking"
         )
 
-    ui_thread = None
     if ui:
-        ui_thread = start_server_component(UI_HOST, UI_PORT, run_ui_app, "UI")
+        ui_thread = start_server_component(
+            UI_HOST, UI_PORT, run_ui_app, "UI", daemon=False
+        )
 
     _servers_started = True
     return engine_thread, tracking_thread, ui_thread

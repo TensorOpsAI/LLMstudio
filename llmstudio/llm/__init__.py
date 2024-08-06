@@ -9,9 +9,6 @@ from tqdm.asyncio import tqdm_asyncio
 
 from llmstudio.config import ENGINE_HOST, ENGINE_PORT
 from llmstudio.llm.semaphore import DynamicSemaphore
-from llmstudio.server import start_server
-
-start_server()
 
 
 class LLM:
