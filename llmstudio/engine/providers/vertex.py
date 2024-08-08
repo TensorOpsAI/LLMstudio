@@ -14,7 +14,7 @@ from typing import (
     Union,
 )
 
-import google.generativeai as genai
+import requests
 from fastapi import HTTPException
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import (
@@ -57,7 +57,12 @@ class VertexAIProvider(Provider):
         """Initialize Vertex AI"""
         try:
             # Init genai
-            genai.configure(api_key=request.api_key or self.GOOGLE_API_KEY)
+            api_key = request.api_key or self.GOOGLE_API_KEY
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{request.model}:streamGenerateContent?alt=sse"
+            headers = {
+                "Content-Type": "application/json",
+                "x-goog-api-key": api_key,
+            }
 
             # Check if chat_input is a string
             if isinstance(request.chat_input, str):
@@ -79,13 +84,15 @@ class VertexAIProvider(Provider):
             ):
                 message = self.generate_prompt_with_functions(message, system_message)
 
+            data = {"contents": [{"role": "user", "parts": [{"text": message}]}]}
+
             if request.functions:
-                model = genai.GenerativeModel(request.model, tools=[request.functions])
-            else:
-                model = genai.GenerativeModel(request.model)
+                data["tools"] = [{"function": func} for func in request.functions]
 
             # Generate content
-            return await asyncio.to_thread(model.generate_content, message, stream=True)
+            return await asyncio.to_thread(
+                requests.post, url, headers=headers, json=data, stream=True
+            )
 
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
@@ -169,10 +176,12 @@ class VertexAIProvider(Provider):
     def parse_string_to_dict(args):
         return json.dumps(
             {
-                key: int(value.ListFields()[0][1])
-                if isinstance(value.ListFields()[0][1], (int, float))
-                and value.ListFields()[0][1] == int(value.ListFields()[0][1])
-                else value.ListFields()[0][1]
+                key: (
+                    int(value.ListFields()[0][1])
+                    if isinstance(value.ListFields()[0][1], (int, float))
+                    and value.ListFields()[0][1] == int(value.ListFields()[0][1])
+                    else value.ListFields()[0][1]
+                )
                 for key, value in args.items()
             }
         ).replace(" ", "")
@@ -180,12 +189,14 @@ class VertexAIProvider(Provider):
     async def parse_response(
         self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:
-        for chunk in response:
+        for chunk in response.iter_content(chunk_size=None):
+            chunk = json.loads(chunk.decode("utf-8").lstrip("data: "))
+            chunk = chunk.get("candidates")[0].get("content")
 
             # Check if it is a function call
-            if chunk.parts[0].function_call:
-                name = chunk.parts[0].__dict__["_pb"].function_call.name
-                args = chunk.parts[0].__dict__["_pb"].function_call.args.fields
+            if chunk.get("parts")[0].get("function_call"):
+                name = chunk.get("parts")[0].__dict__["_pb"].function_call.name
+                args = chunk.get("parts")[0].__dict__["_pb"].function_call.args.fields
                 openai_args = self.parse_string_to_dict(args)
                 str(uuid.uuid4())
 
@@ -242,13 +253,16 @@ class VertexAIProvider(Provider):
                 ).model_dump()
 
             # Check if it is a normal call
-            elif chunk.parts[0].text:
+            elif chunk.get("parts")[0].get("text"):
                 # Parse google chunk response into ChatCompletionChunk
                 yield ChatCompletionChunk(
                     id=str(uuid.uuid4()),
                     choices=[
                         Choice(
-                            delta=ChoiceDelta(content=chunk.text, role="assistant"),
+                            delta=ChoiceDelta(
+                                content=chunk.get("parts")[0].get("text"),
+                                role="assistant",
+                            ),
                             finish_reason=None,
                             index=0,
                         )
