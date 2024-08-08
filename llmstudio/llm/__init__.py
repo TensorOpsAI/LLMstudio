@@ -4,18 +4,18 @@ from typing import Dict, List, Union
 import aiohttp
 import requests
 from IPython.display import clear_output
-from openai.types.chat import ChatCompletion, ChatCompletionChunk
-from pydantic import BaseModel, ValidationError
+from openai.types.chat import ChatCompletion
 from tqdm.asyncio import tqdm_asyncio
 
-from llmstudio.cli import start_server
 from llmstudio.config import ENGINE_HOST, ENGINE_PORT
 from llmstudio.llm.semaphore import DynamicSemaphore
+from llmstudio.server import start_server
+
+start_server()
 
 
 class LLM:
     def __init__(self, model_id: str, **kwargs):
-        start_server()
         self.provider, self.model = model_id.split("/")
         self.session_id = kwargs.get("session_id")
         self.api_key = kwargs.get("api_key")
@@ -43,15 +43,20 @@ class LLM:
                 "is_stream": is_stream,
                 "retries": retries,
                 "parameters": {
-                    "temperature": kwargs.get("temperature") or self.temperature,
-                    "top_p": kwargs.get("top_p") or self.top_p,
-                    "top_k": kwargs.get("top_k") or self.top_k,
-                    "max_tokens": kwargs.get("max_tokens") or self.max_tokens,
-                    "max_output_tokens": kwargs.get("max_tokens") or self.max_tokens,
-                    "frequency_penalty": kwargs.get("frequency_penalty")
-                    or self.frequency_penalty,
-                    "presence_penalty": kwargs.get("presence_penalty")
-                    or self.presence_penalty,
+                    key: value
+                    for key, value in {
+                        "temperature": kwargs.get("temperature") or self.temperature,
+                        "top_p": kwargs.get("top_p") or self.top_p,
+                        "top_k": kwargs.get("top_k") or self.top_k,
+                        "max_tokens": kwargs.get("max_tokens") or self.max_tokens,
+                        "max_output_tokens": kwargs.get("max_tokens")
+                        or self.max_tokens,
+                        "frequency_penalty": kwargs.get("frequency_penalty")
+                        or self.frequency_penalty,
+                        "presence_penalty": kwargs.get("presence_penalty")
+                        or self.presence_penalty,
+                    }.items()
+                    if value is not None
                 },
                 **kwargs,
             },
@@ -59,7 +64,12 @@ class LLM:
             headers={"Content-Type": "application/json"},
         )
 
-        response.raise_for_status()
+        if not response.ok:
+            try:
+                error_data = response.json().get("detail", "LLMstudio Engine error")
+            except ValueError:
+                error_data = response.text
+            raise Exception(error_data)
 
         if is_stream:
             return self.generate_chat(response)
@@ -221,7 +231,14 @@ class LLM:
                 },
                 headers={"Content-Type": "application/json"},
             ) as response:
-                response.raise_for_status()
+                if not response.ok:
+                    try:
+                        error_data = response.json().get(
+                            "detail", "LLMstudio Engine error"
+                        )
+                    except ValueError:
+                        error_data = response.text
+                    raise Exception(error_data)
 
                 return ChatCompletion(**await response.json())
 
@@ -254,7 +271,14 @@ class LLM:
                 },
                 headers={"Content-Type": "application/json"},
             ) as response:
-                response.raise_for_status()
+                if not response.ok:
+                    try:
+                        error_data = response.json().get(
+                            "detail", "LLMstudio Engine error"
+                        )
+                    except ValueError:
+                        error_data = response.text
+                    raise Exception(error_data)
 
                 async for chunk in response.content.iter_any():
                     if chunk:
