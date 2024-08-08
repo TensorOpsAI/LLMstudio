@@ -16,7 +16,6 @@ from typing import (
 )
 
 import tiktoken
-from anthropic import Anthropic
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from openai.types.chat import (
@@ -28,7 +27,6 @@ from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion_message import FunctionCall
 from openai.types.chat.chat_completion_message_tool_call import Function
 from pydantic import BaseModel, ValidationError
-from tokenizers import Tokenizer
 
 from llmstudio.tracking.tracker import tracker
 
@@ -58,7 +56,7 @@ class Provider:
 
     def __init__(self, config):
         self.config = config
-        self.tokenizer: Tokenizer = self._get_tokenizer()
+        self.tokenizer = self._get_tokenizer()
         self.count = 0
 
     async def chat(
@@ -402,10 +400,8 @@ class Provider:
     def get_end_token_string(self, metrics: Dict[str, Any]) -> str:
         return f"{self.END_TOKEN},input_tokens={metrics['input_tokens']},output_tokens={metrics['output_tokens']},cost_usd={metrics['cost_usd']},latency_s={metrics['latency_s']:.5f},time_to_first_token_s={metrics['time_to_first_token_s']:.5f},inter_token_latency_s={metrics['inter_token_latency_s']:.5f},tokens_per_second={metrics['tokens_per_second']:.2f}"
 
-    def _get_tokenizer(self) -> Tokenizer:
-        return {
-            "anthropic": Anthropic().get_tokenizer(),
-        }.get(self.config.id, tiktoken.get_encoding("cl100k_base"))
+    def _get_tokenizer(self):
+        return {}.get(self.config.id, tiktoken.get_encoding("cl100k_base"))
 
     def save_log(self, response: Dict[str, Any]):
         local = False  # NB: Make this dynamic

@@ -89,6 +89,8 @@ class VertexAIProvider(Provider):
             if request.functions:
                 data["tools"] = [{"function": func} for func in request.functions]
 
+            # ADD PARAMETERS
+
             # Generate content
             return await asyncio.to_thread(
                 requests.post, url, headers=headers, json=data, stream=True
