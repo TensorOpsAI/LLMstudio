@@ -59,23 +59,25 @@ class VertexAIProvider(Provider):
             # Init genai
             genai.configure(api_key=request.api_key or self.GOOGLE_API_KEY)
 
-            # Check if chat_input is a string or a list
+            # Check if chat_input is a string
             if isinstance(request.chat_input, str):
                 message = request.chat_input
-            # Check if the request has functions
-            elif request.functions:
-                # Parse the list into the desired template
-                message = self.genereate_tool_messege(request.chat_input)
-            # Check if the request.chat_input is in the specified format
+
+            # Check if the message is in the OpenAI format
             elif isinstance(request.chat_input, list) and all(
                 isinstance(item, dict) and "role" in item and "content" in item
                 for item in request.chat_input
             ):
-                message = request.chat_input[0]["content"]
-            else:
-                raise HTTPException(
-                    status_code=400, detail="Got a request with an invalid format"
+                system_message, message = self.parse_openai_messages_with_functions(
+                    request.chat_input
                 )
+
+            # Check if has functions and is in OpenAI format
+            if request.functions and all(
+                isinstance(item, dict) and "role" in item and "content" in item
+                for item in request.chat_input
+            ):
+                message = self.generate_prompt_with_functions(message, system_message)
 
             if request.functions:
                 model = genai.GenerativeModel(request.model, tools=[request.functions])
@@ -86,8 +88,53 @@ class VertexAIProvider(Provider):
             return await asyncio.to_thread(model.generate_content, message, stream=True)
 
         except Exception as e:
-            # Handle any other exceptions that might occur
             raise HTTPException(status_code=500, detail=str(e))
+
+    def generate_prompt_with_functions(self, conversation, system_message):
+        # Create the prompt
+        prompt = ""
+        if system_message:
+            prompt += f"Here are your system instructions: {system_message}\n"
+        prompt += (
+            "Based on the conversation so far, please answer the last questions the user made. "
+            "Here is the conversation:\n"
+            f"{conversation}\n\n"
+        )
+        return prompt
+
+    def parse_openai_messages_with_functions(self, messages):
+        system_message = ""
+        conversation = []
+
+        for message in messages:
+            role = message["role"]
+            content = message.get("content")
+            function_call = message.get("function_call")
+
+            if role == "system":
+                system_message = content
+            elif role == "user":
+                conversation.append(f"User: {content}")
+            elif role == "assistant":
+                if function_call:
+                    # Handle function call messages
+                    function_name = function_call.get("name")
+                    arguments = function_call.get("arguments", "{}")
+                    conversation.append(
+                        f"Assistant called function '{function_name}' with arguments {arguments}"
+                    )
+                else:
+                    conversation.append(f"Assistant: {content}")
+            elif role == "function":
+                function_name = message.get("name")
+                conversation.append(
+                    f"Function '{function_name}' responded with: {content}"
+                )
+
+        # Join the conversation parts with newlines
+        conversation_str = "\n".join(conversation)
+
+        return system_message, conversation_str
 
     def genereate_tool_messege(self, chat_input: List[Dict[str, Any]]) -> str:
         question = next(
