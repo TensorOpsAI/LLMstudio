@@ -55,6 +55,9 @@ class VertexAIProvider(Provider):
         self, request: VertexAIRequest
     ) -> Coroutine[Any, Any, Generator]:
         """Initialize Vertex AI"""
+
+        print(f'request.chat_input: {request.chat_input}')
+
         try:
             # Init genai
             genai.configure(api_key=request.api_key or self.GOOGLE_API_KEY)

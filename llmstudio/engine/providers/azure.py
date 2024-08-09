@@ -44,6 +44,9 @@ class AzureProvider(Provider):
         self, request: AzureRequest
     ) -> Coroutine[Any, Any, Generator]:
         """Generate an AzureOpenAI client"""
+
+        print(f'request.chat_input: {request.chat_input}')
+
         try:
             if request.base_url or self.BASE_URL:
                 client = OpenAI(
