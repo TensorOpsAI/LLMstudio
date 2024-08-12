@@ -46,6 +46,7 @@ class AzureLlamaProvider(Provider):
         super().__init__(config)
         self.API_KEY = os.getenv("LLAMA_API_KEY")
         self.BASE_URL = os.getenv("LLAMA_BASE_URL")
+        self.request = None
         self.has_functions = False
         self.has_tools = False
         self.functions_called = False
@@ -59,15 +60,12 @@ class AzureLlamaProvider(Provider):
     ) -> Coroutine[Any, Any, Generator]:
         """Generate an AzureOpenAI client"""
 
-        print(f'request.chat_input: {request.chat_input}')
-        print(f'request.tools: {request.tools}')
-        print(f'request.functions: {request.functions}')
-
         # Set functions and tools indicators
-        if request.functions:
-            self.has_functions = True
-        elif request.tools:
-            self.has_tools = True
+        # if request.functions:
+        #     self.has_functions = True
+        # elif request.tools:
+        #     self.has_tools = True
+        self.request = request
 
         try:
             # 1. Initialize Client
@@ -79,12 +77,13 @@ class AzureLlamaProvider(Provider):
             # 2. Transoform prompt into openai format if not already.
             message = self.ensure_openai_format(request.chat_input)
             
-            # 3. Add functions to the conversation, if functions are provided.
-            if self.has_functions:
-                message = self.create_conversation_with_function_prompt(message, request.functions)
-            elif self.has_tools:
-                message = self.create_conversation_with_tool_prompt(message, request.tools)
+            # 3. Add functions/tools to the conversation, if they are provided.
+            if self.request.functions:
+                message = self.create_conversation_with_function_prompt(message, self.request.functions)
+            elif self.request.tools:
+                message = self.create_conversation_with_tool_prompt(message, self.request.tools)
 
+            print(message)
             return await asyncio.to_thread(
                 client.chat.completions.create,
                 model=request.model,
@@ -96,10 +95,18 @@ class AzureLlamaProvider(Provider):
             raise HTTPException(status_code=e.status_code, detail=e.response.json())
 
     def ensure_openai_format(self, chat_input):
+        print(chat_input)
         # Check if the input is already in the expected list of dictionaries format
         if isinstance(chat_input, list):
             # Check if each item in the list is a dictionary with 'role' and 'content' keys
             if all(isinstance(item, dict) and 'role' in item and 'content' in item for item in chat_input):
+                # Remove 'tool_call_id' and 'name' if they exist in any dictionary
+                for item in chat_input:
+                    item.pop('tool_call_id', None)
+                    item.pop('name', None)
+                    # Change role from 'tool' to 'assistant' if applicable
+                    # if item.get('role') == 'tool':
+                    #     item['role'] = 'assistant'
                 return chat_input
             else:
                 # If it's a list but doesn't have the proper structure, consider it invalid
@@ -109,7 +116,7 @@ class AzureLlamaProvider(Provider):
             return [{"role": "user", "content": chat_input}]
         else:
             # If it's neither a list nor a string, it's not a supported format
-            raise TypeError("Input must be either a string or a list of dictionaries in the expected format.")
+            raise TypeError("Input must be either a string, a dictionary, or a list of dictionaries in the expected format.")
     
     def create_conversation_with_tool_prompt(self, message, tools):
         # Constructing the tool prompt
@@ -133,33 +140,34 @@ class AzureLlamaProvider(Provider):
         - Required parameters MUST be specified.
         - Put the entire function call reply on one line.
         - If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls.
+        - If you have already called a tool and got the response for the users question please reply with the response.
         """
 
         new_message = self.inject_tool_prompt(tool_prompt, message)
         return new_message
 
-    def create_conversation_with_function_prompt(self, message, functions):
-        # Constructing the tool prompt
-        tool_prompt = "You have access to the following functions:\n\n"
+    # def create_conversation_with_function_prompt(self, message, functions):
+    #     # Constructing the tool prompt
+    #     tool_prompt = "You have access to the following functions:\n\n"
 
-        for function in functions:
-            tool_prompt += f"Use the function '{function['name']}' to '{function['description']}':\n"
-            tool_prompt += f"{json.dumps(function)}\n\n"
+    #     for function in functions:
+    #         tool_prompt += f"Use the function '{function['name']}' to '{function['description']}':\n"
+    #         tool_prompt += f"{json.dumps(function)}\n\n"
 
-        tool_prompt += """
-        If you choose to call a function, ONLY reply in the following format with no prefix or suffix:
-        §example_function_name§{{\"example_name\": \"example_value\"}}
+    #     tool_prompt += """
+    #     If you choose to call a function, ONLY reply in the following format with no prefix or suffix:
+    #     §example_function_name§{{\"example_name\": \"example_value\"}}
 
-        Reminder:
-        - Function calls MUST follow the specified format.
-        - Only call one function at a time
-        - Required parameters MUST be specified.
-        - Put the entire function call reply on one line.
-        - If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls.
-        """
+    #     Reminder:
+    #     - Function calls MUST follow the specified format.
+    #     - Only call one function at a time
+    #     - Required parameters MUST be specified.
+    #     - Put the entire function call reply on one line.
+    #     - If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls.
+    #     """
 
-        new_message = self.inject_tool_prompt(tool_prompt, message)
-        return new_message
+    #     new_message = self.inject_tool_prompt(tool_prompt, message)
+    #     return new_message
 
     def inject_tool_prompt(self,tool_prompt, message):
 
@@ -185,188 +193,183 @@ class AzureLlamaProvider(Provider):
         self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:
         # ... existing code before the if self.has_functions ...
-
-        if self.has_functions:
-            print('has_functions')
-            async for chunk in self.handle_function_response(response, **kwargs):
-                yield chunk
-        elif self.has_tools:
-            print('has_tools')
+                    
+        if self.request.tools:
             async for chunk in self.handle_tool_response(response, **kwargs):
                 yield chunk
         else:
             for chunk in response:
                 yield chunk.model_dump()
 
-    async def handle_function_response(
-        self, response: AsyncGenerator, **kwargs
-    ) -> AsyncGenerator[str, None]:
-        saving = False
-        function_name = ""
-        for chunk in response:
-            content = chunk.choices[0].delta.content
-            if content is not None:
-                if '§' in content:
-                    if saving:
-                        # End of function call, stop saving
-                        saving = False
-                        function_name += content.split('§')[0]
-                        print(f'function_name: {function_name}')
-
-                        # First chunk
-                        chunk = ChatCompletionChunk(
-                            id=str(uuid.uuid4()),
-                            choices=[
-                                Choice(
-                                    delta=ChoiceDelta(
-                                        role="assistant",
-                                        function_call=ChoiceDeltaFunctionCall(
-                                            name=function_name, arguments=""
-                                        ),
-                                    ),
-                                    finish_reason=None,
-                                    index=0,
-                                )
-                            ],
-                            created=int(time.time()),
-                            model=kwargs.get("request").model,
-                            object="chat.completion.chunk",
-                        ).model_dump()
-                        print(chunk)
-                        yield chunk
-
-                        function_name = ""
-                    else:
-                        # Start of function call, start saving
-                        saving = True
-                        function_name += content.split('§')[1]
-                elif saving:
-                    function_name += content
-                # Check if finish_reason is 'stop'
-                elif chunk.choices[0].finish_reason == 'stop':
-                    chunk = ChatCompletionChunk(
-                        id=str(uuid.uuid4()),
-                        choices=[
-                            Choice(
-                                delta=ChoiceDelta(), finish_reason="function_call", index=0
-                            )
-                        ],
-                        created=int(time.time()),
-                        model=kwargs.get("request").model,
-                        object="chat.completion.chunk",
-                    ).model_dump()
-                    print(chunk)
-                    yield chunk
-                else:
-                    chunk = ChatCompletionChunk(
-                        id=str(uuid.uuid4()),
-                        choices=[
-                            Choice(
-                                delta=ChoiceDelta(
-                                    role=None,
-                                    function_call=ChoiceDeltaFunctionCall(
-                                        arguments=content, name=None
-                                    ),
-                                ),
-                                finish_reason=None,
-                                index=0,
-                            )
-                        ],
-                        created=int(time.time()),
-                        model=kwargs.get("request").model,
-                        object="chat.completion.chunk",
-                    ).model_dump()
-                    print(chunk)
-                    yield chunk
-
     async def handle_tool_response(
-        self, response: AsyncGenerator, **kwargs
-    ) -> AsyncGenerator[str, None]:
-        print('handle tool response')
-        saving = False
-        function_name = ""
-        for chunk in response:
-            content = chunk.choices[0].delta.content
-            if content is not None:
-                if '§' in content:
-                    if saving:
-                        
-                        # End of function call, stop saving
-                        saving = False
-                        function_name += content.split('§')[0]
-                        print(f'function_name: {function_name}')
-                        # First chunk
-                        chunk = ChatCompletionChunk(
-                            id=str(uuid.uuid4()),
-                            choices=[
-                                Choice(
-                                    delta=ChoiceDelta(
-                                        role="assistant",
-                                        tool_calls=[ChoiceDeltaToolCall(
-                                            index=0, 
-                                            id='call_' + 'testid1234',
-                                            function=ChoiceDeltaToolCallFunction(
-                                                name=function_name,
-                                                arguments="",
-                                                type="function"
-                                            )
-                                        )],        
-                                    ),
-                                    finish_reason=None,
-                                    index=0,
-                                )
-                            ],
-                            created=int(time.time()),
-                            model=kwargs.get("request").model,
-                            object="chat.completion.chunk",
-                        ).model_dump()
-                        print(chunk)
-                        yield chunk
+            self, response: AsyncGenerator, **kwargs
+        ) -> AsyncGenerator[str, None]:
+            saving = False
+            function_name = ""
+            function_response = False
+            for chunk in response:
+                content = chunk.choices[0].delta.content
+                if content is not None:
+                    if '§' in content:
+                        if saving:
+                            
+                            # End of function call, stop saving
+                            saving = False
+                            function_response = True
+                            function_name += content.split('§')[0]
+                            # First chunk
+                            chunk = ChatCompletionChunk(
+                                id=str(uuid.uuid4()),
+                                choices=[
+                                    Choice(
+                                        delta=ChoiceDelta(
+                                            role="assistant",
+                                            tool_calls=[ChoiceDeltaToolCall(
+                                                index=0, 
+                                                id='call_' + 'testid1234',
+                                                function=ChoiceDeltaToolCallFunction(
+                                                    name=function_name,
+                                                    arguments="",
+                                                    type="function"
+                                                )
+                                            )],        
+                                        ),
+                                        finish_reason=None,
+                                        index=0,
+                                    )
+                                ],
+                                created=int(time.time()),
+                                model=kwargs.get("request").model,
+                                object="chat.completion.chunk",
+                            ).model_dump()
+                            yield chunk
 
-                        function_name = ""
+                            function_name = ""
+                        else:
+                            # Start of function call, start saving
+                            saving = True
+                            function_name += content.split('§')[1]
+                    elif saving:
+                        function_name += content
+                    # Check if finish_reason is 'stop'
+                    elif function_response:
+                        if chunk.choices[0].finish_reason == 'stop':
+                            chunk = ChatCompletionChunk(
+                                id=str(uuid.uuid4()),
+                                choices=[
+                                    Choice(
+                                        delta=ChoiceDelta(), finish_reason="tool_calls", index=0
+                                    )
+                                ],
+                                created=int(time.time()),
+                                model=kwargs.get("request").model,
+                                object="chat.completion.chunk",
+                            ).model_dump()
+                            yield chunk
+                        else:
+                            chunk = ChatCompletionChunk(
+                                    id=str(uuid.uuid4()),
+                                    choices=[
+                                        Choice(
+                                            delta=ChoiceDelta(
+                                                tool_calls=[ChoiceDeltaToolCall(
+                                                    index=0, 
+                                                    function=ChoiceDeltaToolCallFunction(
+                                                        arguments=content,
+                                                    )
+                                                )],        
+                                            ),
+                                            finish_reason=None,
+                                            index=0,
+                                        )
+                                    ],
+                                    created=int(time.time()),
+                                    model=kwargs.get("request").model,
+                                    object="chat.completion.chunk",
+                                ).model_dump()
+                            yield chunk
                     else:
-                        # Start of function call, start saving
-                        print(f'Is saving')
-                        saving = True
-                        function_name += content.split('§')[1]
-                elif saving:
-                    function_name += content
-                # Check if finish_reason is 'stop'
-                elif chunk.choices[0].finish_reason == 'stop':
-                    chunk = ChatCompletionChunk(
-                        id=str(uuid.uuid4()),
-                        choices=[
-                            Choice(
-                                delta=ChoiceDelta(), finish_reason="tool_calls", index=0
-                            )
-                        ],
-                        created=int(time.time()),
-                        model=kwargs.get("request").model,
-                        object="chat.completion.chunk",
-                    ).model_dump()
-                    print(chunk)
-                    yield chunk
-                else:
-                    
-                    chunk = ChatCompletionChunk(
-                            id=str(uuid.uuid4()),
-                            choices=[
-                                Choice(
-                                    delta=ChoiceDelta(
-                                        tool_calls=[ChoiceDeltaToolCall(
-                                            index=0, 
-                                            function=ChoiceDeltaToolCallFunction(
-                                                arguments=content,
-                                            )
-                                        )],        
-                                    ),
-                                    finish_reason=None,
-                                    index=0,
-                                )
-                            ],
-                            created=int(time.time()),
-                            model=kwargs.get("request").model,
-                            object="chat.completion.chunk",
-                        ).model_dump()
-                    print(chunk)
-                    yield chunk
+                        yield chunk.model_dump()
+
+    # async def handle_function_response(
+    #     self, response: AsyncGenerator, **kwargs
+    # ) -> AsyncGenerator[str, None]:
+    #     saving = False
+    #     function_name = ""
+    #     for chunk in response:
+    #         content = chunk.choices[0].delta.content
+    #         if content is not None:
+    #             if '§' in content:
+    #                 if saving:
+    #                     # End of function call, stop saving
+    #                     saving = False
+    #                     function_name += content.split('§')[0]
+    #                     print(f'function_name: {function_name}')
+
+    #                     # First chunk
+    #                     chunk = ChatCompletionChunk(
+    #                         id=str(uuid.uuid4()),
+    #                         choices=[
+    #                             Choice(
+    #                                 delta=ChoiceDelta(
+    #                                     role="assistant",
+    #                                     function_call=ChoiceDeltaFunctionCall(
+    #                                         name=function_name, arguments=""
+    #                                     ),
+    #                                 ),
+    #                                 finish_reason=None,
+    #                                 index=0,
+    #                             )
+    #                         ],
+    #                         created=int(time.time()),
+    #                         model=kwargs.get("request").model,
+    #                         object="chat.completion.chunk",
+    #                     ).model_dump()
+    #                     print(chunk)
+    #                     yield chunk
+
+    #                     function_name = ""
+    #                 else:
+    #                     # Start of function call, start saving
+    #                     saving = True
+    #                     function_name += content.split('§')[1]
+    #             elif saving:
+    #                 function_name += content
+    #             # Check if finish_reason is 'stop'
+    #             elif chunk.choices[0].finish_reason == 'stop':
+    #                 chunk = ChatCompletionChunk(
+    #                     id=str(uuid.uuid4()),
+    #                     choices=[
+    #                         Choice(
+    #                             delta=ChoiceDelta(), finish_reason="function_call", index=0
+    #                         )
+    #                     ],
+    #                     created=int(time.time()),
+    #                     model=kwargs.get("request").model,
+    #                     object="chat.completion.chunk",
+    #                 ).model_dump()
+    #                 print(chunk)
+    #                 yield chunk
+    #             else:
+    #                 chunk = ChatCompletionChunk(
+    #                     id=str(uuid.uuid4()),
+    #                     choices=[
+    #                         Choice(
+    #                             delta=ChoiceDelta(
+    #                                 role=None,
+    #                                 function_call=ChoiceDeltaFunctionCall(
+    #                                     arguments=content, name=None
+    #                                 ),
+    #                             ),
+    #                             finish_reason=None,
+    #                             index=0,
+    #                         )
+    #                     ],
+    #                     created=int(time.time()),
+    #                     model=kwargs.get("request").model,
+    #                     object="chat.completion.chunk",
+    #                 ).model_dump()
+    #                 print(chunk)
+    #                 yield chunk
+
+    
