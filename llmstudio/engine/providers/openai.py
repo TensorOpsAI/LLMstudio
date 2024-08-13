@@ -50,9 +50,9 @@ class OpenAIProvider(Provider):
                     if isinstance(request.chat_input, str)
                     else request.chat_input
                 ),
-                tools=request.tools,
-                # functions=request.functions,
-                # function_call="auto" if request.functions else None,
+                # tools=request.tools,
+                functions=request.functions,
+                function_call="auto" if request.functions else None,
                 stream=True,
                 response_format=request.response_format,
                 **request.parameters.model_dump(),
