@@ -34,7 +34,6 @@ class AzureLlamaRequest(ChatRequest):  # Renamed from AzureRequest
     api_version: Optional[str] = None
     base_url: Optional[str] = None
     parameters: Optional[AzureLlamaParameters] = AzureLlamaParameters()  # Updated reference
-    functions: Optional[List[Dict[str, Any]]] = None
     tools: Optional[List[Dict[str, Any]]] = None
     chat_input: Any
     response_format: Optional[Dict[str, str]] = None
@@ -44,13 +43,9 @@ class AzureLlamaRequest(ChatRequest):  # Renamed from AzureRequest
 class AzureLlamaProvider(Provider):
     def __init__(self, config):
         super().__init__(config)
-        self.API_KEY = os.getenv("LLAMA_API_KEY")
-        self.BASE_URL = os.getenv("LLAMA_BASE_URL")
+        self.API_KEY = os.getenv("AZURE_API_KEY")
+        self.BASE_URL = os.getenv("AZURE_BASE_URL")
         self.request = None
-        self.has_functions = False
-        self.has_tools = False
-        self.functions_called = False
-        self.tools_called = False
 
     def validate_request(self, request: AzureLlamaRequest):  # Updated reference
         return AzureLlamaRequest(**request)  # Updated reference
@@ -60,139 +55,37 @@ class AzureLlamaProvider(Provider):
     ) -> Coroutine[Any, Any, Generator]:
         """Generate an AzureOpenAI client"""
 
-        # Set functions and tools indicators
-        # if request.functions:
-        #     self.has_functions = True
-        # elif request.tools:
-        #     self.has_tools = True
         self.request = request
 
         try:
+            
             # 1. Initialize Client
             client = OpenAI(
                 api_key=request.api_key or self.API_KEY,
                 base_url=request.base_url or self.BASE_URL,
             )
             
-            # 2. Transoform prompt into openai format if not already.
-            message = self.ensure_openai_format(request.chat_input)
+            # 2. Create Llama Prompt.
+            user_message = self.convert_to_openai_format(request.chat_input)
+            content = """<|begin_of_text|>"""
+            content = self.add_system_message(user_message, content, request.tools)
+            # content = self.add_tool_instructions(content, request.tools)
+            content = self.add_conversation(user_message,content)
+            llama_message = [{'role': 'user', 'content': content}]
             
-            # 3. Add functions/tools to the conversation, if they are provided.
-            if self.request.functions:
-                message = self.create_conversation_with_function_prompt(message, self.request.functions)
-            elif self.request.tools:
-                message = self.create_conversation_with_tool_prompt(message, self.request.tools)
-
-            print(message)
             return await asyncio.to_thread(
                 client.chat.completions.create,
                 model=request.model,
-                messages=message,
+                messages=llama_message,
                 stream=True,
             )
 
         except openai._exceptions.APIError as e:
             raise HTTPException(status_code=e.status_code, detail=e.response.json())
 
-    def ensure_openai_format(self, chat_input):
-        print(chat_input)
-        # Check if the input is already in the expected list of dictionaries format
-        if isinstance(chat_input, list):
-            # Check if each item in the list is a dictionary with 'role' and 'content' keys
-            if all(isinstance(item, dict) and 'role' in item and 'content' in item for item in chat_input):
-                # Remove 'tool_call_id' and 'name' if they exist in any dictionary
-                for item in chat_input:
-                    item.pop('tool_call_id', None)
-                    item.pop('name', None)
-                    # Change role from 'tool' to 'assistant' if applicable
-                    # if item.get('role') == 'tool':
-                    #     item['role'] = 'assistant'
-                return chat_input
-            else:
-                # If it's a list but doesn't have the proper structure, consider it invalid
-                raise ValueError("Each item in the list must be a dictionary with 'role' and 'content' keys.")
-        elif isinstance(chat_input, str):
-            # Convert string to the OpenAI chat format
-            return [{"role": "user", "content": chat_input}]
-        else:
-            # If it's neither a list nor a string, it's not a supported format
-            raise TypeError("Input must be either a string, a dictionary, or a list of dictionaries in the expected format.")
-    
-    def create_conversation_with_tool_prompt(self, message, tools):
-        # Constructing the tool prompt
-        tool_prompt = "You have access to the following tools:\n\n"
-
-        for tool in tools:
-            if tool['type'] == 'function':
-                func = tool['function']
-                tool_prompt += f"Use the function '{func['name']}' to '{func['description']}':\n"
-                # Formatting the parameters to show the user how to use them
-                params_info = json.dumps(func['parameters'], indent=4)
-                tool_prompt += f"Parameters format:\n{params_info}\n\n"
-
-        tool_prompt += """
-        If you choose to call a function, ONLY reply in the following format with no prefix or suffix:
-        §function_name§{{"param_name": "param_value"}}
-
-        Reminder:
-        - Function calls MUST follow the specified format.
-        - Only call one function at a time
-        - Required parameters MUST be specified.
-        - Put the entire function call reply on one line.
-        - If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls.
-        - If you have already called a tool and got the response for the users question please reply with the response.
-        """
-
-        new_message = self.inject_tool_prompt(tool_prompt, message)
-        return new_message
-
-    # def create_conversation_with_function_prompt(self, message, functions):
-    #     # Constructing the tool prompt
-    #     tool_prompt = "You have access to the following functions:\n\n"
-
-    #     for function in functions:
-    #         tool_prompt += f"Use the function '{function['name']}' to '{function['description']}':\n"
-    #         tool_prompt += f"{json.dumps(function)}\n\n"
-
-    #     tool_prompt += """
-    #     If you choose to call a function, ONLY reply in the following format with no prefix or suffix:
-    #     §example_function_name§{{\"example_name\": \"example_value\"}}
-
-    #     Reminder:
-    #     - Function calls MUST follow the specified format.
-    #     - Only call one function at a time
-    #     - Required parameters MUST be specified.
-    #     - Put the entire function call reply on one line.
-    #     - If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls.
-    #     """
-
-    #     new_message = self.inject_tool_prompt(tool_prompt, message)
-    #     return new_message
-
-    def inject_tool_prompt(self,tool_prompt, message):
-
-        # Creating the new message list starting with the system prompt if it exists
-        new_message = []
-        if message and message[0]['role'] == 'system':
-            new_message.append(message[0])  # Add the system prompt if present
-
-        # Adding the tool prompt
-        new_message.append({"role": "user", "content": tool_prompt})
-        # Adding the assistant's initial reply
-        new_message.append({"role": "assistant", "content": "Ok."})
-
-        # Adding the rest of the conversation after the system prompt and the assistant's initial reply
-        if message and message[0]['role'] == 'system':
-            new_message.extend(message[1:])
-        else:
-            new_message.extend(message)
-
-        return new_message
-
     async def parse_response(
         self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:
-        # ... existing code before the if self.has_functions ...
                     
         if self.request.tools:
             async for chunk in self.handle_tool_response(response, **kwargs):
@@ -291,85 +184,118 @@ class AzureLlamaProvider(Provider):
                     else:
                         yield chunk.model_dump()
 
-    # async def handle_function_response(
-    #     self, response: AsyncGenerator, **kwargs
-    # ) -> AsyncGenerator[str, None]:
-    #     saving = False
-    #     function_name = ""
-    #     for chunk in response:
-    #         content = chunk.choices[0].delta.content
-    #         if content is not None:
-    #             if '§' in content:
-    #                 if saving:
-    #                     # End of function call, stop saving
-    #                     saving = False
-    #                     function_name += content.split('§')[0]
-    #                     print(f'function_name: {function_name}')
+    def convert_to_openai_format(self, message):
+        # Check if the input is a simple string
+        if isinstance(message, str):
+            # Convert the string into the OpenAI message format
+            openai_message = [{'role': 'user', 'content': message}]
+            return openai_message
+        
+        # If the message is already in OpenAI format, we can handle it later
+        return message
 
-    #                     # First chunk
-    #                     chunk = ChatCompletionChunk(
-    #                         id=str(uuid.uuid4()),
-    #                         choices=[
-    #                             Choice(
-    #                                 delta=ChoiceDelta(
-    #                                     role="assistant",
-    #                                     function_call=ChoiceDeltaFunctionCall(
-    #                                         name=function_name, arguments=""
-    #                                     ),
-    #                                 ),
-    #                                 finish_reason=None,
-    #                                 index=0,
-    #                             )
-    #                         ],
-    #                         created=int(time.time()),
-    #                         model=kwargs.get("request").model,
-    #                         object="chat.completion.chunk",
-    #                     ).model_dump()
-    #                     print(chunk)
-    #                     yield chunk
-
-    #                     function_name = ""
-    #                 else:
-    #                     # Start of function call, start saving
-    #                     saving = True
-    #                     function_name += content.split('§')[1]
-    #             elif saving:
-    #                 function_name += content
-    #             # Check if finish_reason is 'stop'
-    #             elif chunk.choices[0].finish_reason == 'stop':
-    #                 chunk = ChatCompletionChunk(
-    #                     id=str(uuid.uuid4()),
-    #                     choices=[
-    #                         Choice(
-    #                             delta=ChoiceDelta(), finish_reason="function_call", index=0
-    #                         )
-    #                     ],
-    #                     created=int(time.time()),
-    #                     model=kwargs.get("request").model,
-    #                     object="chat.completion.chunk",
-    #                 ).model_dump()
-    #                 print(chunk)
-    #                 yield chunk
-    #             else:
-    #                 chunk = ChatCompletionChunk(
-    #                     id=str(uuid.uuid4()),
-    #                     choices=[
-    #                         Choice(
-    #                             delta=ChoiceDelta(
-    #                                 role=None,
-    #                                 function_call=ChoiceDeltaFunctionCall(
-    #                                     arguments=content, name=None
-    #                                 ),
-    #                             ),
-    #                             finish_reason=None,
-    #                             index=0,
-    #                         )
-    #                     ],
-    #                     created=int(time.time()),
-    #                     model=kwargs.get("request").model,
-    #                     object="chat.completion.chunk",
-    #                 ).model_dump()
-    #                 print(chunk)
-    #                 yield chunk
-
+    def add_system_message(self, openai_message, llama_message, tools):
     
+        system_message = ""
+        # Iterate over each message in the OpenAI format
+        system_message_found = False
+        for message in openai_message:
+            # Check if the role is 'system' and the content is not None
+            if message['role'] == 'system' and message['content'] is not None:
+                system_message_found = True
+                # Create the formatted system message for LLaMA 3.1
+                system_message = f"""
+<|start_header_id|>system<|end_header_id|>
+{message['content']}
+
+"""
+        if not system_message_found:
+            # Default system message if no system message is found
+            system_message = """
+<|start_header_id|>system<|end_header_id|>
+You are a helpful AI assistant.
+
+"""
+        
+        # Constructing the tool prompt
+        if tools:
+            system_message = system_message + self.add_tool_instructions(tools)
+        
+        end_tag = "\n<|eot_id|>"
+        return llama_message + system_message + end_tag
+    
+    def add_tool_instructions(self,tools):
+        
+        # Constructing the tool prompt
+        tool_prompt = """
+You have access to the following tools:
+"""
+
+        for tool in tools:
+            if tool['type'] == 'function':
+                func = tool['function']
+                tool_prompt += f"Use the function '{func['name']}' to '{func['description']}':\n"
+                # Formatting the parameters to show the user how to use them
+                params_info = json.dumps(func['parameters'], indent=4)
+                tool_prompt += f"Parameters format:\n{params_info}\n\n"
+
+        tool_prompt += """
+If you choose to call a function, ONLY reply in the following format with no prefix or suffix:
+§function_name§{{"param_name": "param_value"}}
+
+Reminder:
+- Function calls MUST follow the specified format.
+- Only call one function at a time.
+- NEVER call more than one function at a time.
+- Required parameters MUST be specified.
+- Put the entire function call reply on one line.
+- If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls.
+- If you have already called a tool and got the response for the users question please reply with the response.
+"""
+
+        return tool_prompt
+    
+    def add_conversation(self, openai_message, llama_message):
+        # Iterate over each message in the OpenAI message list
+        for message in openai_message:
+            # Skip system messages
+            if message['role'] == 'system':
+                continue
+            
+            # Check if the message has tool calls
+            elif 'tool_calls' in message:
+                for tool_call in message['tool_calls']:
+                    function_name = tool_call['function']['name']
+                    arguments = tool_call['function']['arguments']
+                    llama_message += f"""
+<|start_header_id|>assistant<|end_header_id|>
+<function={function_name}>{arguments}</function>
+<|eom_id|>
+        """
+        
+            # Check if the message has tool responses
+            elif 'tool_call_id' in message:
+                tool_response = message['content']
+                llama_message += f"""
+<|start_header_id|>ipython<|end_header_id|>
+{tool_response}
+<|eot_id|>
+        """
+            
+            # Check if it is an assistant call
+            elif message['role'] == 'assistant' and message['content'] is not None:
+                llama_message += f"""
+<|start_header_id|>assistant<|end_header_id|>
+{message['content']}
+<|eot_id|>
+            """
+            
+            # Check if it is an assistant call
+            elif message['role'] == 'user' and message['content'] is not None:
+                llama_message += f"""
+<|start_header_id|>user<|end_header_id|>
+{message['content']}
+<|eot_id|>
+            """
+        
+        return llama_message

@@ -201,16 +201,10 @@ class Provider:
             tool_call_name = tool_calls[0].get("function").get("name")
             tool_call_type = tool_calls[0].get("function").get("type")
             tool_call_arguments = ""
-
-            print(f"Tool Call ID: {tool_call_id}")
-            print(f"Tool Call Name: {tool_call_name}")
-            print(f"Tool Call Type: {tool_call_type}")
             
             for chunk in tool_calls[1:]:
                 tool_call_arguments += chunk.get("function").get("arguments")
-            print(f"Tool Call Arguments: {tool_call_arguments}")
             try:
-                
                 return (
                     ChatCompletion(
                         id=chunks[-1].get("id"),
@@ -243,7 +237,7 @@ class Provider:
                     tool_call_arguments,
                 )
             except Exception as e:
-                print(f'Error: {e}')
+                raise e
         elif finish_reason == "function_call":
             function_calls = [
                 chunk.get("choices")[0].get("delta").get("function_call")

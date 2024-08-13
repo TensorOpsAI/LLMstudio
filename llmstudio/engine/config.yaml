@@ -253,14 +253,14 @@ providers:
     chat: true
     embed: true
     keys:
-      - AZURE_API_KEY
-      - AZURE_BASE_URL
+      - LLAMA_API_KEY
+      - LLAMA_BASE_URL
     models:
       Meta-Llama-3.1-405B-Instruct:
         mode: chat
         max_tokens: 128000
-        input_token_cost: 0 # placeholder
-        output_token_cost: 0 # placeholder
+        input_token_cost: 0.00533
+        output_token_cost: 0.016
     parameters:
       temperature:
         name: "Temperature"
