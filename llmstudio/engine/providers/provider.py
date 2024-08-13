@@ -186,9 +186,9 @@ class Provider:
 
     def join_chunks(self, chunks, request):
         from llmstudio.engine.providers.azure import AzureRequest
+        from llmstudio.engine.providers.azurellama import AzureLlamaRequest
         from llmstudio.engine.providers.openai import OpenAIRequest
         from llmstudio.engine.providers.vertex import VertexAIRequest
-        from llmstudio.engine.providers.azurellama import AzureLlamaRequest
 
         finish_reason = chunks[-1].get("choices")[0].get("finish_reason")
 
@@ -201,7 +201,7 @@ class Provider:
             tool_call_name = tool_calls[0].get("function").get("name")
             tool_call_type = tool_calls[0].get("function").get("type")
             tool_call_arguments = ""
-            
+
             for chunk in tool_calls[1:]:
                 tool_call_arguments += chunk.get("function").get("arguments")
             try:
@@ -249,9 +249,11 @@ class Provider:
 
             if isinstance(request, AzureRequest):
                 function_call_name = function_calls[0].get("name")
-            elif isinstance(request, OpenAIRequest) or isinstance(
-                request, VertexAIRequest
-            ) or isinstance(request, AzureLlamaRequest):
+            elif (
+                isinstance(request, OpenAIRequest)
+                or isinstance(request, VertexAIRequest)
+                or isinstance(request, AzureLlamaRequest)
+            ):
                 function_call_name = (
                     chunks[0]
                     .get("choices")[0]
@@ -265,9 +267,11 @@ class Provider:
                     part = chunk.get("arguments", "")
                     if part:
                         function_call_arguments += part
-                elif isinstance(request, OpenAIRequest) or isinstance(
-                    request, VertexAIRequest
-                )or isinstance(request, AzureLlamaRequest):
+                elif (
+                    isinstance(request, OpenAIRequest)
+                    or isinstance(request, VertexAIRequest)
+                    or isinstance(request, AzureLlamaRequest)
+                ):
                     function_call_arguments += chunk.get("arguments")
 
             return (

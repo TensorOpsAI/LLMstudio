@@ -50,7 +50,7 @@ class OpenAIProvider(Provider):
                     if isinstance(request.chat_input, str)
                     else request.chat_input
                 ),
-                tools = request.tools,
+                tools=request.tools,
                 # functions=request.functions,
                 # function_call="auto" if request.functions else None,
                 stream=True,
