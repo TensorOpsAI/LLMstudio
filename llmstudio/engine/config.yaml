@@ -317,9 +317,9 @@ providers:
           min: 0
           max: 2
           step: 0.01
-  vert:
-      id: vert
-      name: Vert
+  newvertex:
+      id: newvertex
+      name: newVertex
       chat: true
       embed: true
       keys:

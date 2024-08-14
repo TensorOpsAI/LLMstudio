@@ -186,6 +186,7 @@ class Provider:
         from llmstudio.engine.providers.azure import AzureRequest
         from llmstudio.engine.providers.openai import OpenAIRequest
         from llmstudio.engine.providers.vertex import VertexAIRequest
+        from llmstudio.engine.providers.newvertex import newVertexAIRequest
 
         finish_reason = chunks[-1].get("choices")[0].get("finish_reason")
 
