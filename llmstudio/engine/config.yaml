@@ -325,7 +325,7 @@ providers:
       keys:
         - GOOGLE_API_KEY
       models:
-        gemini-1.5-flash:
+        gemini-1.5-pro-latest:
           mode: chat
           max_tokens: 1000000
           input_token_cost:
@@ -338,24 +338,6 @@ providers:
               cost: 0.00000105
             - range: [128001, null]
               cost: 0.0000021
-        gemini-1.5-pro:
-          mode: chat
-          max_tokens: 1000000
-          input_token_cost:
-            - range: [0, 128000]
-              cost: 0.0000035
-            - range: [128001, null]
-              cost: 0.000007
-          output_token_cost:
-            - range: [0, 128000]
-              cost: 0.0000105
-            - range: [128001, null]
-              cost: 0.000021
-        gemini-1.0-pro:
-          mode: chat
-          max_tokens: 1000000
-          input_token_cost: 0.0000005
-          output_token_cost: 0.0000015
       parameters:
         temperature:
           name: "Temperature"
