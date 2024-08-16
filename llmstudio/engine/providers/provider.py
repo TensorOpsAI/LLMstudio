@@ -185,19 +185,19 @@ class Provider:
     def join_chunks(self, chunks, request):
         from llmstudio.engine.providers.azure import AzureRequest
         from llmstudio.engine.providers.openai import OpenAIRequest
-        from llmstudio.engine.providers.vertex import VertexAIRequest
-        from llmstudio.engine.providers.newvertex import newVertexAIRequest
+        from llmstudio.engine.providers.vertexai import VertexAIRequest
 
         finish_reason = chunks[-1].get("choices")[0].get("finish_reason")
-
         if finish_reason == "tool_calls":
             tool_calls = [
                 chunk.get("choices")[0].get("delta").get("tool_calls")[0]
                 for chunk in chunks[1:-1]
             ]
+
             tool_call_id = tool_calls[0].get("id")
             tool_call_name = tool_calls[0].get("function").get("name")
-            tool_call_type = tool_calls[0].get("type")
+            # tool_call_type = tool_calls[0].get("function").get("type")
+            tool_call_type = 'function'
             tool_call_arguments = ""
             for chunk in tool_calls[1:]:
                 tool_call_arguments += chunk.get("function").get("arguments")

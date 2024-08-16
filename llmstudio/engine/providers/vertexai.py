@@ -17,18 +17,21 @@ from typing import (
 from pydantic import BaseModel, ValidationError
 import requests
 from fastapi import HTTPException
-from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import (
     Choice,
     ChoiceDelta,
     ChoiceDeltaFunctionCall,
+    ChoiceDeltaToolCall,
+    ChoiceDeltaToolCallFunction,
 )
+
+from openai.types.chat import ChatCompletionChunk
 from pydantic import BaseModel, Field
 
 from llmstudio.engine.providers.provider import ChatRequest, Provider, provider
 
 
-class newVertexParameters(BaseModel):
+class VertexParameters(BaseModel):
     top_p: Optional[float] = Field(default=1, ge=0, le=1)
     top_k: Optional[float] = Field(default=1, ge=0, le=1)
     temperature: Optional[float] = Field(default=1, ge=0, le=2)
@@ -37,8 +40,8 @@ class newVertexParameters(BaseModel):
     presence_penalty: Optional[float] = Field(default=0, ge=0, le=1)
 
 
-class newVertexAIRequest(ChatRequest):
-    parameters: Optional[newVertexParameters] = newVertexParameters()
+class VertexAIRequest(ChatRequest):
+    parameters: Optional[VertexParameters] = VertexParameters()
     tools: Any = None
     chat_input: Union[str, List[Dict[str, Any]]]
 
@@ -87,20 +90,18 @@ class VertexAI(BaseModel):
 
 
 @provider
-class newVertexProvider(Provider):
+class VertexAIProvider(Provider):
     def __init__(self, config):
         super().__init__(config)
         self.GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-    def validate_request(self, request: newVertexAIRequest):
-        return newVertexAIRequest(**request)
+    def validate_request(self, request: VertexAIRequest):
+        return VertexAIRequest(**request)
 
     async def generate_client(
-        self, request: newVertexAIRequest
+        self, request: VertexAIRequest
     ) -> Coroutine[Any, Any, Generator]:
         """Initialize Vertex AI"""
-
-        print(f'tools: {request.tools}')
 
         try:
             # Init genai
@@ -114,8 +115,6 @@ class newVertexProvider(Provider):
             # Convert the chat input into VertexAI format
             tool_payload = self.process_tools(request.tools)
             message = self.convert_openai_to_vertexai(request.chat_input, tool_payload)
-
-            print(f'message: {message}')
             
             # Generate content
             return await asyncio.to_thread(
@@ -129,70 +128,97 @@ class newVertexProvider(Provider):
         self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:
         for chunk in response.iter_content(chunk_size=None):
-            print(f'chunk: {chunk}')
+            
             chunk = json.loads(chunk.decode("utf-8").lstrip("data: "))
             chunk = chunk.get("candidates")[0].get("content")
-            
 
             # Check if it is a function call
-            if chunk.get("parts")[0].get("function_call"):
-                name = chunk.get("parts")[0].__dict__["_pb"].function_call.name
-                args = chunk.get("parts")[0].__dict__["_pb"].function_call.args.fields
-                openai_args = self.parse_string_to_dict(args)
-                str(uuid.uuid4())
+            if 'functionCall' in chunk['parts'][0] and chunk['parts'][0]['functionCall'] is not None:
+                first_chunk = ChatCompletionChunk(
+                    id='chatcmpl-9woLM1b1qGErhTbXA3UBQf2FhUAho', 
+                    choices=[Choice(
+                        delta=ChoiceDelta(
+                            content=None, 
+                            function_call=None, 
+                            role='assistant', 
+                            tool_calls=None
+                            ),  
+                            index=0)
+                            ], created=int(time.time()), 
+                            model=kwargs.get("request").model, 
+                            object='chat.completion.chunk', 
+                            usage=None
+                            )
+                yield first_chunk.model_dump()
 
-                # First chunk
-                yield ChatCompletionChunk(
-                    id=str(uuid.uuid4()),
-                    choices=[
-                        Choice(
-                            delta=ChoiceDelta(
-                                role="assistant",
-                                function_call=ChoiceDeltaFunctionCall(
-                                    name=name, arguments=""
-                                ),
-                            ),
-                            finish_reason=None,
-                            index=0,
-                        )
-                    ],
-                    created=int(time.time()),
-                    model=kwargs.get("request").model,
-                    object="chat.completion.chunk",
-                ).model_dump()
+                for index, functioncall in  enumerate(chunk['parts']):
 
-                # Midle chunk with arguments
-                yield ChatCompletionChunk(
-                    id=str(uuid.uuid4()),
-                    choices=[
-                        Choice(
-                            delta=ChoiceDelta(
-                                role=None,
-                                function_call=ChoiceDeltaFunctionCall(
-                                    arguments=openai_args, name=None
-                                ),
-                            ),
-                            finish_reason=None,
-                            index=0,
-                        )
-                    ],
-                    created=int(time.time()),
-                    model=kwargs.get("request").model,
-                    object="chat.completion.chunk",
-                ).model_dump()
+                    name_chunk = ChatCompletionChunk(
+                                        id=str(uuid.uuid4()),
+                                        choices=[
+                                            Choice(
+                                                delta=ChoiceDelta(
+                                                    role="assistant",
+                                                    tool_calls=[
+                                                        ChoiceDeltaToolCall(
+                                                            index=index,
+                                                            id="call_" + str(uuid.uuid4())[:29],
+                                                            function=ChoiceDeltaToolCallFunction(
+                                                                name=functioncall['functionCall']['name'],
+                                                                arguments="",
+                                                                type="function",
+                                                            ),
+                                                        )
+                                                    ],
+                                                ),
+                                                finish_reason=None,
+                                                index=index,
+                                            )
+                                        ],
+                                        created=int(time.time()),
+                                        model=kwargs.get("request").model,
+                                        object="chat.completion.chunk",
+                                    )
+                    yield name_chunk.model_dump()
+                    
+                    args_chunk = ChatCompletionChunk(
+                                        id=str(uuid.uuid4()),
+                                        choices=[
+                                            Choice(
+                                                delta=ChoiceDelta(
+                                                    tool_calls=[
+                                                        ChoiceDeltaToolCall(
+                                                            index=index,
+                                                            function=ChoiceDeltaToolCallFunction(
+                                                                arguments=json.dumps(functioncall['functionCall']['args']),
+                                                            ),
+                                                        )
+                                                    ],
+                                                ),
+                                                finish_reason=None,
+                                                index=index,
+                                            )
+                                        ],
+                                        created=int(time.time()),
+                                        model=kwargs.get("request").model,
+                                        object="chat.completion.chunk",
+                                    )
+                    yield args_chunk.model_dump()
 
-                yield ChatCompletionChunk(
-                    id=str(uuid.uuid4()),
-                    choices=[
-                        Choice(
-                            delta=ChoiceDelta(), finish_reason="function_call", index=0
-                        )
-                    ],
-                    created=int(time.time()),
-                    model=kwargs.get("request").model,
-                    object="chat.completion.chunk",
-                ).model_dump()
-
+                final_chunk = ChatCompletionChunk(
+                                            id=str(uuid.uuid4()),
+                                            choices=[
+                                                Choice(
+                                                    delta=ChoiceDelta(),
+                                                    finish_reason="tool_calls",
+                                                    index=0,
+                                                )
+                                            ],
+                                            created=int(time.time()),
+                                            model=kwargs.get("request").model,
+                                            object="chat.completion.chunk",
+                                        )
+                yield final_chunk.model_dump()
             # Check if it is a normal call
             elif chunk.get("parts")[0].get("text"):
                 # Parse google chunk response into ChatCompletionChunk
@@ -269,16 +295,40 @@ class newVertexProvider(Provider):
             if message["role"] == "system":
                 # Set the system instruction if provided, otherwise keep the default
                 vertexai_format["system_instruction"]["parts"]["text"] = message["content"] or "You are a helpful assistant"
-            elif message["role"] in ["user", "assistant"]:
-                # Convert roles: 'assistant' -> 'model'
-                role = "model" if message["role"] == "assistant" else "user"
-                # Append the message to the contents list in Vertex AI format
+            elif message["role"] == "user":
+                # Append the user message to the contents list in Vertex AI format
                 vertexai_format["contents"].append({
-                    "role": role,
+                    "role": "user",
                     "parts": [{"text": message["content"]}]
                 })
+            elif message["role"] == "assistant":
+                if message["content"] is None and "tool_calls" in message:
+                    # Parse the tool call into Vertex AI format
+                    tool_call = message["tool_calls"][0]
+                    vertexai_format["contents"].append({
+                        "role": "model",
+                        "parts": [
+                            {
+                                "functionCall": {
+                                    "name": tool_call["function"]["name"],
+                                    "args": json.loads(tool_call["function"]["arguments"])
+                                }
+                            }
+                        ]
+                    })
+                else:
+                    # Append the assistant message to the contents list in Vertex AI format
+                    vertexai_format["contents"].append({
+                        "role": "model",
+                        "parts": [{"text": message["content"]}]
+                    })
+            elif message["role"] == "tool":
+                # Add the function call and response to the system instruction
+                function_name = message["name"]
+                response = message["content"]
+                vertexai_format["system_instruction"]["parts"]["text"] += f"\nYou have called {function_name} and got the following response: {response}."
             else:
-                raise ValueError(f"Invalid role: {message['role']}. Expected 'system', 'user', or 'assistant'.")
+                raise ValueError(f"Invalid role: {message['role']}. Expected 'system', 'user', 'assistant', or 'tool'.")
         
         return vertexai_format
     
