@@ -100,7 +100,7 @@ class newVertexProvider(Provider):
     ) -> Coroutine[Any, Any, Generator]:
         """Initialize Vertex AI"""
 
-        print(request.tools)
+        print(f'tools: {request.tools}')
 
         try:
             # Init genai
@@ -115,7 +115,7 @@ class newVertexProvider(Provider):
             tool_payload = self.process_tools(request.tools)
             message = self.convert_openai_to_vertexai(request.chat_input, tool_payload)
 
-            print(message)
+            print(f'message: {message}')
             
             # Generate content
             return await asyncio.to_thread(
@@ -132,6 +132,7 @@ class newVertexProvider(Provider):
             print(f'chunk: {chunk}')
             chunk = json.loads(chunk.decode("utf-8").lstrip("data: "))
             chunk = chunk.get("candidates")[0].get("content")
+            
 
             # Check if it is a function call
             if chunk.get("parts")[0].get("function_call"):
@@ -230,7 +231,7 @@ class newVertexProvider(Provider):
             return {
                 "system_instruction": {
                     "parts": {
-                        "text": ""  # Empty system instruction
+                        "text": "You are a helpful assistant"  # Default system instruction
                     }
                 },
                 "contents": [
@@ -241,7 +242,7 @@ class newVertexProvider(Provider):
                 ],
                 "tools": tool_payload,  # Use the parsed object instead of the JSON string
                 "tool_config": {
-                    "function_calling_config": {"mode": "ANY"}
+                    "function_calling_config": {"mode": "AUTO"}
                 },
             }
         
@@ -253,21 +254,21 @@ class newVertexProvider(Provider):
         vertexai_format = {
             "system_instruction": {
                 "parts": {
-                    "text": ""
+                    "text": "You are a helpful assistant"  # Default system instruction
                 }
             },
             "contents": [],
             "tools": tool_payload,  # Use the parsed object instead of the JSON string
             "tool_config": {
-                "function_calling_config": {"mode": "ANY"}
+                "function_calling_config": {"mode": "AUTO"}
             },
         }
         
         # Loop through the OpenAI formatted messages
         for message in input_data:
             if message["role"] == "system":
-                # Set the system instruction
-                vertexai_format["system_instruction"]["parts"]["text"] = message["content"]
+                # Set the system instruction if provided, otherwise keep the default
+                vertexai_format["system_instruction"]["parts"]["text"] = message["content"] or "You are a helpful assistant"
             elif message["role"] in ["user", "assistant"]:
                 # Convert roles: 'assistant' -> 'model'
                 role = "model" if message["role"] == "assistant" else "user"
@@ -279,7 +280,6 @@ class newVertexProvider(Provider):
             else:
                 raise ValueError(f"Invalid role: {message['role']}. Expected 'system', 'user', or 'assistant'.")
         
-        print(vertexai_format)
         return vertexai_format
     
     def process_tools(self, tools: Optional[Union[List[Dict], Dict]]) -> Optional[VertexAI]:
