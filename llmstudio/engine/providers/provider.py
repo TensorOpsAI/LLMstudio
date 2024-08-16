@@ -197,7 +197,7 @@ class Provider:
             tool_call_id = tool_calls[0].get("id")
             tool_call_name = tool_calls[0].get("function").get("name")
             # tool_call_type = tool_calls[0].get("function").get("type")
-            tool_call_type = 'function'
+            tool_call_type = "function"
             tool_call_arguments = ""
             for chunk in tool_calls[1:]:
                 tool_call_arguments += chunk.get("function").get("arguments")
