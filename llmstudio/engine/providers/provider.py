@@ -192,7 +192,7 @@ class Provider:
         if finish_reason == "tool_calls":
             tool_calls = [
                 chunk.get("choices")[0].get("delta").get("tool_calls")[0]
-                for chunk in chunks[:-1]
+                for chunk in chunks[1:-1]
             ]
 
             tool_call_id = tool_calls[0].get("id")
