@@ -21,6 +21,7 @@ class OpenAIParameters(BaseModel):
 class OpenAIRequest(ChatRequest):
     parameters: Optional[OpenAIParameters] = OpenAIParameters()
     functions: Optional[List[Dict[str, Any]]] = None
+    tools: Optional[List[Dict[str, Any]]] = None
     chat_input: Any
     response_format: Optional[Dict[str, str]] = None
 
@@ -38,6 +39,7 @@ class OpenAIProvider(Provider):
         self, request: OpenAIRequest
     ) -> Coroutine[Any, Any, Generator]:
         """Generate an OpenAI client"""
+
         try:
             client = OpenAI(api_key=request.api_key or self.API_KEY)
             return await asyncio.to_thread(
@@ -48,6 +50,7 @@ class OpenAIProvider(Provider):
                     if isinstance(request.chat_input, str)
                     else request.chat_input
                 ),
+                # tools=request.tools,
                 functions=request.functions,
                 function_call="auto" if request.functions else None,
                 stream=True,
