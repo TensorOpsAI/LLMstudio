@@ -1,9 +1,7 @@
 import asyncio
 from typing import Dict, List, Union
 
-import aiohttp
 import requests
-from IPython.display import clear_output
 from openai.types.chat import ChatCompletion
 from tqdm.asyncio import tqdm_asyncio
 
@@ -114,7 +112,6 @@ class LLM:
                 semaphore.requests_since_last_increase += 1
                 semaphore.try_increase_permits(error_threshold, increment)
                 if verbose > 0:
-                    clear_output()
                     print(
                         f"Finished requests: {semaphore.finished_requests}/{semaphore.batch_size}"
                     )
@@ -203,19 +200,21 @@ class LLM:
         return responses
 
     async def async_non_stream(self, input: str, **kwargs):
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                f"http://{ENGINE_HOST}:{ENGINE_PORT}/api/engine/chat/{self.provider}",
-                json={
-                    "model": self.model,
-                    "session_id": self.session_id,
-                    "api_key": self.api_key,
-                    "api_endpoint": self.api_endpoint,
-                    "api_version": self.api_version,
-                    "base_url": self.base_url,
-                    "chat_input": input,
-                    "is_stream": False,
-                    "parameters": {
+        response = await asyncio.to_thread(
+            requests.post,
+            f"http://{ENGINE_HOST}:{ENGINE_PORT}/api/engine/chat/{self.provider}",
+            json={
+                "model": self.model,
+                "session_id": self.session_id,
+                "api_key": self.api_key,
+                "api_endpoint": self.api_endpoint,
+                "api_version": self.api_version,
+                "base_url": self.base_url,
+                "chat_input": input,
+                "is_stream": False,
+                "parameters": {
+                    key: value
+                    for key, value in {
                         "temperature": kwargs.get("temperature") or self.temperature,
                         "top_p": kwargs.get("top_p") or self.top_p,
                         "top_k": kwargs.get("top_k") or self.top_k,
@@ -226,36 +225,39 @@ class LLM:
                         or self.frequency_penalty,
                         "presence_penalty": kwargs.get("presence_penalty")
                         or self.presence_penalty,
-                    },
-                    **kwargs,
+                    }.items()
+                    if value is not None
                 },
-                headers={"Content-Type": "application/json"},
-            ) as response:
-                if not response.ok:
-                    try:
-                        error_data = response.json().get(
-                            "detail", "LLMstudio Engine error"
-                        )
-                    except ValueError:
-                        error_data = response.text
-                    raise Exception(error_data)
+                **kwargs,
+            },
+            headers={"Content-Type": "application/json"},
+        )
 
-                return ChatCompletion(**await response.json())
+        if not response.ok:
+            try:
+                error_data = response.json().get("detail", "LLMstudio Engine error")
+            except ValueError:
+                error_data = response.text
+            raise Exception(error_data)
+
+        return ChatCompletion(**response.json())
 
     async def async_stream(self, input: str, **kwargs):
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                f"http://{ENGINE_HOST}:{ENGINE_PORT}/api/engine/chat/{self.provider}",
-                json={
-                    "model": self.model,
-                    "session_id": self.session_id,
-                    "api_key": self.api_key,
-                    "api_endpoint": self.api_endpoint,
-                    "api_version": self.api_version,
-                    "base_url": self.base_url,
-                    "chat_input": input,
-                    "is_stream": True,
-                    "parameters": {
+        response = await asyncio.to_thread(
+            requests.post,
+            f"http://{ENGINE_HOST}:{ENGINE_PORT}/api/engine/chat/{self.provider}",
+            json={
+                "model": self.model,
+                "session_id": self.session_id,
+                "api_key": self.api_key,
+                "api_endpoint": self.api_endpoint,
+                "api_version": self.api_version,
+                "base_url": self.base_url,
+                "chat_input": input,
+                "is_stream": True,
+                "parameters": {
+                    key: value
+                    for key, value in {
                         "temperature": kwargs.get("temperature") or self.temperature,
                         "top_p": kwargs.get("top_p") or self.top_p,
                         "top_k": kwargs.get("top_k") or self.top_k,
@@ -266,21 +268,23 @@ class LLM:
                         or self.frequency_penalty,
                         "presence_penalty": kwargs.get("presence_penalty")
                         or self.presence_penalty,
-                    },
-                    **kwargs,
+                    }.items()
+                    if value is not None
                 },
-                headers={"Content-Type": "application/json"},
-            ) as response:
-                if not response.ok:
-                    try:
-                        error_data = response.json().get(
-                            "detail", "LLMstudio Engine error"
-                        )
-                    except ValueError:
-                        error_data = response.text
-                    raise Exception(error_data)
+                **kwargs,
+            },
+            headers={"Content-Type": "application/json"},
+            stream=True,
+        )
 
-                async for chunk in response.content.iter_any():
-                    if chunk:
-                        yield chunk.decode("utf-8")
-                        # yield ChatCompletionChunk(**await chunk.decode("utf-8"))
+        if not response.ok:
+            try:
+                error_data = response.json().get("detail", "LLMstudio Engine error")
+            except ValueError:
+                error_data = response.text
+            raise Exception(error_data)
+
+        for chunk in response.iter_content(chunk_size=None):
+            if chunk:
+                yield chunk.decode("utf-8")
+                # yield ChatCompletionChunk(**chunk.decode("utf-8"))

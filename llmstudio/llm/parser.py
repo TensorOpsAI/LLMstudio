@@ -14,9 +14,8 @@ class Parser:
             parsed_response = response_model.model_validate(json.loads(trimmed_str))
             return parsed_response
         except json.JSONDecodeError as e:
-            custom_error = ValueError(
+            raise ValueError(
                 f"Failed to decode JSON string: {str(e)}. JSON string: {trimmed_str}\n"
             )
-            return custom_error
         except Exception as e:
             return e

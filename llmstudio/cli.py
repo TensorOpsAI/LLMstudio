@@ -2,15 +2,6 @@ import os
 import signal
 
 import click
-
-from llmstudio.config import (
-    ENGINE_HOST,
-    ENGINE_PORT,
-    TRACKING_HOST,
-    TRACKING_PORT,
-    UI_HOST,
-    UI_PORT,
-)
 from llmstudio.server import start_server
 
 
