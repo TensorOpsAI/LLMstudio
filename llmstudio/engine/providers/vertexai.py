@@ -20,7 +20,6 @@ from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import (
     Choice,
     ChoiceDelta,
-    ChoiceDeltaFunctionCall,
     ChoiceDeltaToolCall,
     ChoiceDeltaToolCallFunction,
 )
@@ -44,53 +43,45 @@ class VertexAIRequest(ChatRequest):
     chat_input: Union[str, List[Dict[str, Any]]]
 
 
-# Define Pydantic model for OpenAI tool parameter
-class OpenAIParameter(BaseModel):
+class OpenAIToolParameter(BaseModel):
     type: str
     description: Optional[str] = None
 
 
-# Define Pydantic model for OpenAI tool parameters container
-class OpenAIParameters(BaseModel):
+class OpenAIToolParameters(BaseModel):
     type: str
-    properties: Dict[str, OpenAIParameter]
+    properties: Dict[str, OpenAIToolParameter]
     required: List[str]
 
 
-# Define Pydantic model for OpenAI tool function
 class OpenAIToolFunction(BaseModel):
     name: str
     description: str
-    parameters: OpenAIParameters
+    parameters: OpenAIToolParameters
 
 
-# Define Pydantic model for OpenAI tool
 class OpenAITool(BaseModel):
     type: str
     function: OpenAIToolFunction
 
 
-# Define Pydantic model for VertexAI tool parameter
-class VertexAIParameter(BaseModel):
+class VertexAIToolParameter(BaseModel):
     type: str
     description: str
 
 
-# Define Pydantic model for VertexAI tool parameters container
-class VertexAIParameters(BaseModel):
+class VertexAIToolParameters(BaseModel):
     type: str
-    properties: Dict[str, VertexAIParameter]
+    properties: Dict[str, VertexAIToolParameter]
     required: List[str]
 
 
-# Define Pydantic model for VertexAI function declaration
 class VertexAIFunctionDeclaration(BaseModel):
     name: str
     description: str
-    parameters: VertexAIParameters
+    parameters: VertexAIToolParameters
 
 
-# Define Pydantic model for VertexAI functions container
 class VertexAI(BaseModel):
     function_declarations: List[VertexAIFunctionDeclaration]
 
@@ -370,7 +361,7 @@ class VertexAIProvider(Provider):
             for tool in parsed_tools:
                 function = tool.function
                 properties = {
-                    name: VertexAIParameter(
+                    name: VertexAIToolParameter(
                         type=param.type, description=param.description or ""
                     )
                     for name, param in function.parameters.properties.items()
@@ -378,7 +369,7 @@ class VertexAIProvider(Provider):
                 function_decl = VertexAIFunctionDeclaration(
                     name=function.name,
                     description=function.description,
-                    parameters=VertexAIParameters(
+                    parameters=VertexAIToolParameters(
                         type=function.parameters.type,
                         properties=properties,
                         required=function.parameters.required,

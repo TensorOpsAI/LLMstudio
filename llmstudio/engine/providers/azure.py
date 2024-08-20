@@ -46,20 +46,19 @@ class AzureProvider(Provider):
         self.API_ENDPOINT = os.getenv("AZURE_API_ENDPOINT")
         self.API_VERSION = os.getenv("AZURE_API_VERSION")
         self.BASE_URL = os.getenv("AZURE_BASE_URL")
-        self.request = None
+        self.is_llama = False
+        self.has_tools = False
 
     def validate_request(self, request: AzureRequest):
         return AzureRequest(**request)
-
-    def is_llama_model(self, model_name: str) -> bool:
-        return "llama" in model_name.lower()
 
     async def generate_client(
         self, request: AzureRequest
     ) -> Coroutine[Any, Any, Generator]:
         """Generate an AzureOpenAI client"""
 
-        self.request = request
+        self.is_llama = "llama" in request.model.lower()
+        self.has_tools = request.tools is not None
 
         try:
             if request.base_url or self.BASE_URL:
@@ -80,10 +79,16 @@ class AzureProvider(Provider):
                 client.chat.completions.create,
                 model=request.model,
                 messages=messages,
-                # tools=request.tools,
-                # tool_choice="auto" if request.tools else None,
                 stream=True,
-                # response_format=request.response_format,
+                **(
+                    {}
+                    if self.is_llama
+                    else {
+                        "tools": request.tools,
+                        "tool_choice": "auto" if request.tools else None,
+                        "response_format": request.response_format,
+                    }
+                ),
                 **request.parameters.model_dump(),
             )
 
@@ -91,7 +96,7 @@ class AzureProvider(Provider):
             raise HTTPException(status_code=e.status_code, detail=e.response.json())
 
     def prepare_messages(self, request: AzureRequest):
-        if self.is_llama_model(request.model):
+        if self.is_llama:
             user_message = self.convert_to_openai_format(request.chat_input)
             content = "<|begin_of_text|>"
             content = self.add_system_message(user_message, content, request.tools)
@@ -107,7 +112,7 @@ class AzureProvider(Provider):
     async def parse_response(
         self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:
-        if self.is_llama_model(self.request.model) and self.request.tools:
+        if self.is_llama and self.has_tools:
             async for chunk in self.handle_tool_response(response, **kwargs):
                 yield chunk
         else:
