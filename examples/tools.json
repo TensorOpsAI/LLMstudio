@@ -1,1 +1,0 @@
-{"function_declarations": [{"name": "set_light_color", "description": "Set the light color. Lights must be enabled for this to work.", "parameters": {"type": "object", "properties": {"rgb_hex": {"type": "string", "description": "The light color as a 6-digit hex string, e.g., ff0000 for red."}}, "required": ["rgb_hex"]}}]}
