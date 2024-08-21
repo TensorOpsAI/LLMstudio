@@ -49,7 +49,6 @@ class AzureProvider(Provider):
         self.is_llama = False
         self.has_tools = False
         self.has_functions = False
-        
 
     def validate_request(self, request: AzureRequest):
         return AzureRequest(**request)
@@ -93,14 +92,16 @@ class AzureProvider(Provider):
                                 "tools": request.tools,
                                 "tool_choice": "auto" if request.tools else None,
                             }
-                            if self.has_tools and self.is_openai else {}  # Check if is_openai before adding tools
+                            if self.has_tools and self.is_openai
+                            else {}  # Check if is_openai before adding tools
                         ),
                         **(
                             {
                                 "functions": request.functions,
                                 "function_call": "auto" if request.functions else None,
                             }
-                            if self.has_functions and self.is_openai else {}  # Check if is_openai before adding functions
+                            if self.has_functions and self.is_openai
+                            else {}  # Check if is_openai before adding functions
                         ),
                         "response_format": request.response_format,
                     }
