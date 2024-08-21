@@ -60,6 +60,7 @@ class AzureProvider(Provider):
         """Generate an AzureOpenAI client"""
 
         self.is_llama = "llama" in request.model.lower()
+        self.is_openai = "gpt" in request.model.lower()
         self.has_tools = request.tools is not None
         self.has_functions = request.functions is not None
 
@@ -92,16 +93,14 @@ class AzureProvider(Provider):
                                 "tools": request.tools,
                                 "tool_choice": "auto" if request.tools else None,
                             }
-                            if self.has_tools
-                            else {}
+                            if self.has_tools and self.is_openai else {}  # Check if is_openai before adding tools
                         ),
                         **(
                             {
                                 "functions": request.functions,
                                 "function_call": "auto" if request.functions else None,
                             }
-                            if self.has_functions
-                            else {}
+                            if self.has_functions and self.is_openai else {}  # Check if is_openai before adding functions
                         ),
                         "response_format": request.response_format,
                     }
