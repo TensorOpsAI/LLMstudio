@@ -48,6 +48,8 @@ class AzureProvider(Provider):
         self.BASE_URL = os.getenv("AZURE_BASE_URL")
         self.is_llama = False
         self.has_tools = False
+        self.has_functions = False
+        
 
     def validate_request(self, request: AzureRequest):
         return AzureRequest(**request)
@@ -59,6 +61,7 @@ class AzureProvider(Provider):
 
         self.is_llama = "llama" in request.model.lower()
         self.has_tools = request.tools is not None
+        self.has_functions = request.functions is not None
 
         try:
             if request.base_url or self.BASE_URL:
@@ -84,8 +87,22 @@ class AzureProvider(Provider):
                     {}
                     if self.is_llama
                     else {
-                        "tools": request.tools,
-                        "tool_choice": "auto" if request.tools else None,
+                        **(
+                            {
+                                "tools": request.tools,
+                                "tool_choice": "auto" if request.tools else None,
+                            }
+                            if self.has_tools
+                            else {}
+                        ),
+                        **(
+                            {
+                                "functions": request.functions,
+                                "function_call": "auto" if request.functions else None,
+                            }
+                            if self.has_functions
+                            else {}
+                        ),
                         "response_format": request.response_format,
                     }
                 ),
