@@ -111,7 +111,7 @@ class VertexAIProvider(Provider):
 
             # Convert the chat input into VertexAI format
             tool_payload = self.process_tools(request.tools)
-            message = self.convert_openai_to_vertexai(request.chat_input, tool_payload)
+            message = self.convert_input_to_vertexai(request.chat_input, tool_payload)
 
             # Generate content
             return await asyncio.to_thread(
@@ -257,92 +257,97 @@ class VertexAIProvider(Provider):
                     object="chat.completion.chunk",
                 ).model_dump()
 
-    def convert_openai_to_vertexai(self, input_data, tool_payload):
-        # Check if the input is a simple string
+    def convert_input_to_vertexai(self, input_data: Union[Dict, str, List[Dict]], tool_payload: Optional[Any]) -> Dict:
+        """
+        Converts OpenAI formatted input to VertexAI format.
+
+        Args:
+            input_data (Union[Dict, str, List[Dict]]): The input data in OpenAI format.
+            tool_payload (Optional[Any]): The tool payload for the request.
+
+        Returns:
+            Dict: The converted input in VertexAI format.
+        """
+        if isinstance(input_data, dict) and "input" in input_data:
+            return self._handle_simple_string_input(input_data["input"], tool_payload)
+        
         if isinstance(input_data, str):
-            # Return a Vertex AI formatted message with a user message
-            return {
-                "system_instruction": {
-                    "parts": {
-                        "text": "You are a helpful assistant"  # Default system instruction
-                    }
-                },
-                "contents": [{"role": "user", "parts": [{"text": input_data}]}],
-                "tools": tool_payload,  # Use the parsed object instead of the JSON string
-                "tool_config": {"function_calling_config": {"mode": "AUTO"}},
-            }
+            return self._handle_simple_string_input(input_data, tool_payload)
+        
+        if isinstance(input_data, list):
+            return self._convert_list_input_to_vertexai(input_data, tool_payload)
+        
+        raise ValueError("Invalid input type. Expected dict, str, or list.")
 
-        # Validate if input_data is a list and each element is a dictionary with the correct structure
-        if not isinstance(input_data, list) or not all(
-            isinstance(msg, dict) and "role" in msg and "content" in msg
-            for msg in input_data
-        ):
-            raise ValueError(
-                "Input must be a list of dictionaries, each containing 'role' and 'content' keys."
-            )
+    def _handle_simple_string_input(self, input_data: str, tool_payload: Optional[Any]) -> Dict:
+        """
+        Handles simple string input and converts it to VertexAI format.
 
-        # Initialize the Vertex AI format if the input is not a simple string
-        vertexai_format = {
-            "system_instruction": {
-                "parts": {
-                    "text": "You are a helpful assistant"  # Default system instruction
-                }
-            },
-            "contents": [],
-            "tools": tool_payload,  # Use the parsed object instead of the JSON string
-            "tool_config": {"function_calling_config": {"mode": "AUTO"}},
-        }
+        Args:
+            input_data (str): The input data as a simple string.
+            tool_payload (Optional[Any]): The tool payload for the request.
 
-        # Loop through the OpenAI formatted messages
+        Returns:
+            Dict: The converted input in VertexAI format.
+        """
+        return self._initialize_vertexai_message(user_message=input_data, tool_payload=tool_payload)
+
+    def _convert_list_input_to_vertexai(self, input_data: List[Dict], tool_payload: Optional[Any]) -> Dict:
+        """
+        Converts a list of messages in OpenAI format to VertexAI format.
+
+        Args:
+            input_data (List[Dict]): The input data as a list of messages.
+            tool_payload (Optional[Any]): The tool payload for the request.
+
+        Returns:
+            Dict: The converted input in VertexAI format.
+        """
+        vertexai_format = self._initialize_vertexai_message(tool_payload=tool_payload)
         for message in input_data:
-            if message["role"] == "system":
-                # Set the system instruction if provided, otherwise keep the default
-                vertexai_format["system_instruction"]["parts"]["text"] = (
-                    message["content"] or "You are a helpful assistant"
-                )
-            elif message["role"] == "user":
-                # Append the user message to the contents list in Vertex AI format
-                vertexai_format["contents"].append(
-                    {"role": "user", "parts": [{"text": message["content"]}]}
-                )
-            elif message["role"] == "assistant":
+            role = message.get("role")
+            if role == "system":
+                vertexai_format["system_instruction"]["parts"]["text"] = message["content"] or "You are a helpful assistant"
+            elif role == "user":
+                vertexai_format["contents"].append({"role": "user", "parts": [{"text": message["content"]}]})
+            elif role == "assistant":
                 if message["content"] is None and "tool_calls" in message:
-                    # Parse the tool call into Vertex AI format
                     tool_call = message["tool_calls"][0]
-                    vertexai_format["contents"].append(
-                        {
-                            "role": "model",
-                            "parts": [
-                                {
-                                    "functionCall": {
-                                        "name": tool_call["function"]["name"],
-                                        "args": json.loads(
-                                            tool_call["function"]["arguments"]
-                                        ),
-                                    }
-                                }
-                            ],
-                        }
-                    )
+                    vertexai_format["contents"].append({
+                        "role": "model",
+                        "parts": [{"functionCall": {"name": tool_call["function"]["name"], "args": json.loads(tool_call["function"]["arguments"])}}]
+                    })
                 else:
-                    # Append the assistant message to the contents list in Vertex AI format
-                    vertexai_format["contents"].append(
-                        {"role": "model", "parts": [{"text": message["content"]}]}
-                    )
-            elif message["role"] == "tool":
-                # Add the function call and response to the system instruction
+                    vertexai_format["contents"].append({"role": "model", "parts": [{"text": message["content"]}]})
+            elif role == "tool":
                 function_name = message["name"]
                 response = message["content"]
-                vertexai_format["system_instruction"]["parts"][
-                    "text"
-                ] += f"\nYou have called {function_name} and got the following response: {response}."
+                vertexai_format["system_instruction"]["parts"]["text"] += f"\nYou have called {function_name} and got the following response: {response}."
             else:
-                raise ValueError(
-                    f"Invalid role: {message['role']}. Expected 'system', 'user', 'assistant', or 'tool'."
-                )
-
+                raise ValueError(f"Invalid role: {role}. Expected 'system', 'user', 'assistant', or 'tool'.")
         return vertexai_format
 
+    def _initialize_vertexai_message(self, user_message: Optional[str] = None, tool_payload: Optional[Any] = None) -> Dict:
+        """
+        Initializes the basic structure of a VertexAI message.
+
+        Args:
+            user_message (Optional[str]): The user's message to include in the request.
+            tool_payload (Optional[Any]): The tool payload for the request.
+
+        Returns:
+            Dict: The initialized VertexAI message structure.
+        """
+        message_format = {
+            "system_instruction": {"parts": {"text": "You are a helpful assistant"}},
+            "contents": [],
+            "tools": tool_payload,
+            "tool_config": {"function_calling_config": {"mode": "AUTO"}},
+        }
+        if user_message:
+            message_format["contents"].append({"role": "user", "parts": [{"text": user_message}]})
+        return message_format
+    
     def process_tools(
         self, tools: Optional[Union[List[Dict], Dict]]
     ) -> Optional[VertexAI]:
