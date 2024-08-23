@@ -197,7 +197,6 @@ class Provider:
             tool_call_id = tool_calls[0].get("id")
             tool_call_name = tool_calls[0].get("function").get("name")
             tool_call_type = tool_calls[0].get("function").get("type")
-            # tool_call_type = "function"
             tool_call_arguments = "".join(
                 chunk.get("function", {}).get("arguments", "")
                 for chunk in tool_calls[1:]
@@ -269,6 +268,28 @@ class Provider:
                 ):
                     function_call_arguments += chunk.get("arguments")
 
+            chunk = ChatCompletion(
+                id=chunks[-1].get("id"),
+                created=chunks[-1].get("created"),
+                model=chunks[-1].get("model"),
+                object="chat.completion",
+                choices=[
+                    Choice(
+                        finish_reason="function_call",
+                        index=0,
+                        logprobs=None,
+                        message=ChatCompletionMessage(
+                            content=None,
+                            role="assistant",
+                            tool_calls=None,
+                            function_call=FunctionCall(
+                                arguments=function_call_arguments,
+                                name=function_call_name,
+                            ),
+                        ),
+                    )
+                ],
+            )
             return (
                 ChatCompletion(
                     id=chunks[-1].get("id"),
@@ -294,6 +315,7 @@ class Provider:
                 ),
                 function_call_arguments,
             )
+
         elif finish_reason == "stop" or finish_reason == "length":
             if isinstance(request, AzureRequest) or isinstance(request, OpenAIRequest):
                 start_index = 1
@@ -308,6 +330,26 @@ class Provider:
                         for chunk in chunks[start_index:]
                     ],
                 )
+            )
+
+            chunk = ChatCompletion(
+                id=chunks[-1].get("id"),
+                created=chunks[-1].get("created"),
+                model=chunks[-1].get("model"),
+                object="chat.completion",
+                choices=[
+                    Choice(
+                        finish_reason="stop",
+                        index=0,
+                        logprobs=None,
+                        message=ChatCompletionMessage(
+                            content=stop_content,
+                            role="assistant",
+                            function_call=None,
+                            tool_calls=None,
+                        ),
+                    )
+                ],
             )
 
             return (
