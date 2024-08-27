@@ -23,6 +23,10 @@ class ChatLLMstudio(BaseChatModel):
     def _llm_type(self):
         return "LLMstudio"
 
+    # @property
+    # def model_id(self) -> str:
+    #     return self.model_id
+
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
     ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:

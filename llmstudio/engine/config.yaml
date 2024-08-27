@@ -115,6 +115,11 @@ providers:
     keys:
       - OPENAI_API_KEY
     models:
+      gpt-4o-mini:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0.00000015
+        output_token_cost: 0.00000060
       gpt-4o:
         mode: chat
         max_tokens: 128000
@@ -186,6 +191,11 @@ providers:
       - AZURE_API_ENDPOINT
       - AZURE_API_VERSION
     models:
+      gpt-4o-mini:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0.00000015
+        output_token_cost: 0.0000006
       gpt-4o:
         mode: chat
         max_tokens: 128000
@@ -204,6 +214,126 @@ providers:
       gpt-35-turbo:
         mode: chat
         max_tokens: 4097
+        input_token_cost: 0.0000005
+        output_token_cost: 0.0000015
+      Meta-Llama-3.1-405B-Instruct:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0.00533
+        output_token_cost: 0.016
+      Meta-Llama-3.1-70B-Instruct:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0.00268
+        output_token_cost: 0.00354
+      Meta-Llama-3.1-8B-Instruct:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0.0003
+        output_token_cost: 0.00061
+      Meta-Llama-3-70B-Instruct:
+        mode: chat
+        max_tokens: 8192
+        input_token_cost: 0.00378
+        output_token_cost: 0.01134
+      Meta-Llama-3-8B-Instruct:
+        mode: chat
+        max_tokens: 8192
+        input_token_cost: 0.00037
+        output_token_cost: 0.0011
+      Meta-Llama-2-70B:
+        mode: chat
+        max_tokens: 4096
+        input_token_cost: 0.00154
+        output_token_cost: 0.00177
+      Meta-Llama-2-70B-Chat:
+        mode: chat
+        max_tokens: 4096
+        input_token_cost: 0.00154
+        output_token_cost: 0.00177
+      Meta-Llama-2-13B-Chat:
+        mode: chat
+        max_tokens: 4096
+        input_token_cost: 0.00081
+        output_token_cost: 0.00094
+      Meta-Llama-2-7B:
+        mode: chat
+        max_tokens: 4096
+        input_token_cost: 0.00052
+        output_token_cost: 0.00067
+    parameters:
+      temperature:
+        name: "Temperature"
+        type: float
+        default: 1
+        min: 0
+        max: 2
+        step: 0.01
+      max_tokens:
+        name: "Maximum length"
+        type: int
+        default: 256
+        min: 1
+        max: 4096
+        step: 1
+      top_p:
+        name: "Top P"
+        type: float
+        default: 1
+        min: 0
+        max: 1
+        step: 0.01
+      frequency_penalty:
+        name: "Frequency Penalty"
+        type: float
+        default: 0
+        min: 0
+        max: 2
+        step: 0.01
+      presence_penalty:
+        name: "Presence Penalty"
+        type: float
+        default: 0
+        min: 0
+        max: 2
+        step: 0.01
+  vertexai:
+    id: vertexai
+    name: VertexAI
+    chat: true
+    embed: true
+    keys:
+      - GOOGLE_API_KEY
+    models:
+      gemini-1.5-flash:
+        mode: chat
+        max_tokens: 1000000
+        input_token_cost:
+          - range: [0, 128000]
+            cost: 0.00000035
+          - range: [128001, null]
+            cost: 0.0000007
+        output_token_cost:
+          - range: [0, 128000]
+            cost: 0.00000105
+          - range: [128001, null]
+            cost: 0.0000021
+      gemini-1.5-pro-latest:
+        mode: chat
+        max_tokens: 1000000
+        input_token_cost:
+          - range: [0, 128000]
+            cost: 0.00000035
+          - range: [128001, null]
+            cost: 0.0000007
+        output_token_cost:
+          - range: [0, 128000]
+            cost: 0.0000105
+          - range: [128001, null]
+            cost: 0.000021
+      gemini-1.0-pro:
+        mode: chat
+        max_tokens: 1000000
         input_token_cost: 0.0000005
         output_token_cost: 0.0000015
     parameters:
@@ -242,78 +372,3 @@ providers:
         min: 0
         max: 2
         step: 0.01
-  vertexai:
-      id: vertexai
-      name: VertexAI
-      chat: true
-      embed: true
-      keys:
-        - GOOGLE_API_KEY
-      models:
-        gemini-1.5-flash:
-          mode: chat
-          max_tokens: 1000000
-          input_token_cost:
-            - range: [0, 128000]
-              cost: 0.00000035
-            - range: [128001, null]
-              cost: 0.0000007
-          output_token_cost:
-            - range: [0, 128000]
-              cost: 0.00000105
-            - range: [128001, null]
-              cost: 0.0000021
-        gemini-1.5-pro:
-          mode: chat
-          max_tokens: 1000000
-          input_token_cost:
-            - range: [0, 128000]
-              cost: 0.0000035
-            - range: [128001, null]
-              cost: 0.000007
-          output_token_cost:
-            - range: [0, 128000]
-              cost: 0.0000105
-            - range: [128001, null]
-              cost: 0.000021
-        gemini-1.0-pro:
-          mode: chat
-          max_tokens: 1000000
-          input_token_cost: 0.0000005
-          output_token_cost: 0.0000015
-      parameters:
-        temperature:
-          name: "Temperature"
-          type: float
-          default: 1
-          min: 0
-          max: 2
-          step: 0.01
-        max_tokens:
-          name: "Maximum length"
-          type: int
-          default: 256
-          min: 1
-          max: 4096
-          step: 1
-        top_p:
-          name: "Top P"
-          type: float
-          default: 1
-          min: 0
-          max: 1
-          step: 0.01
-        frequency_penalty:
-          name: "Frequency Penalty"
-          type: float
-          default: 0
-          min: 0
-          max: 2
-          step: 0.01
-        presence_penalty:
-          name: "Presence Penalty"
-          type: float
-          default: 0
-          min: 0
-          max: 2
-          step: 0.01

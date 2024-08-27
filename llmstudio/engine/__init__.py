@@ -20,9 +20,6 @@ ENGINE_DESCRIPTION = "The core API for LLM interactions"
 ENGINE_VERSION = "0.1.0"
 
 
-# Models for Configuration
-
-
 class CostRange(BaseModel):
     range: List[Optional[int]]
     cost: float
@@ -49,7 +46,6 @@ class EngineConfig(BaseModel):
     providers: Dict[str, ProviderConfig]
 
 
-# Configuration Loading
 def _load_engine_config() -> EngineConfig:
     default_config_path = Path(os.path.join(os.path.dirname(__file__), "config.yaml"))
     local_config_path = Path(os.getcwd(), "config.yaml")
@@ -82,7 +78,6 @@ def _load_engine_config() -> EngineConfig:
         raise RuntimeError(f"Error in configuration data: {e}")
 
 
-# Functions for API Operations
 def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
     app = FastAPI(
         title=ENGINE_TITLE,
@@ -123,7 +118,6 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
                 )
         return all_models[provider] if provider else all_models
 
-    # Function to create a chat handler for a provider
     def create_chat_handler(provider_config):
         async def chat_handler(request: Request):
             """Endpoint for chat functionality."""
@@ -133,7 +127,6 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
 
         return chat_handler
 
-    # Dynamic route creation based on the 'chat' boolean
     for provider_name, provider_config in config.providers.items():
         if provider_config.chat:
             app.post(f"{ENGINE_BASE_ENDPOINT}/chat/{provider_name}")(
