@@ -1,5 +1,8 @@
 import asyncio
 from typing import Dict, List, Union
+import logging
+from logging import StreamHandler
+import sys
 
 import requests
 from openai.types.chat import ChatCompletion
@@ -11,6 +14,16 @@ from llmstudio.server import start_server
 
 start_server()
 
+# Configure logging to display in Jupyter Notebook
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)  # Set to DEBUG for more detailed output
+
+# Ensure we add the stream handler only once (in case of multiple executions)
+if not logger.handlers:
+    handler = StreamHandler(stream=sys.stdout)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
 
 class LLM:
     def __init__(self, model_id: str, **kwargs):
@@ -26,6 +39,7 @@ class LLM:
         self.max_tokens = kwargs.get("max_tokens")
         self.frequency_penalty = kwargs.get("frequency_penalty")
         self.presence_penalty = kwargs.get("presence_penalty")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def chat(self, input: str, is_stream: bool = False, retries: int = 0, **kwargs):
         response = requests.post(
@@ -87,41 +101,34 @@ class LLM:
             return await self.async_non_stream(input, retries=retries)
 
     async def chat_coroutine(
-        self,
-        input: Union[str, List[Dict[str, str]]],
-        semaphore,
-        retries,
-        error_threshold,
-        increment,
-        verbose,
-    ):
+            self,
+            input: Union[str, List[Dict[str, str]]],
+            semaphore,
+            retries,
+            error_threshold,
+            increment,
+            verbose: bool = False
+        ):
 
-        async with semaphore:
-            try:
-                response = await self.async_non_stream(
-                    input, max_tokens=semaphore.get_max_tokens(), retries=retries
-                )
-                semaphore.update_computed_max_tokens(response.metrics["total_tokens"])
-                return response
-            except Exception as e:
-                semaphore.error_requests += 1
-                semaphore.error_requests_since_last_increase += 1
-                return e
-            finally:
-                semaphore.finished_requests += 1
-                semaphore.requests_since_last_increase += 1
-                semaphore.try_increase_permits(error_threshold, increment)
-                if verbose > 0:
-                    print(
-                        f"Finished requests: {semaphore.finished_requests}/{semaphore.batch_size}"
+            async with semaphore:
+                try:
+                    response = await self.async_non_stream(
+                        input, max_tokens=semaphore.max_tokens, retries=retries
                     )
-                    print(
-                        f"Amount of parallel requests being allowed: {semaphore._permits}"
-                    )
-                    print(f"Max tokens being used: {semaphore.get_max_tokens()}")
-                    print(
-                        f"Requests finished with an error: {semaphore.error_requests}"
-                    )
+                    return response
+                except Exception as e:
+                    semaphore.error_requests += 1
+                    semaphore.error_requests_since_last_increase += 1
+                    return e
+                finally:
+                    semaphore.finished_requests += 1
+                    semaphore.requests_since_last_increase += 1
+                    semaphore.try_increase_permits(error_threshold, increment)
+                    if verbose:
+                        self.logger.info(f"Finished requests: {semaphore.finished_requests}/{semaphore.batch_size}")
+                        self.logger.info(f"Amount of parallel requests being allowed: {semaphore._permits}")
+                        self.logger.info(f"Max tokens being used: {semaphore.max_tokens}")
+                        self.logger.info(f"Requests finished with an error: {semaphore.error_requests}")
 
     async def batch_chat_coroutine(
         self,
@@ -135,7 +142,7 @@ class LLM:
     ) -> List[str]:
 
         semaphore = DynamicSemaphore(
-            coroutines, len(inputs), given_max_tokens=max_tokens
+            coroutines, len(inputs), max_tokens=max_tokens
         )
 
         if verbose > 0:
