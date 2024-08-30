@@ -1,8 +1,8 @@
 import asyncio
-from typing import Dict, List, Union
 import logging
-from logging import StreamHandler
 import sys
+from logging import StreamHandler
+from typing import Dict, List, Union
 
 import requests
 from openai.types.chat import ChatCompletion
@@ -21,9 +21,12 @@ logger.setLevel(logging.INFO)  # Set to DEBUG for more detailed output
 # Ensure we add the stream handler only once (in case of multiple executions)
 if not logger.handlers:
     handler = StreamHandler(stream=sys.stdout)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
     handler.setFormatter(formatter)
     logger.addHandler(handler)
+
 
 class LLM:
     def __init__(self, model_id: str, **kwargs):
@@ -101,34 +104,40 @@ class LLM:
             return await self.async_non_stream(input, retries=retries)
 
     async def chat_coroutine(
-            self,
-            input: Union[str, List[Dict[str, str]]],
-            semaphore,
-            retries,
-            error_threshold,
-            increment,
-            verbose: bool = False
-        ):
+        self,
+        input: Union[str, List[Dict[str, str]]],
+        semaphore,
+        retries,
+        error_threshold,
+        increment,
+        verbose: bool = False,
+    ):
 
-            async with semaphore:
-                try:
-                    response = await self.async_non_stream(
-                        input, max_tokens=semaphore.max_tokens, retries=retries
+        async with semaphore:
+            try:
+                response = await self.async_non_stream(
+                    input, max_tokens=semaphore.max_tokens, retries=retries
+                )
+                return response
+            except Exception as e:
+                semaphore.error_requests += 1
+                semaphore.error_requests_since_last_increase += 1
+                return e
+            finally:
+                semaphore.finished_requests += 1
+                semaphore.requests_since_last_increase += 1
+                semaphore.try_increase_permits(error_threshold, increment)
+                if verbose:
+                    self.logger.info(
+                        f"Finished requests: {semaphore.finished_requests}/{semaphore.batch_size}"
                     )
-                    return response
-                except Exception as e:
-                    semaphore.error_requests += 1
-                    semaphore.error_requests_since_last_increase += 1
-                    return e
-                finally:
-                    semaphore.finished_requests += 1
-                    semaphore.requests_since_last_increase += 1
-                    semaphore.try_increase_permits(error_threshold, increment)
-                    if verbose:
-                        self.logger.info(f"Finished requests: {semaphore.finished_requests}/{semaphore.batch_size}")
-                        self.logger.info(f"Amount of parallel requests being allowed: {semaphore._permits}")
-                        self.logger.info(f"Max tokens being used: {semaphore.max_tokens}")
-                        self.logger.info(f"Requests finished with an error: {semaphore.error_requests}")
+                    self.logger.info(
+                        f"Amount of parallel requests being allowed: {semaphore._permits}"
+                    )
+                    self.logger.info(f"Max tokens being used: {semaphore.max_tokens}")
+                    self.logger.info(
+                        f"Requests finished with an error: {semaphore.error_requests}"
+                    )
 
     async def batch_chat_coroutine(
         self,
@@ -141,9 +150,7 @@ class LLM:
         verbose,
     ) -> List[str]:
 
-        semaphore = DynamicSemaphore(
-            coroutines, len(inputs), max_tokens=max_tokens
-        )
+        semaphore = DynamicSemaphore(coroutines, len(inputs), max_tokens=max_tokens)
 
         if verbose > 0:
             responses = await asyncio.gather(
