@@ -268,28 +268,6 @@ class Provider:
                 ):
                     function_call_arguments += chunk.get("arguments")
 
-            chunk = ChatCompletion(
-                id=chunks[-1].get("id"),
-                created=chunks[-1].get("created"),
-                model=chunks[-1].get("model"),
-                object="chat.completion",
-                choices=[
-                    Choice(
-                        finish_reason="function_call",
-                        index=0,
-                        logprobs=None,
-                        message=ChatCompletionMessage(
-                            content=None,
-                            role="assistant",
-                            tool_calls=None,
-                            function_call=FunctionCall(
-                                arguments=function_call_arguments,
-                                name=function_call_name,
-                            ),
-                        ),
-                    )
-                ],
-            )
             return (
                 ChatCompletion(
                     id=chunks[-1].get("id"),
