@@ -1,3 +1,4 @@
+import ast  # Add this import to safely evaluate string representations of lists/dicts
 import asyncio
 import json
 import os
@@ -14,7 +15,6 @@ from typing import (
     Union,
 )
 
-import ast  # Add this import to safely evaluate string representations of lists/dicts
 import openai
 from fastapi import HTTPException
 from openai import AzureOpenAI, OpenAI
@@ -231,7 +231,7 @@ class AzureProvider(Provider):
                 if chunk.choices[0].finish_reason == "stop":
                     for chunk in normal_call_chunks:
                         yield chunk.model_dump()
-    
+
     def create_tool_name_chunk(self, function_name: str, kwargs: dict) -> dict:
         return ChatCompletionChunk(
             id=str(uuid.uuid4()),
@@ -498,7 +498,9 @@ Reminder:
                     if isinstance(content_as_list, list):
                         # If the content is a list, process each nested message
                         for nested_message in content_as_list:
-                            conversation_parts.append(self.format_message(nested_message))
+                            conversation_parts.append(
+                                self.format_message(nested_message)
+                            )
                     else:
                         # If the content is not a list, append it directly
                         conversation_parts.append(self.format_message(message))
@@ -537,7 +539,9 @@ Reminder:
         <function={function_name}>{arguments}</function>
         <|eom_id|>
         """
-        elif message["role"] in ["assistant", "user"] and message["content"] is not None:
+        elif (
+            message["role"] in ["assistant", "user"] and message["content"] is not None
+        ):
             return f"""
     <|start_header_id|>{message['role']}<|end_header_id|>
     {message['content']}

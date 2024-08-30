@@ -22,7 +22,7 @@ class ChatLLMstudio(BaseChatModel):
     @property
     def _llm_type(self):
         return "LLMstudio"
-    
+
     # @property
     # def model_id(self) -> str:
     #     return self.model_id
