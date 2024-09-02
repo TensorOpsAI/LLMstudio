@@ -177,7 +177,6 @@ class AzureProvider(Provider):
         saving = False
         normal_call_chunks = []
         for chunk in response:
-            chunk
             if chunk.choices[0].delta.content is not None:
                 if (
                     "§" in chunk.choices[0].delta.content
