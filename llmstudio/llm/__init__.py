@@ -14,20 +14,6 @@ from llmstudio.server import start_server
 
 start_server()
 
-# Configure logging to display in Jupyter Notebook
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)  # Set to DEBUG for more detailed output
-
-# Ensure we add the stream handler only once (in case of multiple executions)
-if not logger.handlers:
-    handler = StreamHandler(stream=sys.stdout)
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-
-
 class LLM:
     def __init__(self, model_id: str, **kwargs):
         self.provider, self.model = model_id.split("/")
@@ -110,7 +96,6 @@ class LLM:
         retries,
         error_threshold,
         increment,
-        verbose: bool = False,
     ):
 
         async with semaphore:
@@ -127,17 +112,6 @@ class LLM:
                 semaphore.finished_requests += 1
                 semaphore.requests_since_last_increase += 1
                 semaphore.try_increase_permits(error_threshold, increment)
-                if verbose:
-                    self.logger.info(
-                        f"Finished requests: {semaphore.finished_requests}/{semaphore.batch_size}"
-                    )
-                    self.logger.info(
-                        f"Amount of parallel requests being allowed: {semaphore._permits}"
-                    )
-                    self.logger.info(f"Max tokens being used: {semaphore.max_tokens}")
-                    self.logger.info(
-                        f"Requests finished with an error: {semaphore.error_requests}"
-                    )
 
     async def batch_chat_coroutine(
         self,
@@ -147,42 +121,24 @@ class LLM:
         error_threshold,
         increment,
         max_tokens,
-        verbose,
     ) -> List[str]:
 
         semaphore = DynamicSemaphore(coroutines, len(inputs), max_tokens=max_tokens)
 
-        if verbose > 0:
-            responses = await asyncio.gather(
-                *[
-                    self.chat_coroutine(
-                        input=input,
-                        semaphore=semaphore,
-                        retries=retries,
-                        error_threshold=error_threshold,
-                        increment=increment,
-                        verbose=verbose,
-                    )
-                    for input in inputs
-                ],
-            )
-            return responses
-        else:
-            responses = await tqdm_asyncio.gather(
-                *[
-                    self.chat_coroutine(
-                        input=input,
-                        semaphore=semaphore,
-                        retries=retries,
-                        error_threshold=error_threshold,
-                        increment=increment,
-                        verbose=verbose,
-                    )
-                    for input in inputs
-                ],
-                desc="Getting chat responses: ",
-            )
-            return responses
+        responses = await tqdm_asyncio.gather(
+            *[
+                self.chat_coroutine(
+                    input=input,
+                    semaphore=semaphore,
+                    retries=retries,
+                    error_threshold=error_threshold,
+                    increment=increment,
+                )
+                for input in inputs
+            ],
+            desc="Getting chat responses: ",
+        )
+        return responses
 
     def batch_chat(
         self,
@@ -192,7 +148,6 @@ class LLM:
         error_threshold: int = 5,
         increment: int = 5,
         max_tokens=None,
-        verbose=0,
     ) -> List[str]:
 
         if coroutines > len(inputs):
@@ -208,7 +163,6 @@ class LLM:
                 error_threshold,
                 increment,
                 max_tokens,
-                verbose,
             )
         )
         return responses
