@@ -1,7 +1,5 @@
 import asyncio
 import logging
-import sys
-from logging import StreamHandler
 from typing import Dict, List, Union
 
 import requests
@@ -13,6 +11,7 @@ from llmstudio.llm.semaphore import DynamicSemaphore
 from llmstudio.server import start_server
 
 start_server()
+
 
 class LLM:
     def __init__(self, model_id: str, **kwargs):
