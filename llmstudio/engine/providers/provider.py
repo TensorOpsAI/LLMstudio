@@ -79,13 +79,14 @@ class Provider:
                 if request.is_stream:
                     return StreamingResponse(response_handler)
                 else:
-                    return JSONResponse(content=await response_handler.__anext__())
+                    return JSONResponse(content= await response_handler.__anext__())
             except HTTPException as e:
                 if e.status_code == 429:
                     continue  # Retry on rate limit error
                 else:
                     raise e  # Raise other HTTP exceptions
             except Exception as e:
+                print(e)
                 raise HTTPException(
                     status_code=500, detail=str(e)
                 )  # Raise other exceptions as HTTP 500
@@ -310,26 +311,6 @@ class Provider:
                 )
             )
 
-            chunk = ChatCompletion(
-                id=chunks[-1].get("id"),
-                created=chunks[-1].get("created"),
-                model=chunks[-1].get("model"),
-                object="chat.completion",
-                choices=[
-                    Choice(
-                        finish_reason="stop",
-                        index=0,
-                        logprobs=None,
-                        message=ChatCompletionMessage(
-                            content=stop_content,
-                            role="assistant",
-                            function_call=None,
-                            tool_calls=None,
-                        ),
-                    )
-                ],
-            )
-
             return (
                 ChatCompletion(
                     id=chunks[-1].get("id"),
@@ -406,13 +387,20 @@ class Provider:
         if isinstance(input, str):
             return input
         else:
-            return "".join(
-                [
-                    message.get("content", "")
-                    for message in input
-                    if message.get("content") is not None
-                ]
-            )
+            result = []
+            for message in input:
+                if message.get("content") is not None:
+                    if isinstance(message["content"], str):
+                        result.append(message["content"])
+                    elif isinstance(message["content"], list) and message.get("role") == "user":
+                        for item in message["content"]:
+                            if item.get("type") == "text":
+                                result.append(item.get("text", ""))
+                            elif item.get("type") == "image_url":
+                                url = item.get("image_url", {}).get("url", "")
+                                result.append(url)
+            return "".join(result)
+
 
     def output_to_string(self, output):
         if output.choices[0].finish_reason == "stop":
