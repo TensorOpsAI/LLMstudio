@@ -79,7 +79,7 @@ class Provider:
                 if request.is_stream:
                     return StreamingResponse(response_handler)
                 else:
-                    return JSONResponse(content= await response_handler.__anext__())
+                    return JSONResponse(content=await response_handler.__anext__())
             except HTTPException as e:
                 if e.status_code == 429:
                     continue  # Retry on rate limit error
@@ -392,7 +392,10 @@ class Provider:
                 if message.get("content") is not None:
                     if isinstance(message["content"], str):
                         result.append(message["content"])
-                    elif isinstance(message["content"], list) and message.get("role") == "user":
+                    elif (
+                        isinstance(message["content"], list)
+                        and message.get("role") == "user"
+                    ):
                         for item in message["content"]:
                             if item.get("type") == "text":
                                 result.append(item.get("text", ""))
@@ -400,7 +403,6 @@ class Provider:
                                 url = item.get("image_url", {}).get("url", "")
                                 result.append(url)
             return "".join(result)
-
 
     def output_to_string(self, output):
         if output.choices[0].finish_reason == "stop":
