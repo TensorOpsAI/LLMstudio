@@ -78,13 +78,12 @@ class LLM:
         for chunk in response.iter_content(chunk_size=None):
             if chunk:
                 yield chunk.decode("utf-8")
-                # yield ChatCompletionChunk(**chunk.decode("utf-8"))
 
     async def async_chat(self, input: str, is_stream=False, retries: int = 0, **kwargs):
         if is_stream:
-            return self.async_stream(input)
+            return self.async_stream(input, retries=retries, **kwargs)
         else:
-            return await self.async_non_stream(input, retries=retries)
+            return await self.async_non_stream(input, retries=retries, **kwargs)
 
     async def chat_coroutine(
         self,
@@ -199,7 +198,7 @@ class LLM:
         )
         return responses
 
-    async def async_non_stream(self, input: str, **kwargs):
+    async def async_non_stream(self, input: str, retries: int, **kwargs):
         response = await asyncio.to_thread(
             requests.post,
             f"http://{ENGINE_HOST}:{ENGINE_PORT}/api/engine/chat/{self.provider}",
@@ -212,6 +211,7 @@ class LLM:
                 "base_url": self.base_url,
                 "chat_input": input,
                 "is_stream": False,
+                "retries": retries,
                 "parameters": {
                     key: value
                     for key, value in {
@@ -242,7 +242,7 @@ class LLM:
 
         return ChatCompletion(**response.json())
 
-    async def async_stream(self, input: str, **kwargs):
+    async def async_stream(self, input: str, retries: int, **kwargs):
         response = await asyncio.to_thread(
             requests.post,
             f"http://{ENGINE_HOST}:{ENGINE_PORT}/api/engine/chat/{self.provider}",
@@ -255,6 +255,7 @@ class LLM:
                 "base_url": self.base_url,
                 "chat_input": input,
                 "is_stream": True,
+                "retries": retries,
                 "parameters": {
                     key: value
                     for key, value in {
@@ -287,4 +288,3 @@ class LLM:
         for chunk in response.iter_content(chunk_size=None):
             if chunk:
                 yield chunk.decode("utf-8")
-                # yield ChatCompletionChunk(**chunk.decode("utf-8"))
