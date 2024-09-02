@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from typing import Dict, List, Union
 
 import requests
@@ -26,6 +27,7 @@ class LLM:
         self.max_tokens = kwargs.get("max_tokens")
         self.frequency_penalty = kwargs.get("frequency_penalty")
         self.presence_penalty = kwargs.get("presence_penalty")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def chat(self, input: str, is_stream: bool = False, retries: int = 0, **kwargs):
         response = requests.post(
@@ -92,15 +94,13 @@ class LLM:
         retries,
         error_threshold,
         increment,
-        verbose,
     ):
 
         async with semaphore:
             try:
                 response = await self.async_non_stream(
-                    input, max_tokens=semaphore.get_max_tokens(), retries=retries
+                    input, max_tokens=semaphore.max_tokens, retries=retries
                 )
-                semaphore.update_computed_max_tokens(response.metrics["total_tokens"])
                 return response
             except Exception as e:
                 semaphore.error_requests += 1
@@ -110,17 +110,6 @@ class LLM:
                 semaphore.finished_requests += 1
                 semaphore.requests_since_last_increase += 1
                 semaphore.try_increase_permits(error_threshold, increment)
-                if verbose > 0:
-                    print(
-                        f"Finished requests: {semaphore.finished_requests}/{semaphore.batch_size}"
-                    )
-                    print(
-                        f"Amount of parallel requests being allowed: {semaphore._permits}"
-                    )
-                    print(f"Max tokens being used: {semaphore.get_max_tokens()}")
-                    print(
-                        f"Requests finished with an error: {semaphore.error_requests}"
-                    )
 
     async def batch_chat_coroutine(
         self,
@@ -130,44 +119,24 @@ class LLM:
         error_threshold,
         increment,
         max_tokens,
-        verbose,
     ) -> List[str]:
 
-        semaphore = DynamicSemaphore(
-            coroutines, len(inputs), given_max_tokens=max_tokens
-        )
+        semaphore = DynamicSemaphore(coroutines, len(inputs), max_tokens=max_tokens)
 
-        if verbose > 0:
-            responses = await asyncio.gather(
-                *[
-                    self.chat_coroutine(
-                        input=input,
-                        semaphore=semaphore,
-                        retries=retries,
-                        error_threshold=error_threshold,
-                        increment=increment,
-                        verbose=verbose,
-                    )
-                    for input in inputs
-                ],
-            )
-            return responses
-        else:
-            responses = await tqdm_asyncio.gather(
-                *[
-                    self.chat_coroutine(
-                        input=input,
-                        semaphore=semaphore,
-                        retries=retries,
-                        error_threshold=error_threshold,
-                        increment=increment,
-                        verbose=verbose,
-                    )
-                    for input in inputs
-                ],
-                desc="Getting chat responses: ",
-            )
-            return responses
+        responses = await tqdm_asyncio.gather(
+            *[
+                self.chat_coroutine(
+                    input=input,
+                    semaphore=semaphore,
+                    retries=retries,
+                    error_threshold=error_threshold,
+                    increment=increment,
+                )
+                for input in inputs
+            ],
+            desc="Getting chat responses: ",
+        )
+        return responses
 
     def batch_chat(
         self,
@@ -177,7 +146,6 @@ class LLM:
         error_threshold: int = 5,
         increment: int = 5,
         max_tokens=None,
-        verbose=0,
     ) -> List[str]:
 
         if coroutines > len(inputs):
@@ -193,7 +161,6 @@ class LLM:
                 error_threshold,
                 increment,
                 max_tokens,
-                verbose,
             )
         )
         return responses
