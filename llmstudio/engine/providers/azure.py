@@ -1,4 +1,4 @@
-import ast  # Add this import to safely evaluate string representations of lists/dicts
+import ast
 import asyncio
 import json
 import os
@@ -227,6 +227,9 @@ class AzureProvider(Provider):
 
             else:
                 normal_call_chunks.append(chunk)
+                if chunk.choices[0].finish_reason == "stop":
+                    for chunk in normal_call_chunks:
+                        normal_call_chunks.append(chunk)
                 if chunk.choices[0].finish_reason == "stop":
                     for chunk in normal_call_chunks:
                         yield chunk.model_dump()
