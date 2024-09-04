@@ -1,21 +1,19 @@
 import asyncio
 from typing import Dict, List, Union
 
-import aiohttp
 import requests
-from IPython.display import clear_output
-from openai.types.chat import ChatCompletion, ChatCompletionChunk
-from pydantic import BaseModel, ValidationError
+from openai.types.chat import ChatCompletion
 from tqdm.asyncio import tqdm_asyncio
 
-from llmstudio.cli import start_server
 from llmstudio.config import ENGINE_HOST, ENGINE_PORT
 from llmstudio.llm.semaphore import DynamicSemaphore
+from llmstudio.server import start_server
+
+start_server()
 
 
 class LLM:
     def __init__(self, model_id: str, **kwargs):
-        start_server()
         self.provider, self.model = model_id.split("/")
         self.session_id = kwargs.get("session_id")
         self.api_key = kwargs.get("api_key")
@@ -43,15 +41,20 @@ class LLM:
                 "is_stream": is_stream,
                 "retries": retries,
                 "parameters": {
-                    "temperature": kwargs.get("temperature") or self.temperature,
-                    "top_p": kwargs.get("top_p") or self.top_p,
-                    "top_k": kwargs.get("top_k") or self.top_k,
-                    "max_tokens": kwargs.get("max_tokens") or self.max_tokens,
-                    "max_output_tokens": kwargs.get("max_tokens") or self.max_tokens,
-                    "frequency_penalty": kwargs.get("frequency_penalty")
-                    or self.frequency_penalty,
-                    "presence_penalty": kwargs.get("presence_penalty")
-                    or self.presence_penalty,
+                    key: value
+                    for key, value in {
+                        "temperature": kwargs.get("temperature") or self.temperature,
+                        "top_p": kwargs.get("top_p") or self.top_p,
+                        "top_k": kwargs.get("top_k") or self.top_k,
+                        "max_tokens": kwargs.get("max_tokens") or self.max_tokens,
+                        "max_output_tokens": kwargs.get("max_tokens")
+                        or self.max_tokens,
+                        "frequency_penalty": kwargs.get("frequency_penalty")
+                        or self.frequency_penalty,
+                        "presence_penalty": kwargs.get("presence_penalty")
+                        or self.presence_penalty,
+                    }.items()
+                    if value is not None
                 },
                 **kwargs,
             },
@@ -59,7 +62,12 @@ class LLM:
             headers={"Content-Type": "application/json"},
         )
 
-        response.raise_for_status()
+        if not response.ok:
+            try:
+                error_data = response.json().get("detail", "LLMstudio Engine error")
+            except ValueError:
+                error_data = response.text
+            raise Exception(error_data)
 
         if is_stream:
             return self.generate_chat(response)
@@ -70,13 +78,12 @@ class LLM:
         for chunk in response.iter_content(chunk_size=None):
             if chunk:
                 yield chunk.decode("utf-8")
-                # yield ChatCompletionChunk(**chunk.decode("utf-8"))
 
     async def async_chat(self, input: str, is_stream=False, retries: int = 0, **kwargs):
         if is_stream:
-            return self.async_stream(input)
+            return self.async_stream(input, retries=retries, **kwargs)
         else:
-            return await self.async_non_stream(input, retries=retries)
+            return await self.async_non_stream(input, retries=retries, **kwargs)
 
     async def chat_coroutine(
         self,
@@ -104,7 +111,6 @@ class LLM:
                 semaphore.requests_since_last_increase += 1
                 semaphore.try_increase_permits(error_threshold, increment)
                 if verbose > 0:
-                    clear_output()
                     print(
                         f"Finished requests: {semaphore.finished_requests}/{semaphore.batch_size}"
                     )
@@ -192,20 +198,23 @@ class LLM:
         )
         return responses
 
-    async def async_non_stream(self, input: str, **kwargs):
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                f"http://{ENGINE_HOST}:{ENGINE_PORT}/api/engine/chat/{self.provider}",
-                json={
-                    "model": self.model,
-                    "session_id": self.session_id,
-                    "api_key": self.api_key,
-                    "api_endpoint": self.api_endpoint,
-                    "api_version": self.api_version,
-                    "base_url": self.base_url,
-                    "chat_input": input,
-                    "is_stream": False,
-                    "parameters": {
+    async def async_non_stream(self, input: str, retries: int, **kwargs):
+        response = await asyncio.to_thread(
+            requests.post,
+            f"http://{ENGINE_HOST}:{ENGINE_PORT}/api/engine/chat/{self.provider}",
+            json={
+                "model": self.model,
+                "session_id": self.session_id,
+                "api_key": self.api_key,
+                "api_endpoint": self.api_endpoint,
+                "api_version": self.api_version,
+                "base_url": self.base_url,
+                "chat_input": input,
+                "is_stream": False,
+                "retries": retries,
+                "parameters": {
+                    key: value
+                    for key, value in {
                         "temperature": kwargs.get("temperature") or self.temperature,
                         "top_p": kwargs.get("top_p") or self.top_p,
                         "top_k": kwargs.get("top_k") or self.top_k,
@@ -216,29 +225,40 @@ class LLM:
                         or self.frequency_penalty,
                         "presence_penalty": kwargs.get("presence_penalty")
                         or self.presence_penalty,
-                    },
-                    **kwargs,
+                    }.items()
+                    if value is not None
                 },
-                headers={"Content-Type": "application/json"},
-            ) as response:
-                response.raise_for_status()
+                **kwargs,
+            },
+            headers={"Content-Type": "application/json"},
+        )
 
-                return ChatCompletion(**await response.json())
+        if not response.ok:
+            try:
+                error_data = response.json().get("detail", "LLMstudio Engine error")
+            except ValueError:
+                error_data = response.text
+            raise Exception(error_data)
 
-    async def async_stream(self, input: str, **kwargs):
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                f"http://{ENGINE_HOST}:{ENGINE_PORT}/api/engine/chat/{self.provider}",
-                json={
-                    "model": self.model,
-                    "session_id": self.session_id,
-                    "api_key": self.api_key,
-                    "api_endpoint": self.api_endpoint,
-                    "api_version": self.api_version,
-                    "base_url": self.base_url,
-                    "chat_input": input,
-                    "is_stream": True,
-                    "parameters": {
+        return ChatCompletion(**response.json())
+
+    async def async_stream(self, input: str, retries: int, **kwargs):
+        response = await asyncio.to_thread(
+            requests.post,
+            f"http://{ENGINE_HOST}:{ENGINE_PORT}/api/engine/chat/{self.provider}",
+            json={
+                "model": self.model,
+                "session_id": self.session_id,
+                "api_key": self.api_key,
+                "api_endpoint": self.api_endpoint,
+                "api_version": self.api_version,
+                "base_url": self.base_url,
+                "chat_input": input,
+                "is_stream": True,
+                "retries": retries,
+                "parameters": {
+                    key: value
+                    for key, value in {
                         "temperature": kwargs.get("temperature") or self.temperature,
                         "top_p": kwargs.get("top_p") or self.top_p,
                         "top_k": kwargs.get("top_k") or self.top_k,
@@ -249,14 +269,22 @@ class LLM:
                         or self.frequency_penalty,
                         "presence_penalty": kwargs.get("presence_penalty")
                         or self.presence_penalty,
-                    },
-                    **kwargs,
+                    }.items()
+                    if value is not None
                 },
-                headers={"Content-Type": "application/json"},
-            ) as response:
-                response.raise_for_status()
+                **kwargs,
+            },
+            headers={"Content-Type": "application/json"},
+            stream=True,
+        )
 
-                async for chunk in response.content.iter_any():
-                    if chunk:
-                        yield chunk.decode("utf-8")
-                        # yield ChatCompletionChunk(**await chunk.decode("utf-8"))
+        if not response.ok:
+            try:
+                error_data = response.json().get("detail", "LLMstudio Engine error")
+            except ValueError:
+                error_data = response.text
+            raise Exception(error_data)
+
+        for chunk in response.iter_content(chunk_size=None):
+            if chunk:
+                yield chunk.decode("utf-8")

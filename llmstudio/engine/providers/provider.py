@@ -16,7 +16,6 @@ from typing import (
 )
 
 import tiktoken
-from anthropic import Anthropic
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from openai.types.chat import (
@@ -28,7 +27,6 @@ from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion_message import FunctionCall
 from openai.types.chat.chat_completion_message_tool_call import Function
 from pydantic import BaseModel, ValidationError
-from tokenizers import Tokenizer
 
 provider_registry = {}
 
@@ -56,7 +54,7 @@ class Provider:
 
     def __init__(self, config):
         self.config = config
-        self.tokenizer: Tokenizer = self._get_tokenizer()
+        self.tokenizer = self._get_tokenizer()
         self.count = 0
 
     async def chat(
@@ -81,9 +79,15 @@ class Provider:
                 else:
                     return JSONResponse(content=await response_handler.__anext__())
             except HTTPException as e:
-                if e.status_code != 429:
-                    raise
-
+                if e.status_code == 429:
+                    continue  # Retry on rate limit error
+                else:
+                    raise e  # Raise other HTTP exceptions
+            except Exception as e:
+                print(e)
+                raise HTTPException(
+                    status_code=500, detail=str(e)
+                )  # Raise other exceptions as HTTP 500
         raise HTTPException(status_code=429, detail="Too many requests")
 
     def validate_request(self, request: ChatRequest):
@@ -180,52 +184,57 @@ class Provider:
     def join_chunks(self, chunks, request):
         from llmstudio.engine.providers.azure import AzureRequest
         from llmstudio.engine.providers.openai import OpenAIRequest
+        from llmstudio.engine.providers.vertexai import VertexAIRequest
 
         finish_reason = chunks[-1].get("choices")[0].get("finish_reason")
-
         if finish_reason == "tool_calls":
             tool_calls = [
                 chunk.get("choices")[0].get("delta").get("tool_calls")[0]
                 for chunk in chunks[1:-1]
             ]
+
             tool_call_id = tool_calls[0].get("id")
             tool_call_name = tool_calls[0].get("function").get("name")
-            tool_call_type = tool_calls[0].get("type")
-            tool_call_arguments = ""
-            for chunk in tool_calls[1:]:
-                tool_call_arguments += chunk.get("function").get("arguments")
-
-            return (
-                ChatCompletion(
-                    id=chunks[-1].get("id"),
-                    created=chunks[-1].get("created"),
-                    model=chunks[-1].get("model"),
-                    object="chat.completion",
-                    choices=[
-                        Choice(
-                            finish_reason="tool_calls",
-                            index=0,
-                            logprobs=None,
-                            message=ChatCompletionMessage(
-                                content=None,
-                                role="assistant",
-                                function_call=None,
-                                tool_calls=[
-                                    ChatCompletionMessageToolCall(
-                                        id=tool_call_id,
-                                        function=Function(
-                                            arguments=tool_call_arguments,
-                                            name=tool_call_name,
-                                        ),
-                                        type=tool_call_type,
-                                    )
-                                ],
-                            ),
-                        )
-                    ],
-                ),
-                tool_call_arguments,
+            tool_call_type = tool_calls[0].get("function").get("type")
+            tool_call_arguments = "".join(
+                chunk.get("function", {}).get("arguments", "")
+                for chunk in tool_calls[1:]
             )
+
+            try:
+                return (
+                    ChatCompletion(
+                        id=chunks[-1].get("id"),
+                        created=chunks[-1].get("created"),
+                        model=chunks[-1].get("model"),
+                        object="chat.completion",
+                        choices=[
+                            Choice(
+                                finish_reason="tool_calls",
+                                index=0,
+                                logprobs=None,
+                                message=ChatCompletionMessage(
+                                    content=None,
+                                    role="assistant",
+                                    function_call=None,
+                                    tool_calls=[
+                                        ChatCompletionMessageToolCall(
+                                            id=tool_call_id,
+                                            function=Function(
+                                                arguments=tool_call_arguments,
+                                                name=tool_call_name,
+                                            ),
+                                            type=tool_call_type,
+                                        )
+                                    ],
+                                ),
+                            )
+                        ],
+                    ),
+                    tool_call_arguments,
+                )
+            except Exception as e:
+                raise e
         elif finish_reason == "function_call":
             function_calls = [
                 chunk.get("choices")[0].get("delta").get("function_call")
@@ -237,7 +246,9 @@ class Provider:
 
             if isinstance(request, AzureRequest):
                 function_call_name = function_calls[0].get("name")
-            elif isinstance(request, OpenAIRequest):
+            elif isinstance(request, OpenAIRequest) or isinstance(
+                request, VertexAIRequest
+            ):
                 function_call_name = (
                     chunks[0]
                     .get("choices")[0]
@@ -251,7 +262,9 @@ class Provider:
                     part = chunk.get("arguments", "")
                     if part:
                         function_call_arguments += part
-                elif isinstance(request, OpenAIRequest):
+                elif isinstance(request, OpenAIRequest) or isinstance(
+                    request, VertexAIRequest
+                ):
                     function_call_arguments += chunk.get("arguments")
 
             return (
@@ -279,6 +292,7 @@ class Provider:
                 ),
                 function_call_arguments,
             )
+
         elif finish_reason == "stop" or finish_reason == "length":
             if isinstance(request, AzureRequest) or isinstance(request, OpenAIRequest):
                 start_index = 1
@@ -371,13 +385,22 @@ class Provider:
         if isinstance(input, str):
             return input
         else:
-            return "".join(
-                [
-                    message.get("content", "")
-                    for message in input
-                    if message.get("content") is not None
-                ]
-            )
+            result = []
+            for message in input:
+                if message.get("content") is not None:
+                    if isinstance(message["content"], str):
+                        result.append(message["content"])
+                    elif (
+                        isinstance(message["content"], list)
+                        and message.get("role") == "user"
+                    ):
+                        for item in message["content"]:
+                            if item.get("type") == "text":
+                                result.append(item.get("text", ""))
+                            elif item.get("type") == "image_url":
+                                url = item.get("image_url", {}).get("url", "")
+                                result.append(url)
+            return "".join(result)
 
     def output_to_string(self, output):
         if output.choices[0].finish_reason == "stop":
@@ -390,10 +413,8 @@ class Provider:
     def get_end_token_string(self, metrics: Dict[str, Any]) -> str:
         return f"{self.END_TOKEN},input_tokens={metrics['input_tokens']},output_tokens={metrics['output_tokens']},cost_usd={metrics['cost_usd']},latency_s={metrics['latency_s']:.5f},time_to_first_token_s={metrics['time_to_first_token_s']:.5f},inter_token_latency_s={metrics['inter_token_latency_s']:.5f},tokens_per_second={metrics['tokens_per_second']:.2f}"
 
-    def _get_tokenizer(self) -> Tokenizer:
-        return {
-            "anthropic": Anthropic().get_tokenizer(),
-        }.get(self.config.id, tiktoken.get_encoding("cl100k_base"))
+    def _get_tokenizer(self):
+        return {}.get(self.config.id, tiktoken.get_encoding("cl100k_base"))
 
     def save_log(self, response: Dict[str, Any]):
         
