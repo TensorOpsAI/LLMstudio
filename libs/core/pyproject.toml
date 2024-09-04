@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "llmstudio-core"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+pydantic = "^2.5"
+requests = "^2.31"
+fastapi = "^0.109"
+uvicorn = "^0.27"
+openai = "^1.26"
+tiktoken = "^0.7"
+python-dotenv = "^0"
+sqlalchemy = "^2"
+pyyaml = "^6.0.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
