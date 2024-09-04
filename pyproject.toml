@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "llmstudio"
-version = "0.3.10"
+version = "0.3.11a0"
 description = "Prompt Perfection at Your Fingertips"
 authors = ["Cláudio Lemos <claudio@tensorops.ai>"]
 license = "MIT"
@@ -24,6 +24,7 @@ tiktoken = "^0.7"
 python-dotenv = "^0"
 sqlalchemy = "^2"
 langchain-experimental = "^0.0"
+pyyaml = "^6.0.2"
 
 [tool.poetry.scripts]
 llmstudio = "llmstudio.cli:main"
