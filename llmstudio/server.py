@@ -13,6 +13,7 @@ from llmstudio.config import (
 from llmstudio.engine import run_engine_app
 from llmstudio.tracking import run_tracking_app
 from llmstudio.ui import run_ui_app
+from threading import Event
 
 _servers_started = False
 
@@ -29,8 +30,10 @@ def is_server_running(host, port, path="/health"):
 
 def start_server_component(host, port, run_func, server_name):
     if not is_server_running(host, port):
-        thread = threading.Thread(target=run_func, daemon=True)
+        started_event = Event()
+        thread = threading.Thread(target=run_func, daemon=True, args=(started_event,))
         thread.start()
+        started_event.wait() # wait for startup, this assumes the event is set somewhere
         return thread
     else:
         print(f"{server_name} server already running on {host}:{port}")
@@ -53,7 +56,6 @@ def setup_servers(engine, tracking, ui):
             TRACKING_HOST, TRACKING_PORT, run_tracking_app, "Tracking"
         )
 
-    ui_thread = None
     if ui:
         ui_thread = start_server_component(UI_HOST, UI_PORT, run_ui_app, "UI")
 

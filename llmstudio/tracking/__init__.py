@@ -1,6 +1,7 @@
 import uvicorn
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from threading import Event
 
 from llmstudio.config import TRACKING_HOST, TRACKING_PORT
 from llmstudio.engine.providers import *
@@ -15,7 +16,7 @@ TRACKING_BASE_ENDPOINT = "/api/tracking"
 
 
 ## Tracking
-def create_tracking_app() -> FastAPI:
+def create_tracking_app(started_event : Event) -> FastAPI:
     app = FastAPI(
         title=TRACKING_TITLE,
         description=TRACKING_DESCRIPTION,
@@ -43,14 +44,15 @@ def create_tracking_app() -> FastAPI:
 
     @app.on_event("startup")
     async def startup_event():
+        started_event.set()
         print(f"Running LLMstudio Tracking on http://{TRACKING_HOST}:{TRACKING_PORT} ")
 
     return app
 
 
-def run_tracking_app():
+def run_tracking_app(started_event: Event):
     try:
-        tracking = create_tracking_app()
+        tracking = create_tracking_app(started_event)
         uvicorn.run(
             tracking,
             host=TRACKING_HOST,
