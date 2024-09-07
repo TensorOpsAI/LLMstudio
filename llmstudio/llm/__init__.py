@@ -231,6 +231,7 @@ class LLM:
             headers={"Content-Type": "application/json"},
         )
 
+        print(f'\n\nLOGGING RESPONSE BEFORE ERROR \n\n{response}\n\n')
         if not response.ok:
             try:
                 error_data = response.json().get("detail", "LLMstudio Engine error")
