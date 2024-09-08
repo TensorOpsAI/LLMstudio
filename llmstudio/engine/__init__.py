@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+from threading import Event
 from typing import Any, Dict, List, Optional, Union
 
 import uvicorn
@@ -9,7 +10,6 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ValidationError
-from threading import Event
 
 from llmstudio.config import ENGINE_HOST, ENGINE_PORT
 from llmstudio.engine.providers import *
@@ -79,7 +79,9 @@ def _load_engine_config() -> EngineConfig:
         raise RuntimeError(f"Error in configuration data: {e}")
 
 
-def create_engine_app(started_event: Event, config: EngineConfig = _load_engine_config()) -> FastAPI:
+def create_engine_app(
+    started_event: Event, config: EngineConfig = _load_engine_config()
+) -> FastAPI:
     app = FastAPI(
         title=ENGINE_TITLE,
         description=ENGINE_DESCRIPTION,
@@ -169,7 +171,7 @@ def create_engine_app(started_event: Event, config: EngineConfig = _load_engine_
     return app
 
 
-def run_engine_app(started_event : Event):
+def run_engine_app(started_event: Event):
     try:
         engine = create_engine_app(started_event)
         uvicorn.run(

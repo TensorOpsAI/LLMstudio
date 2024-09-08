@@ -1,7 +1,8 @@
+from threading import Event
+
 import uvicorn
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from threading import Event
 
 from llmstudio.config import TRACKING_HOST, TRACKING_PORT
 from llmstudio.engine.providers import *
@@ -16,7 +17,7 @@ TRACKING_BASE_ENDPOINT = "/api/tracking"
 
 
 ## Tracking
-def create_tracking_app(started_event : Event) -> FastAPI:
+def create_tracking_app(started_event: Event) -> FastAPI:
     app = FastAPI(
         title=TRACKING_TITLE,
         description=TRACKING_DESCRIPTION,

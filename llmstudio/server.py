@@ -1,4 +1,5 @@
 import threading
+from threading import Event
 
 import requests
 
@@ -13,7 +14,6 @@ from llmstudio.config import (
 from llmstudio.engine import run_engine_app
 from llmstudio.tracking import run_tracking_app
 from llmstudio.ui import run_ui_app
-from threading import Event
 
 _servers_started = False
 
@@ -33,7 +33,7 @@ def start_server_component(host, port, run_func, server_name):
         started_event = Event()
         thread = threading.Thread(target=run_func, daemon=True, args=(started_event,))
         thread.start()
-        started_event.wait() # wait for startup, this assumes the event is set somewhere
+        started_event.wait()  # wait for startup, this assumes the event is set somewhere
         return thread
     else:
         print(f"{server_name} server already running on {host}:{port}")
