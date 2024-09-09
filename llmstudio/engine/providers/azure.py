@@ -1,3 +1,4 @@
+import ast
 import asyncio
 import json
 import os
@@ -120,13 +121,17 @@ class AzureProvider(Provider):
                 **function_args,
                 **request.parameters.model_dump(),
             }
-
             # Perform the asynchronous call
             return await asyncio.to_thread(
                 client.chat.completions.create, **combined_args
             )
 
-        except openai._exceptions.APIError as e:
+        except openai._exceptions.APIConnectionError as e:
+            raise HTTPException(
+                status_code=404, detail=f"There was an error reaching the endpoint: {e}"
+            )
+
+        except openai._exceptions.APIStatusError as e:
             raise HTTPException(status_code=e.status_code, detail=e.response.json())
 
     def prepare_messages(self, request: AzureRequest):
@@ -174,6 +179,7 @@ class AzureProvider(Provider):
 
         function_call_buffer = ""
         saving = False
+        normal_call_chunks = []
         for chunk in response:
             if chunk.choices[0].delta.content is not None:
                 if (
@@ -224,7 +230,13 @@ class AzureProvider(Provider):
                         yield finish_chunk
 
             else:
-                yield chunk.model_dump()
+                normal_call_chunks.append(chunk)
+                if chunk.choices[0].finish_reason == "stop":
+                    for chunk in normal_call_chunks:
+                        normal_call_chunks.append(chunk)
+                if chunk.choices[0].finish_reason == "stop":
+                    for chunk in normal_call_chunks:
+                        yield chunk.model_dump()
 
     def create_tool_name_chunk(self, function_name: str, kwargs: dict) -> dict:
         return ChatCompletionChunk(
@@ -433,14 +445,15 @@ class AzureProvider(Provider):
         tool_prompt += """
 If you choose to use a function to produce this response, ONLY reply in the following format with no prefix or suffix:
 §{"type": "function", "name": "FUNCTION_NAME", "parameters": {"PARAMETER_NAME": PARAMETER_VALUE}}
+IMPORTANT: IT IS VITAL THAT YOU NEVER ADD A PREFIX OR A SUFFIX TO THE FUNCTION CALL.
 
 Here is an example of the output I desiere when performing function call:
 §{"type": "function", "name": "python_repl_ast", "parameters": {"query": "print(df.shape)"}}
+NOTE: There is no prefix before the symbol '§' and nothing comes after the call is done.
 
     Reminder:
     - Function calls MUST follow the specified format.
     - Only call one function at a time.
-    - NEVER call more than one function at a time.
     - Required parameters MUST be specified.
     - Put the entire function call reply on one line.
     - If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls.
@@ -456,10 +469,10 @@ You have access to the following functions:
 
         for func in functions:
             function_prompt += (
-                f"Use the function '{func['name']}' to '{func['description']}':\n"
+                f"Use the function '{func['name']}' to: '{func['description']}'\n"
             )
             params_info = json.dumps(func["parameters"], indent=4)
-            function_prompt += f"Parameters format:\n{params_info}\n\n"
+            function_prompt += f"{params_info}\n\n"
 
         function_prompt += """
 If you choose to use a function to produce this response, ONLY reply in the following format with no prefix or suffix:
@@ -477,7 +490,6 @@ Reminder:
 - If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls.
 - If you have already called a function and got the response for the user's question, please reply with the response.
 """
-
         return function_prompt
 
     def add_conversation(self, openai_message: list, llama_message: str) -> str:
@@ -485,66 +497,67 @@ Reminder:
         for message in openai_message:
             if message["role"] == "system":
                 continue
-            elif "tool_calls" in message:
-                for tool_call in message["tool_calls"]:
-                    function_name = tool_call["function"]["name"]
-                    arguments = tool_call["function"]["arguments"]
-                    conversation_parts.append(
-                        f"""
-            <|start_header_id|>assistant<|end_header_id|>
-            <function={function_name}>{arguments}</function>
-            <|eom_id|>
-            """
-                    )
-            elif "tool_call_id" in message:
-                tool_response = message["content"]
-                conversation_parts.append(
-                    f"""
-          <|start_header_id|>ipython<|end_header_id|>
-          {tool_response}
-          <|eot_id|>
-          """
-                )
-            elif "function_call" in message:
-                function_name = message["function_call"]["name"]
-                arguments = message["function_call"]["arguments"]
-                conversation_parts.append(
-                    f"""
-            <|start_header_id|>assistant<|end_header_id|>
-            <function={function_name}>{arguments}</function>
-            <|eom_id|>
-            """
-                )
-            elif (
-                message["role"] in ["assistant", "user"]
-                and message["content"] is not None
-            ):
-                conversation_parts.append(
-                    f"""
-          <|start_header_id|>{message['role']}<|end_header_id|>
-          {message['content']}
-          <|eot_id|>
-          """
-                )
-            elif message["role"] == "function":
-                function_response = message["content"]
-                conversation_parts.append(
-                    f"""
-          <|start_header_id|>ipython<|end_header_id|>
-          {function_response}
-          <|eot_id|>
-          """
-                )
-            elif (
-                message["role"] in ["assistant", "user"]
-                and message["content"] is not None
-            ):
-                conversation_parts.append(
-                    f"""
-          <|start_header_id|>{message['role']}<|end_header_id|>
-          {message['content']}
-          <|eot_id|>
-          """
-                )
+            elif message["role"] == "user" and isinstance(message["content"], str):
+                try:
+                    # Attempt to safely evaluate the string to a Python object
+                    content_as_list = ast.literal_eval(message["content"])
+                    if isinstance(content_as_list, list):
+                        # If the content is a list, process each nested message
+                        for nested_message in content_as_list:
+                            conversation_parts.append(
+                                self.format_message(nested_message)
+                            )
+                    else:
+                        # If the content is not a list, append it directly
+                        conversation_parts.append(self.format_message(message))
+                except (ValueError, SyntaxError):
+                    # If evaluation fails or content is not a list/dict string, append the message directly
+                    conversation_parts.append(self.format_message(message))
+            else:
+                # For all other messages, use the existing formatting logic
+                conversation_parts.append(self.format_message(message))
 
         return llama_message + "".join(conversation_parts)
+
+    def format_message(self, message: dict) -> str:
+        """Format a single message for the conversation."""
+        if "tool_calls" in message:
+            for tool_call in message["tool_calls"]:
+                function_name = tool_call["function"]["name"]
+                arguments = tool_call["function"]["arguments"]
+                return f"""
+        <|start_header_id|>assistant<|end_header_id|>
+        <function={function_name}>{arguments}</function>
+        <|eom_id|>
+        """
+        elif "tool_call_id" in message:
+            tool_response = message["content"]
+            return f"""
+    <|start_header_id|>ipython<|end_header_id|>
+    {tool_response}
+    <|eot_id|>
+    """
+        elif "function_call" in message:
+            function_name = message["function_call"]["name"]
+            arguments = message["function_call"]["arguments"]
+            return f"""
+        <|start_header_id|>assistant<|end_header_id|>
+        <function={function_name}>{arguments}</function>
+        <|eom_id|>
+        """
+        elif (
+            message["role"] in ["assistant", "user"] and message["content"] is not None
+        ):
+            return f"""
+    <|start_header_id|>{message['role']}<|end_header_id|>
+    {message['content']}
+    <|eot_id|>
+    """
+        elif message["role"] == "function":
+            function_response = message["content"]
+            return f"""
+    <|start_header_id|>ipython<|end_header_id|>
+    {function_response}
+    <|eot_id|>
+    """
+        return ""

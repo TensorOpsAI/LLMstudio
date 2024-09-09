@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+from threading import Event
 from typing import Any, Dict, List, Optional, Union
 
 import uvicorn
@@ -78,7 +79,9 @@ def _load_engine_config() -> EngineConfig:
         raise RuntimeError(f"Error in configuration data: {e}")
 
 
-def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
+def create_engine_app(
+    started_event: Event, config: EngineConfig = _load_engine_config()
+) -> FastAPI:
     app = FastAPI(
         title=ENGINE_TITLE,
         description=ENGINE_DESCRIPTION,
@@ -162,14 +165,15 @@ def create_engine_app(config: EngineConfig = _load_engine_config()) -> FastAPI:
 
     @app.on_event("startup")
     async def startup_event():
+        started_event.set()
         print(f"Running LLMstudio Engine on http://{ENGINE_HOST}:{ENGINE_PORT} ")
 
     return app
 
 
-def run_engine_app():
+def run_engine_app(started_event: Event):
     try:
-        engine = create_engine_app()
+        engine = create_engine_app(started_event)
         uvicorn.run(
             engine,
             host=ENGINE_HOST,

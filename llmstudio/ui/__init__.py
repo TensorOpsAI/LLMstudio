@@ -2,7 +2,7 @@ import os
 import subprocess
 from pathlib import Path
 import threading
-import webbrowser
+from threading import Event
 
 from llmstudio.config import UI_PORT
 
@@ -20,6 +20,7 @@ def run_bun_in_thread():
         print(f"Error running LLMstudio UI: {e}")
 
 
-def run_ui_app():
+def run_ui_app(started_event: Event):
     thread = threading.Thread(target=run_bun_in_thread)
     thread.start()
+    started_event.set() #just here for compatibility

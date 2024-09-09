@@ -64,7 +64,6 @@ class OllamaProvider(Provider):
             if "error" in chunk:
                 raise HTTPException(status_code=500, detail=chunk["error"])
             if chunk.get("done"):
-                print("done")
                 yield ChatCompletionChunk(
                     id=str(uuid.uuid4()),
                     choices=[
