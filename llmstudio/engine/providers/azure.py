@@ -121,13 +121,17 @@ class AzureProvider(Provider):
                 **function_args,
                 **request.parameters.model_dump(),
             }
-
             # Perform the asynchronous call
             return await asyncio.to_thread(
                 client.chat.completions.create, **combined_args
             )
 
-        except openai._exceptions.APIError as e:
+        except openai._exceptions.APIConnectionError as e:
+            raise HTTPException(
+                status_code=404, detail=f"There was an error reaching the endpoint: {e}"
+            )
+
+        except openai._exceptions.APIStatusError as e:
             raise HTTPException(status_code=e.status_code, detail=e.response.json())
 
     def prepare_messages(self, request: AzureRequest):
