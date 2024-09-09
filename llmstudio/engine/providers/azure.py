@@ -127,7 +127,7 @@ class AzureProvider(Provider):
 
         except openai._exceptions.APIConnectionError as e:
             raise HTTPException(
-                status_code=404, detail="There was an error reaching the endpoint"
+                status_code=404, detail=f"There was an error reaching the endpoint: {e}"
             )
 
         except openai._exceptions.APIStatusError as e:
