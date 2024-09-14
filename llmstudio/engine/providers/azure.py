@@ -150,11 +150,9 @@ class AzureProvider(Provider):
                 else request.chat_input
             )
 
-    async def parse_response(
-        self, response: AsyncGenerator, **kwargs
-    ) -> AsyncGenerator[str, None]:
+    def parse_response(self, response, **kwargs):
         if self.is_llama and (self.has_tools or self.has_functions):
-            async for chunk in self.handle_tool_response(response, **kwargs):
+            for chunk in self.handle_tool_response(response, **kwargs):
                 yield chunk
         else:
             for chunk in response:

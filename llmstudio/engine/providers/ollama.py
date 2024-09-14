@@ -2,7 +2,7 @@ import asyncio
 import json
 import time
 import uuid
-from typing import Any, AsyncGenerator, Coroutine, Generator, Optional
+from typing import Any, Coroutine, Generator, Optional
 
 import requests
 from fastapi import HTTPException
@@ -54,9 +54,7 @@ class OllamaProvider(Provider):
                 detail="Ollama is not running",
             )
 
-    async def parse_response(
-        self, response: AsyncGenerator, **kwargs
-    ) -> AsyncGenerator[str, None]:
+    def parse_response(self, response, **kwargs):
         for line in response.iter_lines():
             if not line:
                 continue

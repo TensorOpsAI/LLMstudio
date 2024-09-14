@@ -3,7 +3,7 @@ import json
 import os
 import time
 import uuid
-from typing import Any, AsyncGenerator, Coroutine, Generator, Optional
+from typing import Any, Coroutine, Generator, Optional
 
 import requests
 from fastapi import HTTPException
@@ -69,9 +69,7 @@ class AnthropicProvider(Provider):
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-    async def parse_response(
-        self, response: AsyncGenerator, **kwargs
-    ) -> AsyncGenerator[str, None]:
+    def parse_response(self, response, **kwargs):
         for chunk in response.iter_content(chunk_size=None):
             chunk = chunk.decode("utf-8")
             if chunk.startswith(("event: content_block_stop", "event: message_stop")):

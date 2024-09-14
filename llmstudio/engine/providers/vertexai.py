@@ -3,16 +3,7 @@ import json
 import os
 import time
 import uuid
-from typing import (
-    Any,
-    AsyncGenerator,
-    Coroutine,
-    Dict,
-    Generator,
-    List,
-    Optional,
-    Union,
-)
+from typing import Any, Coroutine, Dict, Generator, List, Optional, Union
 
 import requests
 from fastapi import HTTPException
@@ -121,9 +112,7 @@ class VertexAIProvider(Provider):
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-    async def parse_response(
-        self, response: AsyncGenerator, **kwargs
-    ) -> AsyncGenerator[str, None]:
+    def parse_response(self, response, **kwargs):
         for chunk in response.iter_content(chunk_size=None):
 
             chunk = json.loads(chunk.decode("utf-8").lstrip("data: "))

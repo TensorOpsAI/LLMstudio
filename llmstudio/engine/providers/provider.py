@@ -74,12 +74,17 @@ class Provider:
             try:
                 start_time = time.time()
                 response = await self.generate_client(request)
-                response_handler = self.handle_response(request, response, start_time)
 
                 if request.is_stream:
-                    return StreamingResponse(response_handler)
+                    response_handler = self.handle_response_stream(
+                        request, response, start_time
+                    )
+                    return StreamingResponse(response_handler, media_type="text/plain")
                 else:
-                    return JSONResponse(content=await response_handler.__anext__())
+                    response_data = await self.handle_response(
+                        request, response, start_time
+                    )
+                    return JSONResponse(content=response_data)
             except HTTPException as e:
                 if e.status_code == 429:
                     continue  # Retry on rate limit error
@@ -106,17 +111,15 @@ class Provider:
     ) -> Coroutine[Any, Any, Generator]:
         """Generate the provider's client"""
 
-    async def handle_response(
-        self, request: ChatRequest, response: AsyncGenerator, start_time: float
-    ) -> AsyncGenerator[str, None]:
-        """Handles the response from an API"""
+    def handle_response_stream(self, request: ChatRequest, response, start_time: float):
+        """Handles the streaming response from an API"""
         first_token_time = None
         previous_token_time = None
         token_times = []
         token_count = 0
         chunks = []
 
-        async for chunk in self.parse_response(response, request=request):
+        for chunk in self.parse_response(response, request=request):
             token_count += 1
             current_time = time.time()
             first_token_time = first_token_time or current_time
@@ -125,10 +128,9 @@ class Provider:
             previous_token_time = current_time
 
             chunks.append(chunk)
-            if request.is_stream:
-                chunk = chunk[0] if isinstance(chunk, tuple) else chunk
-                if chunk.get("choices")[0].get("finish_reason") != "stop":
-                    yield chunk.get("choices")[0].get("delta").get("content")
+            chunk = chunk[0] if isinstance(chunk, tuple) else chunk
+            if chunk.get("choices")[0].get("finish_reason") != "stop":
+                yield chunk.get("choices")[0].get("delta").get("content")
 
         chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
         model = next(chunk["model"] for chunk in chunks if chunk.get("model"))
@@ -181,6 +183,79 @@ class Provider:
 
         if not request.is_stream:
             yield response
+
+    async def handle_response(
+        self, request: ChatRequest, response: AsyncGenerator, start_time: float
+    ) -> Dict[str, Any]:
+        """Handles the non-streaming response from an API"""
+        first_token_time = None
+        previous_token_time = None
+        token_times = []
+        token_count = 0
+        chunks = []
+
+        import time
+
+        for chunk in self.parse_response(response, request=request):
+            token_count += 1
+            current_time = time.time()
+            first_token_time = first_token_time or current_time
+            if previous_token_time is not None:
+                token_times.append(current_time - previous_token_time)
+            previous_token_time = current_time
+
+            chunks.append(chunk)
+
+        chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
+        model = next(chunk["model"] for chunk in chunks if chunk.get("model"))
+
+        response, output_string = self.join_chunks(chunks, request)
+
+        metrics = self.calculate_metrics(
+            request.chat_input,
+            response,
+            request.model,
+            start_time,
+            time.time(),
+            first_token_time,
+            token_times,
+            token_count,
+        )
+
+        response = {
+            **response.model_dump(),
+            "id": str(uuid.uuid4()),
+            "session_id": request.session_id,
+            "chat_input": (
+                request.chat_input
+                if isinstance(request.chat_input, str)
+                else request.chat_input[-1]["content"]
+            ),
+            "chat_output": output_string,
+            "context": (
+                [{"role": "user", "content": request.chat_input}]
+                if isinstance(request.chat_input, str)
+                else request.chat_input
+            ),
+            "provider": self.config.id,
+            "model": (
+                request.model
+                if model and model.startswith(request.model)
+                else (model or request.model)
+            ),
+            "deployment": (
+                model
+                if model and model.startswith(request.model)
+                else (request.model if model != request.model else None)
+            ),
+            "timestamp": time.time(),
+            "parameters": request.parameters.model_dump(),
+            "metrics": metrics,
+        }
+
+        self.save_log(response)
+
+        return response
 
     def join_chunks(self, chunks, request):
         from llmstudio.engine.providers.azure import AzureRequest
@@ -333,9 +408,7 @@ class Provider:
                 stop_content,
             )
 
-    async def parse_response(
-        self, response: AsyncGenerator
-    ) -> AsyncGenerator[str, None]:
+    def parse_response(self, response, **kwargs):
         pass
 
     def calculate_metrics(
