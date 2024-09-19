@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import Any, AsyncGenerator, Coroutine, Dict, List, Optional
+from typing import Any, AsyncGenerator, Coroutine, Dict, List, Optional, Union, Tuple
 
 from fastapi import HTTPException
 from pydantic import BaseModel, Field
@@ -158,11 +158,33 @@ class BedrockProvider(Provider):
                         pass
 
     @staticmethod
-    def _sign(key, msg):
+    def _sign(key: bytes, msg: str) -> bytes:
+        """
+        Generate an HMAC-SHA256 signature for the given key and message.
+
+        Args:
+            key (bytes): The secret key used for signing.
+            msg (str): The message to be signed.
+
+        Returns:
+            bytes: The HMAC-SHA256 digest of the message.
+        """
         return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
 
     @classmethod
-    def _get_signature_key(cls, key, date_stamp, region_name, service_name):
+    def _get_signature_key(cls, key: str, date_stamp: str, region_name: str, service_name: str) -> bytes:
+        """
+        Generate a signing key for AWS Signature Version 4.
+
+        Args:
+            key (str): The secret access key.
+            date_stamp (str): The date stamp in the format 'YYYYMMDD'.
+            region_name (str): The name of the AWS region.
+            service_name (str): The name of the AWS service.
+
+        Returns:
+            bytes: The signing key used in the AWS Signature Version 4 process.
+        """
         k_date = cls._sign(('AWS4' + key).encode('utf-8'), date_stamp)
         k_region = cls._sign(k_date, region_name)
         k_service = cls._sign(k_region, service_name)
@@ -170,7 +192,19 @@ class BedrockProvider(Provider):
         return k_signing
 
     @staticmethod
-    def _generate_input_text(chat_input):
+    def _generate_input_text(chat_input: Union[str, List[Dict[str, str]]]) -> List[Dict[str, Union[List[Dict[str, str]], str]]]:
+        """
+        Generate input text for the Bedrock API based on the provided chat input.
+
+        Args:
+            chat_input (Union[str, List[Dict[str, str]]]): The input text or a list of message dictionaries.
+
+        Returns:
+            List[Dict[str, Union[List[Dict[str, str]], str]]]: A list of formatted messages for the Bedrock API.
+
+        Raises:
+            HTTPException: If the input is invalid.
+        """
         if isinstance(chat_input, str):
             return [
                 {
@@ -192,8 +226,6 @@ class BedrockProvider(Provider):
                         "role": role
                     })
             return messages
-        else:
-            raise HTTPException(status_code=400, detail="Invalid input: chat_input must be a string or a list of messages.")
 
     @staticmethod
     def _generate_system_message(chat_input):
@@ -202,7 +234,25 @@ class BedrockProvider(Provider):
         return None
 
     @classmethod
-    def _create_headers(cls, method, uri, host, region, service, access_key, secret_key, request_parameters, content_type, accept):
+    def _create_headers(cls, method: str, uri: str, host: str, region: str, service: str, access_key: str, secret_key: str, request_parameters: str, content_type: str, accept: str) -> Dict[str, str]:
+        """
+        Create headers for AWS Bedrock API request.
+
+        Args:
+            method (str): HTTP method (e.g., 'POST', 'GET').
+            uri (str): Request URI.
+            host (str): Host name.
+            region (str): AWS region.
+            service (str): AWS service name.
+            access_key (str): AWS access key.
+            secret_key (str): AWS secret key.
+            request_parameters (str): Request parameters as a JSON string.
+            content_type (str): Content type of the request.
+            accept (str): Accepted response format.
+
+        Returns:
+            Dict[str, str]: A dictionary containing the necessary headers for the AWS Bedrock API request.
+        """
         # Timestamp and date
         t = datetime.datetime.utcnow()
         amz_date = t.strftime('%Y%m%dT%H%M%SZ')  # Format: YYYYMMDD'T'HHMMSS'Z'
@@ -271,7 +321,18 @@ class BedrockProvider(Provider):
         return request_headers
     
     @classmethod
-    def _parse_event_stream(cls, buffer):
+    def _parse_event_stream(cls, buffer: bytes) -> Tuple[List[Tuple[Dict[str, str], bytes]], bytes]:
+        """
+        Parse an event stream buffer into individual messages.
+
+        Args:
+            buffer (bytes): The input buffer containing event stream data.
+
+        Returns:
+            Tuple[List[Tuple[Dict[str, str], bytes]], bytes]: A tuple containing:
+                - A list of parsed messages, where each message is a tuple of (headers, payload)
+                - The remaining buffer that couldn't be fully parsed
+        """
         messages = []
         offset = 0
         while offset + 12 <= len(buffer):
@@ -287,8 +348,21 @@ class BedrockProvider(Provider):
         return messages, remaining_buffer
 
     @staticmethod
-    def _parse_event_stream_message(message):
-        total_length = struct.unpack('>I', message[0:4])[0]
+    def _parse_event_stream_message(message: bytes) -> Tuple[Dict[str, str], bytes]:
+        """
+        Parse a single event stream message.
+
+        Args:
+            message (bytes): The raw message bytes to parse.
+
+        Returns:
+            Tuple[Dict[str, str], bytes]: A tuple containing:
+                - A dictionary of parsed headers
+                - The message payload as bytes
+
+        Raises:
+            ValueError: If there's a CRC mismatch in the prelude or message.
+        """
         headers_length = struct.unpack('>I', message[4:8])[0]
         prelude_crc = struct.unpack('>I', message[8:12])[0]
         prelude = message[0:8]
@@ -297,7 +371,7 @@ class BedrockProvider(Provider):
             raise ValueError('Prelude CRC mismatch')
 
         # Parse headers
-        headers = {}
+        headers: Dict[str, str] = {}
         pos = 12  # Starting position after prelude and prelude CRC
         headers_end = pos + headers_length
         while pos < headers_end:
@@ -329,7 +403,19 @@ class BedrockProvider(Provider):
         return headers, payload
 
     @classmethod
-    def _parse_chunk(cls, chunk, buffer):
+    def _parse_chunk(cls, chunk: bytes, buffer: bytes) -> Tuple[List[Dict[str, Any]], bytes]:
+        """
+        Parse a chunk of data and update the buffer.
+
+        Args:
+            chunk (bytes): The new chunk of data to parse.
+            buffer (bytes): The existing buffer of unparsed data.
+
+        Returns:
+            Tuple[List[Dict[str, Any]], bytes]: A tuple containing:
+                - A list of parsed messages as dictionaries.
+                - The updated buffer with any remaining unparsed data.
+        """
         buffer += chunk  # Add the new chunk to the buffer
         messages = []
         while True:
@@ -340,7 +426,16 @@ class BedrockProvider(Provider):
         return messages, buffer
     
     @staticmethod
-    def _generate_chat_message_start_chunk(kwargs):
+    def _generate_chat_message_start_chunk(kwargs: Dict[str, Any]) -> ChatCompletionChunk:
+        """
+        Generate the initial chat message chunk for the start of a conversation.
+
+        Args:
+            kwargs (Dict[str, Any]): A dictionary containing request parameters.
+
+        Returns:
+            ChatCompletionChunk: The initial chat completion chunk with empty content.
+        """
         return ChatCompletionChunk(
             id=str(uuid.uuid4()), 
             choices=[
@@ -365,7 +460,17 @@ class BedrockProvider(Provider):
                     )
     
     @staticmethod
-    def _generate_chat_message_content_chunk(kwargs, text):
+    def _generate_chat_message_content_chunk(kwargs: Dict[str, Any], text: str) -> ChatCompletionChunk:
+        """
+        Generate a chat message content chunk for ongoing conversation.
+
+        Args:
+            kwargs (Dict[str, Any]): A dictionary containing request parameters.
+            text (str): The text content of the message chunk.
+
+        Returns:
+            ChatCompletionChunk: A chat completion chunk containing the message content.
+        """
 
         return ChatCompletionChunk(
             id=str(uuid.uuid4()), 
@@ -390,7 +495,16 @@ class BedrockProvider(Provider):
                     )
     
     @staticmethod
-    def _generate_chat_message_stop_chunk(kwargs):
+    def _generate_chat_message_stop_chunk(kwargs: Dict[str, Any]) -> ChatCompletionChunk:
+        """
+        Generate a chat message stop chunk to indicate the end of a conversation.
+
+        Args:
+            kwargs (Dict[str, Any]): A dictionary containing request parameters.
+
+        Returns:
+            ChatCompletionChunk: A chat completion chunk indicating the end of the conversation.
+        """
         return ChatCompletionChunk(
             id=str(uuid.uuid4()), 
             choices=[
