@@ -1,20 +1,27 @@
 import asyncio
 import os
-from typing import Any, AsyncGenerator, Coroutine, Dict, Generator, List, Optional
+from typing import Any, AsyncGenerator, Coroutine, Dict, List, Optional
 
 from fastapi import HTTPException
 from pydantic import BaseModel, Field
 
-from llmstudio.engine.providers.provider import ChatRequest, Provider, provider
+import time
+import uuid
 
-import sys
-import os
+from llmstudio.engine.providers.provider import ChatRequest, Provider, provider
+from openai.types.chat import ChatCompletionChunk
+from openai.types.chat.chat_completion_chunk import (
+    Choice,
+    ChoiceDelta,
+    ChoiceDeltaToolCall,
+    ChoiceDeltaToolCallFunction,
+)
+
 import datetime
 import hashlib
 import hmac
 import requests
 import json
-import base64
 import struct
 import binascii
 
@@ -43,24 +50,20 @@ class BedrockProvider(Provider):
         super().__init__(config)
         self.BEDROCK_ACCESS_KEY = os.getenv("BEDROCK_ACCESS_KEY")
         self.BEDROCK_SECRET_KEY = os.getenv("BEDROCK_SECRET_KEY")
-        self.BEDROCK_REGEION = os.getenv("BEDROCK_REGEION")
-        # self.SUPPORTED_TOOL_MODELS = ['']
+        self.BEDROCK_REGION = os.getenv("BEDROCK_REGION")
 
     def validate_request(self, request: BedrockRequest):
         return BedrockRequest(**request)
 
     async def generate_client(
         self, request: BedrockRequest
-    ) -> Coroutine[Any, Any, Generator]:
-        """Generate an OpenAI client"""
-
-        print('#######################################')
-        print(f'bedrock.py - request.tools: {request.tools}')
+    ) -> Coroutine[Any, Any, Any]:
+        """Generate an AWS Bedrock client"""
 
         # AWS credentials
         access_key = request.bedrock_access_key or self.BEDROCK_ACCESS_KEY
         secret_key = request.bedrock_secret_key or self.BEDROCK_SECRET_KEY
-        region = request.bedrock_region or self.BEDROCK_REGEION
+        region = request.bedrock_region or self.BEDROCK_REGION
         service = 'bedrock'
 
         if access_key is None or secret_key is None or region is None:
@@ -74,7 +77,6 @@ class BedrockProvider(Provider):
         # Create payload
         payload = {
             "messages": self._generate_input_text(request.chat_input),
-            # "system": self._generate_system_message(request.chat_input),
             "inferenceConfig": {
                 "maxTokens": request.parameters.max_tokens,
                 "stopSequences": [],
@@ -84,8 +86,6 @@ class BedrockProvider(Provider):
         }
 
         request_parameters = json.dumps(payload)
-        print('#######################################')
-        print(f'bedrock.py - request_parameters: {request_parameters}')
 
         request_headers = self._create_headers(
             method='POST',
@@ -97,22 +97,66 @@ class BedrockProvider(Provider):
             secret_key=secret_key,
             request_parameters=request_parameters,
             content_type='application/json',
-            accept='application/json', # Use 'application/json' for EventStream format
+            accept='application/json',  # Use 'application/json' for EventStream format
         )
 
+        # Use asyncio.to_thread to run the synchronous requests.post in an async context
         return await asyncio.to_thread(
-                    requests.post, endpoint, data=request_parameters, headers=request_headers, stream=True
-                )
-    
+            requests.post, endpoint, data=request_parameters, headers=request_headers, stream=True
+        )
+
     async def parse_response(
-        self, response: AsyncGenerator, **kwargs
+        self, response: Any, **kwargs
     ) -> AsyncGenerator[str, None]:
+        
+        # This buffer stores incomplete byte chunks
+        buffer = b''
         for chunk in response:
-            print(chunk)
-            yield chunk.model_dump()
+            if chunk:
+                messages, buffer = self._parse_chunk(chunk, buffer)
+                
+                for headers, payload in messages:
 
+                    payload = json.loads(payload.decode('utf-8'))
+                    
+                    # Process the message based on event type
+                    event_type = headers.get(':event-type')
+                    if event_type == 'messageStart':
 
-    # ************* HELPER FUNCTIONS *************
+                        if payload.get("role") == 'assistant':
+                            chunk = self._generate_chat_message_start_chunk(kwargs)
+                            print(f'start chunk: {chunk}')
+                            yield chunk.model_dump()
+
+                    elif event_type == 'contentBlockDelta':
+                        delta = payload.get('delta', {})
+                        text = delta.get('text', '')
+                        chunk = self._generate_chat_message_content_chunk(kwargs, text)
+                        print(f'content chunk: {chunk}')
+                        yield chunk.model_dump()
+
+                    elif event_type == 'contentBlockStop':
+                        delta = payload.get('delta', {})
+                        text = delta.get('text', '')
+                        chunk = self._generate_chat_message_content_chunk(kwargs, text)
+                        print(f'content chunk: {chunk}')
+                        yield chunk.model_dump()
+
+                    elif event_type == 'messageStop':
+                        chunk = self._generate_chat_message_stop_chunk(kwargs)
+                        print(f'stop chunk: {chunk}')
+                        yield chunk.model_dump()
+                    elif event_type == 'metadata':
+                        #TODO We could maybe do something with the call metadata?
+                        pass
+                    elif event_type == 'error':
+                        #TODO Maybe trow a parsing error? Idk yet.
+                        pass
+                    else:
+                        #TODO For sure we will have different events for tool/function calling.
+                        # For those i need to add the logic here.
+                        pass
+
     @staticmethod
     def _sign(key, msg):
         return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
@@ -124,70 +168,9 @@ class BedrockProvider(Provider):
         k_service = cls._sign(k_region, service_name)
         k_signing = cls._sign(k_service, 'aws4_request')
         return k_signing
-    
-    @staticmethod
-    def _parse_event_stream_message(message):
-        # Parse the prelude
-        headers_length = struct.unpack('>I', message[4:8])[0]
-        prelude_crc = struct.unpack('>I', message[8:12])[0]
-        prelude = message[:8]
-        computed_prelude_crc = binascii.crc32(prelude) & 0xffffffff
-        if prelude_crc != computed_prelude_crc:
-            raise ValueError('Prelude CRC mismatch')
 
-        # Parse headers
-        headers = {}
-        pos = 12  # Starting position after prelude and prelude CRC
-        headers_end = pos + headers_length
-        while pos < headers_end:
-            name_len = message[pos]
-            pos += 1
-            name = message[pos:pos+name_len].decode('utf-8')
-            pos += name_len
-            value_type = message[pos]
-            pos += 1
-            if value_type == 7:  # String
-                value_len = struct.unpack('>H', message[pos:pos+2])[0]
-                pos += 2
-                value = message[pos:pos+value_len].decode('utf-8')
-                pos += value_len
-            else:
-                # Handle other value types if necessary
-                value = None
-            headers[name] = value
-
-        # Payload
-        payload = message[headers_end:-4]  # Exclude the Message CRC at the end
-
-        # Verify message CRC
-        message_crc = struct.unpack('>I', message[-4:])[0]
-        computed_message_crc = binascii.crc32(message[:-4]) & 0xffffffff
-        if message_crc != computed_message_crc:
-            raise ValueError('Message CRC mismatch')
-
-        return headers, payload
-    
-    @classmethod
-    def parse_event_stream(cls, buffer):
-        messages = []
-        offset = 0
-        while offset < len(buffer):
-            if len(buffer) - offset < 4:
-                # Not enough data to read total_length
-                break
-            total_length = struct.unpack('>I', buffer[offset:offset+4])[0]
-            if len(buffer) - offset < total_length:
-                # Not enough data to read the whole message
-                break
-            message = buffer[offset:offset+total_length]
-            headers, payload = cls._parse_event_stream_message(message)
-            messages.append((headers, payload))
-            offset += total_length
-        return messages, buffer[offset:]
-    
     @staticmethod
     def _generate_input_text(chat_input):
-        # If input_data is a string
         if isinstance(chat_input, str):
             return [
                 {
@@ -197,31 +180,31 @@ class BedrockProvider(Provider):
                     "role": "user"
                 }
             ]
-        # If input_data is a list (assuming it's an OpenAI messages format)
+
         elif isinstance(chat_input, list):
-            content_list = []
+            messages = []
             for message in chat_input:
-                if message.get("role") in ["user", "assistant"]:
-                    content_list.append({"text": message.get("content", "")})
-            return [
-                {
-                    "content": content_list,
-                    "role": "user"
-                }
-            ]
+                role = message.get("role")
+                content = message.get("content", "")
+                if role in ["user", "assistant"]:
+                    messages.append({
+                        "content": [{"text": content}],
+                        "role": role
+                    })
+            return messages
         else:
-            raise HTTPException(status_code=400, detail="Invalid input: input_data must be a string or a list of messages.")
-        
+            raise HTTPException(status_code=400, detail="Invalid input: chat_input must be a string or a list of messages.")
+
     @staticmethod
     def _generate_system_message(chat_input):
-        #TODO
+        # TODO
         # Need to get access to Anthropic to try models that support system message.
         return None
-    
+
     @classmethod
     def _create_headers(cls, method, uri, host, region, service, access_key, secret_key, request_parameters, content_type, accept):
         # Timestamp and date
-        t = datetime.datetime.now(datetime.UTC)
+        t = datetime.datetime.utcnow()
         amz_date = t.strftime('%Y%m%dT%H%M%SZ')  # Format: YYYYMMDD'T'HHMMSS'Z'
         date_stamp = t.strftime('%Y%m%d')  # Date without time for credential scope
 
@@ -286,7 +269,148 @@ class BedrockProvider(Provider):
         request_headers = {k: v for k, v in headers.items() if k.lower() != 'host'}
 
         return request_headers
+    
+    @classmethod
+    def _parse_event_stream(cls, buffer):
+        messages = []
+        offset = 0
+        while offset + 12 <= len(buffer):
+            total_length = struct.unpack('>I', buffer[offset:offset+4])[0]
+            if offset + total_length > len(buffer):
+                # Not enough data to read the whole message
+                break
+            message = buffer[offset:offset+total_length]
+            headers, payload = cls._parse_event_stream_message(message)
+            messages.append((headers, payload))
+            offset += total_length
+        remaining_buffer = buffer[offset:]
+        return messages, remaining_buffer
 
+    @staticmethod
+    def _parse_event_stream_message(message):
+        total_length = struct.unpack('>I', message[0:4])[0]
+        headers_length = struct.unpack('>I', message[4:8])[0]
+        prelude_crc = struct.unpack('>I', message[8:12])[0]
+        prelude = message[0:8]
+        computed_prelude_crc = binascii.crc32(prelude) & 0xffffffff
+        if prelude_crc != computed_prelude_crc:
+            raise ValueError('Prelude CRC mismatch')
 
+        # Parse headers
+        headers = {}
+        pos = 12  # Starting position after prelude and prelude CRC
+        headers_end = pos + headers_length
+        while pos < headers_end:
+            name_len = message[pos]
+            pos += 1
+            name = message[pos:pos+name_len].decode('utf-8')
+            pos += name_len
+            value_type = message[pos]
+            pos += 1
+            if value_type == 7:  # String
+                value_len = struct.unpack('>H', message[pos:pos+2])[0]
+                pos += 2
+                value = message[pos:pos+value_len].decode('utf-8')
+                pos += value_len
+            else:
+                # Handle other value types if necessary
+                value = None
+            headers[name] = value
 
+        # Payload
+        payload = message[headers_end:-4]  # Exclude the Message CRC at the end
+
+        # Verify message CRC
+        message_crc = struct.unpack('>I', message[-4:])[0]
+        computed_message_crc = binascii.crc32(message[:-4]) & 0xffffffff
+        if message_crc != computed_message_crc:
+            raise ValueError('Message CRC mismatch')
+
+        return headers, payload
+
+    @classmethod
+    def _parse_chunk(cls, chunk, buffer):
+        buffer += chunk  # Add the new chunk to the buffer
+        messages = []
+        while True:
+            parsed_messages, buffer = cls._parse_event_stream(buffer)
+            if not parsed_messages:
+                break  # Wait for more data
+            messages.extend(parsed_messages)
+        return messages, buffer
+    
+    @staticmethod
+    def _generate_chat_message_start_chunk(kwargs):
+        return ChatCompletionChunk(
+            id=str(uuid.uuid4()), 
+            choices=[
+                Choice(
+                    delta=ChoiceDelta(
+                        content='', 
+                        function_call=None, 
+                        role='assistant', 
+                        tool_calls=None, 
+                        refusal=None
+                        ), 
+                        finish_reason=None, 
+                        index=0, 
+                        logprobs=None
+                        )
+                    ], 
+                    created=int(time.time()), 
+                    model=kwargs.get("request").model, 
+                    object='chat.completion.chunk', 
+                    system_fingerprint=None, 
+                    usage=None
+                    )
+    
+    @staticmethod
+    def _generate_chat_message_content_chunk(kwargs, text):
+
+        return ChatCompletionChunk(
+            id=str(uuid.uuid4()), 
+            choices=[
+                Choice(
+                    delta=ChoiceDelta(
+                        content=text, 
+                        function_call=None, 
+                        role=None, 
+                        tool_calls=None
+                        ), 
+                    finish_reason=None, 
+                    index=0, 
+                    logprobs=None
+                    )
+                    ], 
+                    created=int(time.time()), 
+                    model=kwargs.get("request").model, 
+                    object='chat.completion.chunk', 
+                    system_fingerprint=None, 
+                    usage=None
+                    )
+    
+    @staticmethod
+    def _generate_chat_message_stop_chunk(kwargs):
+        return ChatCompletionChunk(
+            id=str(uuid.uuid4()), 
+            choices=[
+                Choice(
+                    delta=ChoiceDelta(
+                        content=None, 
+                        function_call=None, 
+                        role=None, 
+                        tool_calls=None
+                        ), 
+                    finish_reason='stop', 
+                    index=0, 
+                    logprobs=None
+                    )
+                    ], 
+                    created=int(time.time()), 
+                    model=kwargs.get("request").model,
+                    object='chat.completion.chunk', 
+                    system_fingerprint=None, 
+                    usage=None
+                    )
+    
     

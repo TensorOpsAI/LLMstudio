@@ -65,4 +65,5 @@ class OpenAIProvider(Provider):
         self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:
         for chunk in response:
+            print(f'openai.py - chunk: {chunk}')
             yield chunk.model_dump()
