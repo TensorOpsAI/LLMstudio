@@ -49,6 +49,7 @@ class ChatRequest(BaseModel):
     functions: Optional[List[Dict[str, Any]]] = None
     session_id: Optional[str] = None
     retries: Optional[int] = 0
+    extras: Optional[Dict[str, Any]] = None
 
 
 class Provider:
@@ -162,19 +163,14 @@ class Provider:
                 else request.chat_input
             ),
             "provider": self.config.id,
-            "model": (
-                request.model
-                if model and model.startswith(request.model)
-                else (model or request.model)
-            ),
-            "deployment": (
-                model
-                if model and model.startswith(request.model)
-                else (request.model if model != request.model else None)
-            ),
+            "model": model,
             "timestamp": time.time(),
-            "parameters": request.parameters.model_dump(),
+            "parameters": {
+                **request.parameters.model_dump(),
+                "deployment": request.model,
+            },
             "metrics": metrics,
+            "extras": request.extras,
         }
 
         self.save_log(response)
