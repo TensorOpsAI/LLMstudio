@@ -206,12 +206,6 @@ class Provider:
                 for chunk in tool_calls[1:]
             )
 
-            print(f"tool_calls[0]: {tool_calls[0]}")
-            print(f"tool_call_id: {tool_call_id}")
-            print(f"tool_call_name: {tool_call_name}")
-            print(f"tool_call_type: {tool_call_type}")
-            print(f"tool_call_arguments: {tool_call_arguments}")
-
             try:
                 return (
                     ChatCompletion(

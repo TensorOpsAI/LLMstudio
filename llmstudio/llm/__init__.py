@@ -62,8 +62,6 @@ class LLM:
             headers={"Content-Type": "application/json"},
         )
 
-        print(f'llm __init__.py - response:{response}')
-
         if not response.ok:
             try:
                 error_data = response.json().get("detail", "LLMstudio Engine error")
