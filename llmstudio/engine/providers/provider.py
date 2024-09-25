@@ -194,13 +194,23 @@ class Provider:
                 for chunk in chunks[1:-1]
             ]
 
+            if isinstance(request, AzureRequest):
+                tool_call_type = tool_calls[0].get("type")
+            else:
+                tool_call_type = tool_calls[0].get("function").get("type")
+
             tool_call_id = tool_calls[0].get("id")
             tool_call_name = tool_calls[0].get("function").get("name")
-            tool_call_type = tool_calls[0].get("function").get("type")
             tool_call_arguments = "".join(
                 chunk.get("function", {}).get("arguments", "")
                 for chunk in tool_calls[1:]
             )
+
+            print(f"tool_calls[0]: {tool_calls[0]}")
+            print(f"tool_call_id: {tool_call_id}")
+            print(f"tool_call_name: {tool_call_name}")
+            print(f"tool_call_type: {tool_call_type}")
+            print(f"tool_call_arguments: {tool_call_arguments}")
 
             try:
                 return (

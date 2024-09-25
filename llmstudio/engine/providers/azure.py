@@ -14,7 +14,7 @@ from typing import (
     Optional,
     Union,
 )
-
+import requests
 import openai
 from fastapi import HTTPException
 from openai import AzureOpenAI, OpenAI
@@ -75,94 +75,43 @@ class AzureProvider(Provider):
         self.has_tools = request.tools is not None
         self.has_functions = request.functions is not None
 
-        try:
-            if request.base_url or self.BASE_URL:
-                client = OpenAI(
-                    api_key=request.api_key or self.API_KEY,
-                    base_url=request.base_url or self.BASE_URL,
-                )
-            else:
-                client = AzureOpenAI(
-                    api_key=request.api_key or self.API_KEY,
-                    azure_endpoint=request.api_endpoint or self.API_ENDPOINT,
-                    api_version=request.api_version or self.API_VERSION,
-                )
+        # 1. Build headers
+        headers = self._build_headers()
+        messages  = self._prepare_messages(request)
+        payload = self._build_payload(request, messages)
+        endpoint = self.API_ENDPOINT if self.is_openai else self.BASE_URL if self.is_llama else ''
 
-            messages = self.prepare_messages(request)
-
-            # Prepare the optional tool-related arguments
-            tool_args = {}
-            if not self.is_llama and self.has_tools and self.is_openai:
-                tool_args = {
-                    "tools": request.tools,
-                    "tool_choice": "auto" if request.tools else None,
-                }
-
-            # Prepare the optional function-related arguments
-            function_args = {}
-            if not self.is_llama and self.has_functions and self.is_openai:
-                function_args = {
-                    "functions": request.functions,
-                    "function_call": "auto" if request.functions else None,
-                }
-
-            # Prepare the base arguments
-            base_args = {
-                "model": request.model,
-                "messages": messages,
-                "stream": True,
-                "response_format": request.response_format,
-            }
-
-            # Combine all arguments
-            combined_args = {
-                **base_args,
-                **tool_args,
-                **function_args,
-                **request.parameters.model_dump(),
-            }
-            # Perform the asynchronous call
-            return await asyncio.to_thread(
-                client.chat.completions.create, **combined_args
-            )
-
-        except openai._exceptions.APIConnectionError as e:
-            raise HTTPException(
-                status_code=404, detail=f"There was an error reaching the endpoint: {e}"
-            )
-
-        except openai._exceptions.APIStatusError as e:
-            raise HTTPException(status_code=e.status_code, detail=e.response.json())
-
-    def prepare_messages(self, request: AzureRequest):
-        if self.is_llama:
-            user_message = self.convert_to_openai_format(request.chat_input)
-            content = "<|begin_of_text|>"
-            content = self.add_system_message(
-                user_message, content, request.tools, request.functions
-            )
-            content = self.add_conversation(user_message, content)
-            return [{"role": "user", "content": content}]
-        else:
-            return (
-                [{"role": "user", "content": request.chat_input}]
-                if isinstance(request.chat_input, str)
-                else request.chat_input
+        return await asyncio.to_thread(
+            requests.post, endpoint, headers=headers, json=payload, stream=True,
             )
 
     async def parse_response(
         self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:
-        if self.is_llama and (self.has_tools or self.has_functions):
-            async for chunk in self.handle_tool_response(response, **kwargs):
+        
+        
+        if self.is_openai:
+            async for chunk in self._handle_openai_response(response):
                 yield chunk
-        else:
-            for chunk in response:
-                yield chunk.model_dump()
 
-    async def handle_tool_response(
-        self, response: AsyncGenerator, **kwargs
-    ) -> AsyncGenerator[str, None]:
+        if self.is_llama:
+            async for chunk in self._handle_llama_response(response, **kwargs):
+                yield chunk
+
+    async def _handle_openai_response(self, response: AsyncGenerator):
+        for binary_chunk in response.iter_lines():
+            chunk = self._binary_chunk_to_json(binary_chunk)
+
+            if not chunk:
+                continue
+
+            if chunk == "[DONE]":
+                break
+
+            yield chunk
+
+    async def _handle_llama_response(self, response: AsyncGenerator, **kwargs):
+
         """
         Asynchronously handles tool responses by parsing the content for function calls or tool activations.
         It processes the response chunks to extract and execute embedded function or tool calls, then yields
@@ -180,17 +129,32 @@ class AzureProvider(Provider):
         function_call_buffer = ""
         saving = False
         normal_call_chunks = []
-        for chunk in response:
-            if chunk.choices[0].delta.content is not None:
+        for binary_chunk in response.iter_lines():
+            chunk = self._binary_chunk_to_json(binary_chunk)
+            
+            # Ignore empty chunks
+            if not chunk:
+                continue
+            
+            # End loop
+            if chunk == "[DONE]":
+                break
+            
+            # Yield chunks when we have a normal calls
+            if not (self.has_tools or self.has_functions):
+                yield chunk
+            
+            # Handle chunks when we have a tool call.
+            if "content" in chunk["choices"][0]["delta"]:
                 if (
-                    "§" in chunk.choices[0].delta.content
-                    or "<|python_tag|>" in chunk.choices[0].delta.content
+                    "§" in chunk["choices"][0]["delta"]["content"]
+                    or "<|python_tag|>" in chunk["choices"][0]["delta"]["content"]
                 ):
                     saving = True
 
             if saving:
-                function_call_buffer += chunk.choices[0].delta.content
-                if chunk.choices[0].finish_reason == "stop":
+                function_call_buffer += chunk["choices"][0]["delta"]["content"]
+                if chunk["choices"][0]["finish_reason"] == "stop":
                     cleaned_buffer = function_call_buffer.replace("§", "").replace(
                         "<|python_tag|>", ""
                     )
@@ -199,209 +163,133 @@ class AzureProvider(Provider):
                     if self.has_functions:
 
                         # Create first chunk
-                        first_chunk = self.create_tool_first_chunk(kwargs)
+                        first_chunk = self._create_first_chunk(kwargs)
                         yield first_chunk
 
-                        name_chunk = self.create_function_name_chunk(
+                        name_chunk = self._create_function_name_chunk(
                             result_dict["name"], kwargs
                         )
                         yield name_chunk
 
                         parameters = json.dumps(result_dict["parameters"])
-                        args_chunk = self.create_function_argument_chunk(
+                        args_chunk = self._create_function_argument_chunk(
                             parameters, kwargs
                         )
                         yield args_chunk
 
-                        finish_chunk = self.create_function_finish_chunk(kwargs)
+                        finish_chunk = self._create_function_finish_chunk(kwargs)
                         yield finish_chunk
+                        break
 
                     if self.has_tools:
-                        name_chunk = self.create_tool_name_chunk(
+
+                        # Create first chunk
+                        first_chunk = self._create_first_chunk(kwargs)
+                        yield first_chunk
+                        
+                        name_chunk = self._create_tool_name_chunk(
                             result_dict["name"], kwargs
                         )
                         yield name_chunk
-
                         parameters = json.dumps(result_dict["parameters"])
-                        args_chunk = self.create_tool_argument_chunk(parameters, kwargs)
+                        args_chunk = self._create_tool_argument_chunk(parameters, kwargs)
                         yield args_chunk
 
-                        finish_chunk = self.create_tool_finish_chunk(kwargs)
+                        finish_chunk = self._create_tool_finish_chunk(kwargs)
                         yield finish_chunk
+                        break
 
             else:
                 normal_call_chunks.append(chunk)
-                if chunk.choices[0].finish_reason == "stop":
+                if chunk["choices"][0]["finish_reason"] == "stop":
                     for chunk in normal_call_chunks:
-                        normal_call_chunks.append(chunk)
-                if chunk.choices[0].finish_reason == "stop":
-                    for chunk in normal_call_chunks:
-                        yield chunk.model_dump()
+                        yield chunk
+                    break
+    
+    @staticmethod
+    def _binary_chunk_to_json(binary_chunk):
+        json_str = binary_chunk.decode('utf-8').replace('data: ', '')
+        try:
+            json_data = json.loads(json_str)
+            return json_data
+        except json.JSONDecodeError:
+            return json_str
+    
+    def _build_headers(self):
+        
+        if self.is_llama:
+            return {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.API_KEY}",
+            }
 
-    def create_tool_name_chunk(self, function_name: str, kwargs: dict) -> dict:
-        return ChatCompletionChunk(
-            id=str(uuid.uuid4()),
-            choices=[
-                Choice(
-                    delta=ChoiceDelta(
-                        role="assistant",
-                        tool_calls=[
-                            ChoiceDeltaToolCall(
-                                index=0,
-                                id=str(uuid.uuid4()),
-                                function=ChoiceDeltaToolCallFunction(
-                                    name=function_name,
-                                    arguments="",
-                                    type="function",
-                                ),
-                            )
-                        ],
-                    ),
-                    finish_reason=None,
-                    index=0,
-                )
-            ],
-            created=int(time.time()),
-            model=kwargs.get("request").model,
-            object="chat.completion.chunk",
-        ).model_dump()
+        elif self.is_openai:
+            return {
+                "Content-Type": "application/json",
+                "api-key": f"{self.API_KEY}",
+            }
 
-    def create_function_name_chunk(self, function_name: str, kwargs: dict) -> dict:
-        return ChatCompletionChunk(
-            id=str(uuid.uuid4()),
-            choices=[
-                Choice(
-                    delta=ChoiceDelta(
-                        content=None,
-                        function_call=ChoiceDeltaFunctionCall(
-                            arguments="", name=function_name
-                        ),
-                        role="assistant",
-                        tool_calls=None,
-                        refusal=None,
-                    ),
-                    finish_reason=None,
-                    index=0,
-                    logprobs=None,
-                )
-            ],
-            created=int(time.time()),
-            model=kwargs.get("request").model,
-            object="chat.completion.chunk",
-            system_fingerprint=None,
-            usage=None,
-        ).model_dump()
+    def _build_payload(self, request, messages):
 
-    def create_tool_finish_chunk(self, kwargs: dict) -> dict:
-        return ChatCompletionChunk(
-            id=str(uuid.uuid4()),
-            choices=[
-                Choice(
-                    delta=ChoiceDelta(),
-                    finish_reason="tool_calls",
-                    index=0,
-                )
-            ],
-            created=int(time.time()),
-            model=kwargs.get("request").model,
-            object="chat.completion.chunk",
-        ).model_dump()
+        # Payload for the request
+        base_args = {
+            "messages": messages,
+            "temperature": request.parameters.temperature,
+            "top_p": request.parameters.top_p,
+            "max_tokens": request.parameters.max_tokens,
+            "stream": True
+        }
 
-    def create_tool_argument_chunk(self, content: str, kwargs: dict) -> dict:
-        return ChatCompletionChunk(
-            id=str(uuid.uuid4()),
-            choices=[
-                Choice(
-                    delta=ChoiceDelta(
-                        tool_calls=[
-                            ChoiceDeltaToolCall(
-                                index=0,
-                                function=ChoiceDeltaToolCallFunction(
-                                    arguments=content,
-                                ),
-                            )
-                        ],
-                    ),
-                    finish_reason=None,
-                    index=0,
-                )
-            ],
-            created=int(time.time()),
-            model=kwargs.get("request").model,
-            object="chat.completion.chunk",
-        ).model_dump()
+        tool_args = {}
+        function_args = {}
+        if self.is_openai:
+            
+            # Prepare the optional tool-related arguments
+            if self.has_tools:
+                tool_args = {
+                    "tools": request.tools,
+                    "tool_choice": "auto" if request.tools else None,
+                }
 
-    def create_function_argument_chunk(self, content: str, kwargs: dict) -> dict:
-        return ChatCompletionChunk(
-            id=str(uuid.uuid4()),
-            choices=[
-                Choice(
-                    delta=ChoiceDelta(
-                        content=None,
-                        function_call=ChoiceDeltaFunctionCall(
-                            arguments=content, name=None
-                        ),
-                        role=None,
-                        tool_calls=None,
-                    ),
-                    finish_reason=None,
-                    index=0,
-                    logprobs=None,
-                )
-            ],
-            created=int(time.time()),
-            model=kwargs.get("request").model,
-            object="chat.completion.chunk",
-            system_fingerprint=None,
-            usage=None,
-        ).model_dump()
+            # Prepare the optional function-related arguments
+            if self.has_functions:
+                function_args = {
+                    "functions": request.functions,
+                    "function_call": "auto" if request.functions else None,
+                }
 
-    def create_tool_first_chunk(self, kwargs: dict) -> dict:
-        return ChatCompletionChunk(
-            id=str(uuid.uuid4()),
-            choices=[
-                Choice(
-                    delta=ChoiceDelta(
-                        content=None,
-                        function_call=None,
-                        role="assistant",
-                        tool_calls=None,
-                    ),
-                    index=0,
-                )
-            ],
-            created=int(time.time()),
-            model=kwargs.get("request").model,
-            object="chat.completion.chunk",
-            usage=None,
-        ).model_dump()
+        payload = {
+                **base_args,
+                **tool_args,
+                **function_args,
+                **request.parameters.model_dump(),
+            }
+        
+        return payload
 
-    def create_function_finish_chunk(self, kwargs: dict) -> dict:
-        return ChatCompletionChunk(
-            id=str(uuid.uuid4()),
-            choices=[
-                Choice(
-                    delta=ChoiceDelta(
-                        content=None, function_call=None, role=None, tool_calls=None
-                    ),
-                    finish_reason="function_call",
-                    index=0,
-                    logprobs=None,
-                )
-            ],
-            created=int(time.time()),
-            model=kwargs.get("request").model,
-            object="chat.completion.chunk",
-            system_fingerprint=None,
-            usage=None,
-        ).model_dump()
-
-    def convert_to_openai_format(self, message: Union[str, list]) -> list:
+    def _prepare_messages(self, request: AzureRequest):
+        if self.is_llama:
+            user_message = self._convert_to_openai_format(request.chat_input)
+            content = "<|begin_of_text|>"
+            content = self._add_system_message(
+                user_message, content, request.tools, request.functions
+            )
+            content = self._add_conversation(user_message, content)
+            return [{"role": "user", "content": content}]
+        else:
+            return (
+                [{"role": "user", "content": request.chat_input}]
+                if isinstance(request.chat_input, str)
+                else request.chat_input
+            )
+    
+    @staticmethod
+    def _convert_to_openai_format(message: Union[str, list]) -> list:
         if isinstance(message, str):
             return [{"role": "user", "content": message}]
         return message
 
-    def add_system_message(
+    def _add_system_message(
         self, openai_message: list, llama_message: str, tools: list, functions: list
     ) -> str:
         system_message = ""
@@ -420,15 +308,15 @@ class AzureProvider(Provider):
       """
 
         if tools:
-            system_message = system_message + self.add_tool_instructions(tools)
+            system_message = system_message + self._add_tool_instructions(tools)
 
         if functions:
-            system_message = system_message + self.add_function_instructions(functions)
+            system_message = system_message + self._add_function_instructions(functions)
 
         end_tag = "\n<|eot_id|>"
         return llama_message + system_message + end_tag
 
-    def add_tool_instructions(self, tools: list) -> str:
+    def _add_tool_instructions(self, tools: list) -> str:
         tool_prompt = """
     You have access to the following tools:
     """
@@ -462,7 +350,7 @@ NOTE: There is no prefix before the symbol '§' and nothing comes after the call
 
         return tool_prompt
 
-    def add_function_instructions(self, functions: list) -> str:
+    def _add_function_instructions(self, functions: list) -> str:
         function_prompt = """
 You have access to the following functions:
 """
@@ -491,8 +379,8 @@ Reminder:
 - If you have already called a function and got the response for the user's question, please reply with the response.
 """
         return function_prompt
-
-    def add_conversation(self, openai_message: list, llama_message: str) -> str:
+    
+    def _add_conversation(self, openai_message: list, llama_message: str) -> str:
         conversation_parts = []
         for message in openai_message:
             if message["role"] == "system":
@@ -505,21 +393,21 @@ Reminder:
                         # If the content is a list, process each nested message
                         for nested_message in content_as_list:
                             conversation_parts.append(
-                                self.format_message(nested_message)
+                                self._format_message(nested_message)
                             )
                     else:
                         # If the content is not a list, append it directly
-                        conversation_parts.append(self.format_message(message))
+                        conversation_parts.append(self._format_message(message))
                 except (ValueError, SyntaxError):
                     # If evaluation fails or content is not a list/dict string, append the message directly
-                    conversation_parts.append(self.format_message(message))
+                    conversation_parts.append(self._format_message(message))
             else:
                 # For all other messages, use the existing formatting logic
-                conversation_parts.append(self.format_message(message))
+                conversation_parts.append(self._format_message(message))
 
         return llama_message + "".join(conversation_parts)
-
-    def format_message(self, message: dict) -> str:
+    
+    def _format_message(self, message: dict) -> str:
         """Format a single message for the conversation."""
         if "tool_calls" in message:
             for tool_call in message["tool_calls"]:
@@ -561,3 +449,168 @@ Reminder:
     <|eot_id|>
     """
         return ""
+
+    @staticmethod
+    def _create_tool_name_chunk(function_name: str, kwargs: dict) -> dict:
+        return ChatCompletionChunk(
+            id=str(uuid.uuid4()),
+            choices=[
+                Choice(
+                    delta=ChoiceDelta(
+                        role="assistant",
+                        tool_calls=[
+                            ChoiceDeltaToolCall(
+                                index=0,
+                                id=str(uuid.uuid4()),
+                                type = 'function',
+                                function=ChoiceDeltaToolCallFunction(
+                                    name=function_name,
+                                    arguments="",
+                                ),
+                            )
+                        ],
+                    ),
+                    finish_reason=None,
+                    index=0,
+                )
+            ],
+            created=int(time.time()),
+            model=kwargs.get("request").model,
+            object="chat.completion.chunk",
+        ).model_dump()
+
+    @staticmethod
+    def _create_function_name_chunk(function_name: str, kwargs: dict) -> dict:
+        return ChatCompletionChunk(
+            id=str(uuid.uuid4()),
+            choices=[
+                Choice(
+                    delta=ChoiceDelta(
+                        content=None,
+                        function_call=ChoiceDeltaFunctionCall(
+                            arguments="", name=function_name
+                        ),
+                        role="assistant",
+                        tool_calls=None,
+                        refusal=None,
+                    ),
+                    finish_reason=None,
+                    index=0,
+                    logprobs=None,
+                )
+            ],
+            created=int(time.time()),
+            model=kwargs.get("request").model,
+            object="chat.completion.chunk",
+            system_fingerprint=None,
+            usage=None,
+        ).model_dump()
+
+    @staticmethod
+    def _create_tool_finish_chunk(kwargs: dict) -> dict:
+        return ChatCompletionChunk(
+            id=str(uuid.uuid4()),
+            choices=[
+                Choice(
+                    delta=ChoiceDelta(),
+                    finish_reason="tool_calls",
+                    index=0,
+                )
+            ],
+            created=int(time.time()),
+            model=kwargs.get("request").model,
+            object="chat.completion.chunk",
+        ).model_dump()
+
+    @staticmethod
+    def _create_tool_argument_chunk(content: str, kwargs: dict) -> dict:
+        return ChatCompletionChunk(
+            id=str(uuid.uuid4()),
+            choices=[
+                Choice(
+                    delta=ChoiceDelta(
+                        tool_calls=[
+                            ChoiceDeltaToolCall(
+                                index=0,
+                                function=ChoiceDeltaToolCallFunction(
+                                    arguments=content,
+                                ),
+                            )
+                        ],
+                    ),
+                    finish_reason=None,
+                    index=0,
+                )
+            ],
+            created=int(time.time()),
+            model=kwargs.get("request").model,
+            object="chat.completion.chunk",
+        ).model_dump()
+
+    @staticmethod
+    def _create_function_argument_chunk(content: str, kwargs: dict) -> dict:
+        return ChatCompletionChunk(
+            id=str(uuid.uuid4()),
+            choices=[
+                Choice(
+                    delta=ChoiceDelta(
+                        content=None,
+                        function_call=ChoiceDeltaFunctionCall(
+                            arguments=content, name=None
+                        ),
+                        role=None,
+                        tool_calls=None,
+                    ),
+                    finish_reason=None,
+                    index=0,
+                    logprobs=None,
+                )
+            ],
+            created=int(time.time()),
+            model=kwargs.get("request").model,
+            object="chat.completion.chunk",
+            system_fingerprint=None,
+            usage=None,
+        ).model_dump()
+    
+    @staticmethod
+    def _create_first_chunk(kwargs: dict) -> dict:
+        return ChatCompletionChunk(
+            id=str(uuid.uuid4()),
+            choices=[
+                Choice(
+                    delta=ChoiceDelta(
+                        content=None,
+                        function_call=None,
+                        role="assistant",
+                        tool_calls=None,
+                    ),
+                    index=0,
+                )
+            ],
+            created=int(time.time()),
+            model=kwargs.get("request").model,
+            object="chat.completion.chunk",
+            usage=None,
+        ).model_dump()
+
+    @staticmethod
+    def _create_function_finish_chunk(kwargs: dict) -> dict:
+        return ChatCompletionChunk(
+            id=str(uuid.uuid4()),
+            choices=[
+                Choice(
+                    delta=ChoiceDelta(
+                        content=None, function_call=None, role=None, tool_calls=None
+                    ),
+                    finish_reason="function_call",
+                    index=0,
+                    logprobs=None,
+                )
+            ],
+            created=int(time.time()),
+            model=kwargs.get("request").model,
+            object="chat.completion.chunk",
+            system_fingerprint=None,
+            usage=None,
+        ).model_dump()
