@@ -14,8 +14,9 @@ from typing import (
     Optional,
     Union,
 )
-import requests
+
 import openai
+import requests
 from fastapi import HTTPException
 from openai import AzureOpenAI, OpenAI
 from openai.types.chat import ChatCompletionChunk
@@ -77,19 +78,28 @@ class AzureProvider(Provider):
 
         # 1. Build headers
         headers = self._build_headers()
-        messages  = self._prepare_messages(request)
+        messages = self._prepare_messages(request)
         payload = self._build_payload(request, messages)
-        endpoint = self.API_ENDPOINT if self.is_openai else self.BASE_URL if self.is_llama else ''
+        endpoint = (
+            self.API_ENDPOINT
+            if self.is_openai
+            else self.BASE_URL
+            if self.is_llama
+            else ""
+        )
 
         return await asyncio.to_thread(
-            requests.post, endpoint, headers=headers, json=payload, stream=True,
-            )
+            requests.post,
+            endpoint,
+            headers=headers,
+            json=payload,
+            stream=True,
+        )
 
     async def parse_response(
         self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:
-        
-        
+
         if self.is_openai:
             async for chunk in self._handle_openai_response(response):
                 yield chunk
@@ -98,7 +108,9 @@ class AzureProvider(Provider):
             async for chunk in self._handle_llama_response(response, **kwargs):
                 yield chunk
 
-    async def _handle_openai_response(self, response: AsyncGenerator) -> AsyncGenerator[dict, None]:
+    async def _handle_openai_response(
+        self, response: AsyncGenerator
+    ) -> AsyncGenerator[dict, None]:
         """
         Handles the response from the OpenAI API.
 
@@ -119,7 +131,9 @@ class AzureProvider(Provider):
 
             yield chunk
 
-    async def _handle_llama_response(self, response: AsyncGenerator, **kwargs) -> AsyncGenerator[dict, None]:
+    async def _handle_llama_response(
+        self, response: AsyncGenerator, **kwargs
+    ) -> AsyncGenerator[dict, None]:
         """
         Handles the response from the Llama API, including tool and function calls.
 
@@ -133,22 +147,22 @@ class AzureProvider(Provider):
         function_call_buffer = ""
         saving = False
         normal_call_chunks = []
-        
+
         async for binary_chunk in response:
             chunk = self._binary_chunk_to_json(binary_chunk)
-            
+
             # Ignore empty chunks
             if not chunk:
                 continue
-            
+
             # End loop
             if chunk == "[DONE]":
                 break
-            
+
             # Yield chunks when we have normal calls
             if not (self.has_tools or self.has_functions):
                 yield chunk
-            
+
             # Handle chunks when we have a tool call.
             if "content" in chunk["choices"][0]["delta"]:
                 if (
@@ -189,14 +203,16 @@ class AzureProvider(Provider):
                         # Create first chunk
                         first_chunk = self._create_first_chunk(kwargs)
                         yield first_chunk
-                        
+
                         name_chunk = self._create_tool_name_chunk(
                             result_dict["name"], kwargs
                         )
                         yield name_chunk
-                        
+
                         parameters = json.dumps(result_dict["parameters"])
-                        args_chunk = self._create_tool_argument_chunk(parameters, kwargs)
+                        args_chunk = self._create_tool_argument_chunk(
+                            parameters, kwargs
+                        )
                         yield args_chunk
 
                         finish_chunk = self._create_tool_finish_chunk(kwargs)
@@ -209,7 +225,7 @@ class AzureProvider(Provider):
                     for chunk in normal_call_chunks:
                         yield chunk
                     break
-    
+
     @staticmethod
     def _binary_chunk_to_json(binary_chunk: bytes) -> Union[dict, str]:
         """
@@ -221,13 +237,13 @@ class AzureProvider(Provider):
         Returns:
             Union[dict, str]: The converted JSON object if successful, otherwise the original string.
         """
-        json_str = binary_chunk.decode('utf-8').replace('data: ', '')
+        json_str = binary_chunk.decode("utf-8").replace("data: ", "")
         try:
             json_data = json.loads(json_str)
             return json_data
         except json.JSONDecodeError:
             return json_str
-    
+
     def _build_headers(self) -> dict:
         """
         Build the headers for the request based on the model type.
@@ -235,7 +251,7 @@ class AzureProvider(Provider):
         Returns:
             dict: A dictionary containing the headers for the request.
         """
-        
+
         if self.is_llama:
             return {
                 "Content-Type": "application/json",
@@ -259,20 +275,20 @@ class AzureProvider(Provider):
         Returns:
             dict: The payload dictionary for the request.
         """
-        
+
         # Payload for the request
         base_args = {
             "messages": messages,
             "temperature": request.parameters.temperature,
             "top_p": request.parameters.top_p,
             "max_tokens": request.parameters.max_tokens,
-            "stream": True
+            "stream": True,
         }
 
         tool_args = {}
         function_args = {}
         if self.is_openai:
-            
+
             # Prepare the optional tool-related arguments
             if self.has_tools:
                 tool_args = {
@@ -288,12 +304,12 @@ class AzureProvider(Provider):
                 }
 
         payload = {
-                **base_args,
-                **tool_args,
-                **function_args,
-                **request.parameters.model_dump(),
-            }
-        
+            **base_args,
+            **tool_args,
+            **function_args,
+            **request.parameters.model_dump(),
+        }
+
         return payload
 
     def _prepare_messages(self, request: AzureRequest) -> list:
@@ -320,7 +336,7 @@ class AzureProvider(Provider):
                 if isinstance(request.chat_input, str)
                 else request.chat_input
             )
-    
+
     @staticmethod
     def _convert_to_openai_format(message: Union[str, list]) -> list:
         """
@@ -386,7 +402,7 @@ class AzureProvider(Provider):
         Returns:
             str: A formatted string containing the tool instructions.
         """
-        
+
         tool_prompt = """
     You have access to the following tools:
     """
@@ -459,7 +475,7 @@ Reminder:
 - If you have already called a function and got the response for the user's question, please reply with the response.
 """
         return function_prompt
-    
+
     def _add_conversation(self, openai_message: list[dict], llama_message: str) -> str:
         """
         Add conversation parts from OpenAI messages to the Llama message.
@@ -496,7 +512,7 @@ Reminder:
                 conversation_parts.append(self._format_message(message))
 
         return llama_message + "".join(conversation_parts)
-    
+
     def _format_message(self, message: dict) -> str:
         """
         Format a single message for the conversation.
@@ -507,7 +523,7 @@ Reminder:
         Returns:
             str: The formatted message string.
         """
-        
+
         if "tool_calls" in message:
             for tool_call in message["tool_calls"]:
                 function_name = tool_call["function"]["name"]
@@ -561,7 +577,7 @@ Reminder:
                             ChoiceDeltaToolCall(
                                 index=0,
                                 id=str(uuid.uuid4()),
-                                type = 'function',
+                                type="function",
                                 function=ChoiceDeltaToolCallFunction(
                                     name=function_name,
                                     arguments="",
@@ -671,7 +687,7 @@ Reminder:
             system_fingerprint=None,
             usage=None,
         ).model_dump()
-    
+
     @staticmethod
     def _create_first_chunk(kwargs: dict) -> dict:
         return ChatCompletionChunk(
