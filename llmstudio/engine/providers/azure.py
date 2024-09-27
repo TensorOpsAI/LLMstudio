@@ -148,7 +148,7 @@ class AzureProvider(Provider):
         saving = False
         normal_call_chunks = []
 
-        async for binary_chunk in response:
+        for binary_chunk in response:
             chunk = self._binary_chunk_to_json(binary_chunk)
 
             # Ignore empty chunks
