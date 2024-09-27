@@ -5,12 +5,12 @@ import uuid
 from typing import Any, AsyncGenerator, Coroutine, Generator, Optional
 
 import requests
-from fastapi import HTTPException
+from fastapi import ProviderError
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
 from pydantic import BaseModel, Field
 
-from llmstudio.engine.providers.provider import ChatRequest, Provider, provider
+from llmstudio_core.providers.provider import ChatRequest, Provider, provider
 
 
 class OllamaParameters(BaseModel):
@@ -49,7 +49,7 @@ class OllamaProvider(Provider):
                 stream=True,
             )
         except requests.RequestException:
-            raise HTTPException(
+            raise ProviderError(
                 status_code=500,
                 detail="Ollama is not running",
             )
@@ -62,7 +62,7 @@ class OllamaProvider(Provider):
                 continue
             chunk = json.loads(line.decode("utf-8"))
             if "error" in chunk:
-                raise HTTPException(status_code=500, detail=chunk["error"])
+                raise ProviderError(status_code=500, detail=chunk["error"])
             if chunk.get("done"):
                 yield ChatCompletionChunk(
                     id=str(uuid.uuid4()),

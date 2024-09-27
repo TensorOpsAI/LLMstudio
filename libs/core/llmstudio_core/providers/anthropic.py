@@ -6,12 +6,12 @@ import uuid
 from typing import Any, AsyncGenerator, Coroutine, Generator, Optional
 
 import requests
-from fastapi import HTTPException
+from fastapi import ProviderError
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
 from pydantic import BaseModel, Field
 
-from llmstudio.engine.providers.provider import ChatRequest, Provider, provider
+from llmstudio_core.providers.provider import ChatRequest, Provider, provider
 
 
 class ClaudeParameters(BaseModel):
@@ -28,9 +28,9 @@ class AnthropicRequest(ChatRequest):
 
 @provider
 class AnthropicProvider(Provider):
-    def __init__(self, config):
+    def __init__(self, config, api_key=None):
         super().__init__(config)
-        self.API_KEY = os.getenv("ANTHROPIC_API_KEY")
+        self.API_KEY = api_key or os.getenv("ANTHROPIC_API_KEY")
 
     def validate_request(self, request: AnthropicRequest):
         return AnthropicRequest(**request)
@@ -40,11 +40,10 @@ class AnthropicProvider(Provider):
     ) -> Coroutine[Any, Any, Generator]:
         """Generate an Anthropic client"""
         try:
-            api_key = request.api_key or self.API_KEY
             url = f"https://api.anthropic.com/v1/messages"
             headers = {
                 "content-type": "application/json",
-                "x-api-key": api_key,
+                "x-api-key": self.API_KEY,
                 "anthropic-version": "2023-06-01",
             }
             data = {
@@ -67,7 +66,7 @@ class AnthropicProvider(Provider):
                 stream=True,
             )
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise ProviderError(status_code=500, detail=str(e))
 
     async def parse_response(
         self, response: AsyncGenerator, **kwargs

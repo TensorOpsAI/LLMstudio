@@ -15,7 +15,7 @@ from typing import (
 )
 
 import requests
-from fastapi import HTTPException
+from fastapi import ProviderError
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import (
     Choice,
@@ -25,7 +25,7 @@ from openai.types.chat.chat_completion_chunk import (
 )
 from pydantic import BaseModel, Field, ValidationError
 
-from llmstudio.engine.providers.provider import ChatRequest, Provider, provider
+from llmstudio_core.providers.provider import ChatRequest, Provider, provider
 
 
 class VertexParameters(BaseModel):
@@ -88,9 +88,9 @@ class VertexAI(BaseModel):
 
 @provider
 class VertexAIProvider(Provider):
-    def __init__(self, config):
-        super().__init__(config)
-        self.GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+    def __init__(self, config, api_key):
+        super().__init__(config, api_key=api_key)
+        self.GOOGLE_API_KEY = api_key or os.getenv("GOOGLE_API_KEY")
 
     def validate_request(self, request: VertexAIRequest):
         return VertexAIRequest(**request)
@@ -102,11 +102,10 @@ class VertexAIProvider(Provider):
 
         try:
             # Init genai
-            api_key = request.api_key or self.GOOGLE_API_KEY
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{request.model}:streamGenerateContent?alt=sse"
             headers = {
                 "Content-Type": "application/json",
-                "x-goog-api-key": api_key,
+                "x-goog-api-key": self.GOOGLE_API_KEY,
             }
 
             # Convert the chat input into VertexAI format
@@ -119,7 +118,7 @@ class VertexAIProvider(Provider):
             )
 
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise ProviderError(status_code=500, detail=str(e))
 
     async def parse_response(
         self, response: AsyncGenerator, **kwargs

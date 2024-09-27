@@ -16,7 +16,7 @@ from typing import (
 )
 
 import tiktoken
-from fastapi import HTTPException
+from fastapi import ProviderError
 from fastapi.responses import JSONResponse, StreamingResponse
 from openai.types.chat import (
     ChatCompletion,
@@ -28,7 +28,6 @@ from openai.types.chat.chat_completion_message import FunctionCall
 from openai.types.chat.chat_completion_message_tool_call import Function
 from pydantic import BaseModel, ValidationError
 
-from llmstudio.tracking.tracker import tracker
 
 provider_registry = {}
 
@@ -54,10 +53,11 @@ class ChatRequest(BaseModel):
 class Provider:
     END_TOKEN = "<END_TOKEN>"
 
-    def __init__(self, config):
+    def __init__(self, config, api_key=None):
         self.config = config
         self.tokenizer = self._get_tokenizer()
         self.count = 0
+        self.API_KEY = api_key
 
     async def chat(
         self, request: ChatRequest
@@ -66,7 +66,7 @@ class Provider:
         try:
             request = self.validate_request(request)
         except ValidationError as e:
-            raise HTTPException(status_code=422, detail=e.errors())
+            raise ProviderError(status_code=422, detail=e.errors())
 
         self.validate_model(request)
 
@@ -80,26 +80,21 @@ class Provider:
                     return StreamingResponse(response_handler)
                 else:
                     return JSONResponse(content=await response_handler.__anext__())
-            except HTTPException as e:
+            except ProviderError as e:
                 if e.status_code == 429:
                     continue  # Retry on rate limit error
                 else:
                     raise e  # Raise other HTTP exceptions
             except Exception as e:
-                raise HTTPException(
-                    status_code=500, detail=str(e)
-                )  # Raise other exceptions as HTTP 500
-        raise HTTPException(status_code=429, detail="Too many requests")
+                raise ProviderError(str(e))  # Raise other exceptions as HTTP 500
+        raise ProviderError("Too many requests")
 
     def validate_request(self, request: ChatRequest):
         pass
 
-    def validate_model(self, request: ChatRequest):
-        if request.model not in self.config.models:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Model {request.model} is not supported by {self.config.name}",
-            )
+    def validate_model(self, model):
+        if model not in self.config.models:
+            raise ProviderError(f"Model {model} is not supported by {self.config.name}")
 
     async def generate_client(
         self, request: ChatRequest
@@ -138,7 +133,7 @@ class Provider:
         metrics = self.calculate_metrics(
             request.chat_input,
             response,
-            request.model,
+            model,
             start_time,
             time.time(),
             first_token_time,
@@ -163,29 +158,27 @@ class Provider:
             ),
             "provider": self.config.id,
             "model": (
-                request.model
-                if model and model.startswith(request.model)
-                else (model or request.model)
+                model
+                if model and model.startswith(model)
+                else (model or model)
             ),
             "deployment": (
                 model
-                if model and model.startswith(request.model)
-                else (request.model if model != request.model else None)
+                if model and model.startswith(model)
+                else (model if model != model else None)
             ),
             "timestamp": time.time(),
             "parameters": request.parameters.model_dump(),
             "metrics": metrics,
         }
 
-        self.save_log(response)
-
         if not request.is_stream:
             yield response
 
     def join_chunks(self, chunks, request):
-        from llmstudio.engine.providers.azure import AzureRequest
-        from llmstudio.engine.providers.openai import OpenAIRequest
-        from llmstudio.engine.providers.vertexai import VertexAIRequest
+        from llmstudio_core.providers.azure import AzureRequest
+        from llmstudio_core.providers.openai import OpenAIRequest
+        from llmstudio_core.providers.vertexai import VertexAIRequest
 
         finish_reason = chunks[-1].get("choices")[0].get("finish_reason")
         if finish_reason == "tool_calls":
@@ -416,18 +409,3 @@ class Provider:
 
     def _get_tokenizer(self):
         return {}.get(self.config.id, tiktoken.get_encoding("cl100k_base"))
-
-    def save_log(self, response: Dict[str, Any]):
-        local = False  # NB: Make this dynamic
-        if local:
-            file_name = Path(
-                os.path.join(os.path.dirname(__file__), "..", "logs.jsonl")
-            )
-            if not os.path.exists(file_name):
-                with open(file_name, "w") as f:
-                    pass
-
-            with open(file_name, "a") as f:
-                f.write(json.dumps(response) + "\n")
-        else:
-            tracker.log(response)

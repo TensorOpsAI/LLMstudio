@@ -3,11 +3,11 @@ import os
 from typing import Any, AsyncGenerator, Coroutine, Dict, Generator, List, Optional
 
 import openai
-from fastapi import HTTPException
+from fastapi import ProviderError
 from openai import OpenAI
 from pydantic import BaseModel, Field
 
-from llmstudio.engine.providers.provider import ChatRequest, Provider, provider
+from llmstudio_core.providers.provider import ChatRequest, Provider, provider
 
 
 class OpenAIParameters(BaseModel):
@@ -58,7 +58,7 @@ class OpenAIProvider(Provider):
                 **request.parameters.model_dump(),
             )
         except openai._exceptions.APIError as e:
-            raise HTTPException(status_code=e.status_code, detail=e.response.json())
+            raise ProviderError(status_code=e.status_code, detail=e.response.json())
 
     async def parse_response(
         self, response: AsyncGenerator, **kwargs

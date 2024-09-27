@@ -16,7 +16,7 @@ from typing import (
 )
 
 import openai
-from fastapi import HTTPException
+from fastapi import ProviderError
 from openai import AzureOpenAI, OpenAI
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import (
@@ -28,7 +28,7 @@ from openai.types.chat.chat_completion_chunk import (
 )
 from pydantic import BaseModel, Field
 
-from llmstudio.engine.providers.provider import ChatRequest, Provider, provider
+from llmstudio_core.providers.provider import ChatRequest, Provider, provider
 
 
 class AzureParameters(BaseModel):
@@ -127,12 +127,12 @@ class AzureProvider(Provider):
             )
 
         except openai._exceptions.APIConnectionError as e:
-            raise HTTPException(
+            raise ProviderError(
                 status_code=404, detail=f"There was an error reaching the endpoint: {e}"
             )
 
         except openai._exceptions.APIStatusError as e:
-            raise HTTPException(status_code=e.status_code, detail=e.response.json())
+            raise ProviderError(status_code=e.status_code, detail=e.response.json())
 
     def prepare_messages(self, request: AzureRequest):
         if self.is_llama:
