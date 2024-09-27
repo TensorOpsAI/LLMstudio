@@ -29,7 +29,7 @@ def get_session_by_message_id(db: Session, message_id: int):
 
 
 def add_session(db: Session, session: schemas.SessionDefaultCreate):
-    db_session = models.SessionDefault(**session.dict())
+    db_session = models.SessionDefault(**session.model_dump())
 
     db.add(db_session)
     db.commit()

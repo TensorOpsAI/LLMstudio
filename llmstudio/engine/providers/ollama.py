@@ -44,7 +44,7 @@ class OllamaProvider(Provider):
                     "model": request.model,
                     "prompt": request.chat_input,
                     "stream": True,
-                    **request.parameters.dict(),
+                    **request.parameters.model_dump(),
                 },
                 stream=True,
             )

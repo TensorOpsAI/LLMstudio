@@ -2,6 +2,7 @@ import json
 import os
 import time
 import uuid
+import requests
 from pathlib import Path
 from typing import (
     Any,
@@ -75,6 +76,8 @@ class Provider:
                 start_time = time.time()
                 response = await self.generate_client(request)
 
+                response.raise_for_status()
+
                 if request.is_stream:
                     response_handler = self.handle_response_stream(
                         request, response, start_time
@@ -85,6 +88,13 @@ class Provider:
                         request, response, start_time
                     )
                     return JSONResponse(content=response_data)
+            except requests.exceptions.HTTPError as e:
+                error_message = (
+                    e.response.text
+                )  # Or e.response.json() if the error response is in JSON
+                raise HTTPException(
+                    status_code=e.response.status_code, detail=error_message
+                )
             except HTTPException as e:
                 if e.status_code == 429:
                     continue  # Retry on rate limit error

@@ -109,10 +109,20 @@ class VertexAIProvider(Provider):
                 requests.post, url, headers=headers, json=message, stream=True
             )
 
+        except requests.exceptions.HTTPError as e:
+            error_message = (
+                e.response.text
+            )  # Or e.response.json() if the error response is in JSON
+            raise HTTPException(
+                status_code=e.response.status_code, detail=error_message
+            )
+
         except Exception as e:
+            print(e)
             raise HTTPException(status_code=500, detail=str(e))
 
     def parse_response(self, response, **kwargs):
+        print(response.json())
         for chunk in response.iter_content(chunk_size=None):
 
             chunk = json.loads(chunk.decode("utf-8").lstrip("data: "))

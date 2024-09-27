@@ -18,7 +18,7 @@ def get_logs_by_session(db: Session, session_id: str, skip: int = 0, limit: int 
 
 
 def add_log(db: Session, log: schemas.LogDefaultCreate):
-    db_log = models.LogDefault(**log.dict())
+    db_log = models.LogDefault(**log.model_dump())
     db.add(db_log)
     db.commit()
     db.refresh(db_log)

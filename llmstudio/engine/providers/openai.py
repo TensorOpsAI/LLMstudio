@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import Any, AsyncGenerator, Coroutine, Dict, Generator, List, Optional
+from typing import Any, Coroutine, Dict, Generator, List, Optional
 
 import openai
 from fastapi import HTTPException
