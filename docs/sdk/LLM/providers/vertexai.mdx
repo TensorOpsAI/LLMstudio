@@ -1,0 +1,103 @@
+Interact with your VertexAI models using LLM.
+
+## Supported models
+1. `gemini-1.5-flash`
+2. `gemini-1.5-pro`
+3. `gemini-1.0-pro`
+
+<Warning>Want to use another model? Check how to use custom models here.</Warning>
+
+## Parameters
+A VertexAI LLM interface can have the following parameters:
+| Parameter         | Type   | Description                                                                 |
+|-------------------|--------|-----------------------------------------------------------------------------|
+| `api_key`         | str    | The API key for authentication.                                              |
+| `temperature`     | float  | The temperature parameter for the model.                                     |
+| `top_p`           | float  | The top-p parameter for the model.                                           |
+| `max_tokens`      | int    | The maximum number of tokens for the model's output.                         |
+| `frequency_penalty` | float | The frequency penalty parameter for the model.                              |
+| `presence_penalty` | float | The presence penalty parameter for the model.                                |
+
+
+## Usage
+Here is how you setup an interface to interact with your OpenAI models.
+
+<Tabs>
+  <Tab title="w/ .env">
+    <Steps>
+        <Step>
+            Create a `.env` file with you `OPENAI_API_KEY`
+
+            <Warning>Make sure you call your environment variable OPENAI_API_KEY</Warning>
+            ```bash
+            OPENAI_API_KEY="YOUR-KEY"
+            ```
+        </Step>
+        <Step >
+            In your python code, import LLM from llmstudio.
+            ```python
+            from llmstudio import LLM
+            ```
+        </Step>
+        <Step>
+            Create your **llm** instance.
+            ```python
+            llm = LLM('openai/{model}')
+            ```
+        </Step>
+        <Step>
+            **Optional:** You can add your parameters as follows:
+            ```python
+            llm = LLM('openai/model', 
+            temperature= ...,
+            max_tokens= ...,
+            top_p= ...,
+            frequency_penalty= ...,
+            presence_penalty= ...)
+            ```
+            <Check>You are done setting up your **OpenAI LLM**!</Check>
+        </Step>
+    </Steps>
+  </Tab>
+  <Tab title="w/o .env">
+    <Steps>
+        <Step >
+            In your python code, import LLM from llmstudio.
+            ```python
+            from llmstudio import LLM
+            ```
+        </Step>
+        <Step>
+            Create your **llm** instance.
+            ```python
+            llm = LLM('openai/{model}',api_key="YOUR_API_KEY")
+            ```
+        </Step>
+        <Step>
+            **Optional:** You can add your parameters as follows:
+            ```python
+            llm = LLM('openai/model', 
+            temperature= ...,
+            max_tokens= ...,
+            top_p= ...,
+            frequency_penalty= ...,
+            presence_penalty= ...)
+            ```
+            <Check>You are done setting up your **OpenAI LLM**!</Check>
+        </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+
+
+
+## What's next?
+<CardGroup cols={2}>
+    <Card title="LLM.chat()" icon="link" href="/content/components/card-group">
+    Learn how to send messeges and recieve responses next!
+    </Card>
+    <Card title="LLM.batch_chat()" icon="link" href="/content/components/card-group">
+    Send multiple concurrent messeges and hit your models rate limit!
+    </Card>
+</CardGroup>

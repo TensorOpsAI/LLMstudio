@@ -1,0 +1,76 @@
+Interact with your Ollama models using LLM.
+
+## Parameters
+An Ollama LLM interface can have the following parameters:
+| Parameter         | Type   | Description                                                                 |
+|-------------------|--------|-----------------------------------------------------------------------------|
+| `temperature`     | float  | The temperature parameter for the model.                                     |
+| `top_p`           | float  | The top-p parameter for the model.                                           |
+| `num_predict`     | int    | The number of tokens to predict.                                             |
+| `top_k`           | int    | The top-k parameter for the model.                                           |
+
+
+## Usage
+Here is how you setup an interface to interact with your Ollama models.
+
+
+<Steps>
+    <Step>
+        Create a `config.yaml` in the same directory your code is in.
+        1. src
+            1. yourPythonCode.py
+            2. yourPyNotebook.py
+            3. **config.yaml**
+    </Step>
+    <Step >
+        Define your Ollama provider and models inside the `config.yaml` file.
+        ```yaml
+        providers:
+            ollama:
+                id: ollama
+                name: Ollama
+                chat: true
+                embed: true
+                keys:
+                models:
+                    YOUR_MODEL: <- Replace with your model name
+                        mode: chat
+                        max_tokens: ...
+                        input_token_cost: ...
+                        output_token_cost: ...
+        ```
+        <Tip>If you are not sure about any of these parameters, you can just leave them as **0**</Tip>
+    </Step>
+    <Step>
+        Create your **llm** instance.
+        ```python
+        llm = LLM('ollama/{YOUR_MODEL}')
+        ```
+    </Step>
+    <Step>
+        **Optional:** You can add your parameters as follows:
+        ```python
+        llm = LLM('ollama/model', 
+        temperature= ...,
+        num_predict= ...,
+        top_p= ...,
+        top_k= ...,)
+        ```
+        <Check>You are done setting up your **Ollama LLM**!</Check>
+    </Step>
+</Steps>
+
+
+
+
+
+
+## What's next?
+<CardGroup cols={2}>
+    <Card title="LLM.chat()" icon="link" href="/content/components/card-group">
+    Learn how to send messeges and recieve responses next!
+    </Card>
+    <Card title="LLM.batch_chat()" icon="link" href="/content/components/card-group">
+    Send multiple concurrent messeges and hit your models rate limit!
+    </Card>
+</CardGroup>
