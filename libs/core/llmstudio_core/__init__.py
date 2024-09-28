@@ -20,11 +20,11 @@ _providers_map = dict(
 )
 
 
-def LLM(provider:str) -> Provider:
+def LLM(provider:str, api_key=None) -> Provider:
     provider_config = _engine_config.providers.get(provider)
     provider_class = _providers_map.get(provider_config.id)
     if provider_class:
-        return provider_class(config=provider_config)
+        return provider_class(config=provider_config, api_key=api_key)
     raise NotImplementedError(f"Provider not found: {provider_config.id}. Available providers: {str(_providers_map.keys())}")
 
 if __name__ == "__main__":

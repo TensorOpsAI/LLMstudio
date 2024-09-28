@@ -16,7 +16,7 @@ from typing import (
 )
 
 import openai
-from fastapi import ProviderError
+from llmstudio_core.exceptions import ProviderError
 from openai import AzureOpenAI, OpenAI
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import (
@@ -52,9 +52,9 @@ class AzureRequest(ChatRequest):
 
 @provider
 class AzureProvider(Provider):
-    def __init__(self, config):
+    def __init__(self, config, api_key=None):
         super().__init__(config)
-        self.API_KEY = os.getenv("AZURE_API_KEY")
+        self.API_KEY = api_key or os.getenv("AZURE_API_KEY")
         self.API_ENDPOINT = os.getenv("AZURE_API_ENDPOINT")
         self.API_VERSION = os.getenv("AZURE_API_VERSION")
         self.BASE_URL = os.getenv("AZURE_BASE_URL")
@@ -78,12 +78,12 @@ class AzureProvider(Provider):
         try:
             if request.base_url or self.BASE_URL:
                 client = OpenAI(
-                    api_key=request.api_key or self.API_KEY,
+                    api_key=self.API_KEY,
                     base_url=request.base_url or self.BASE_URL,
                 )
             else:
                 client = AzureOpenAI(
-                    api_key=request.api_key or self.API_KEY,
+                    api_key=self.API_KEY,
                     azure_endpoint=request.api_endpoint or self.API_ENDPOINT,
                     api_version=request.api_version or self.API_VERSION,
                 )
@@ -127,12 +127,10 @@ class AzureProvider(Provider):
             )
 
         except openai._exceptions.APIConnectionError as e:
-            raise ProviderError(
-                status_code=404, detail=f"There was an error reaching the endpoint: {e}"
-            )
+            raise ProviderError(f"There was an error reaching the endpoint: {e}")
 
         except openai._exceptions.APIStatusError as e:
-            raise ProviderError(status_code=e.status_code, detail=e.response.json())
+            raise ProviderError(e.response.json())
 
     def prepare_messages(self, request: AzureRequest):
         if self.is_llama:

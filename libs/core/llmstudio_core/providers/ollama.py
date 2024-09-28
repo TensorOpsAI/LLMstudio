@@ -5,7 +5,7 @@ import uuid
 from typing import Any, AsyncGenerator, Coroutine, Generator, Optional
 
 import requests
-from fastapi import ProviderError
+from llmstudio_core.exceptions import ProviderError
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
 from pydantic import BaseModel, Field
@@ -26,7 +26,7 @@ class OllamaRequest(ChatRequest):
 
 @provider
 class OllamaProvider(Provider):
-    def __init__(self, config):
+    def __init__(self, config, api_key=None):
         super().__init__(config)
 
     def validate_request(self, request: OllamaRequest):
@@ -39,7 +39,7 @@ class OllamaProvider(Provider):
         try:
             return await asyncio.to_thread(
                 requests.post,
-                url="http://localhost:11434/api/generate",
+                url="http://localhost:11434/api/generate", #TODO make this configurable
                 json={
                     "model": request.model,
                     "prompt": request.chat_input,
@@ -49,10 +49,7 @@ class OllamaProvider(Provider):
                 stream=True,
             )
         except requests.RequestException:
-            raise ProviderError(
-                status_code=500,
-                detail="Ollama is not running",
-            )
+            raise ProviderError("Ollama is not running")
 
     async def parse_response(
         self, response: AsyncGenerator, **kwargs
@@ -62,7 +59,7 @@ class OllamaProvider(Provider):
                 continue
             chunk = json.loads(line.decode("utf-8"))
             if "error" in chunk:
-                raise ProviderError(status_code=500, detail=chunk["error"])
+                raise ProviderError(chunk["error"])
             if chunk.get("done"):
                 yield ChatCompletionChunk(
                     id=str(uuid.uuid4()),

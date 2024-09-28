@@ -15,8 +15,9 @@ from typing import (
     Union,
 )
 
+from fastapi import HTTPException
 import tiktoken
-from fastapi import ProviderError
+from llmstudio_core.exceptions import ProviderError
 from fastapi.responses import JSONResponse, StreamingResponse
 from openai.types.chat import (
     ChatCompletion,
@@ -66,9 +67,9 @@ class Provider:
         try:
             request = self.validate_request(request)
         except ValidationError as e:
-            raise ProviderError(status_code=422, detail=e.errors())
+            raise ProviderError(e.errors())
 
-        self.validate_model(request)
+        self.validate_model(request.model)
 
         for _ in range(request.retries + 1):
             try:
@@ -80,7 +81,7 @@ class Provider:
                     return StreamingResponse(response_handler)
                 else:
                     return JSONResponse(content=await response_handler.__anext__())
-            except ProviderError as e:
+            except HTTPException as e:
                 if e.status_code == 429:
                     continue  # Retry on rate limit error
                 else:
@@ -92,7 +93,7 @@ class Provider:
     def validate_request(self, request: ChatRequest):
         pass
 
-    def validate_model(self, model):
+    def validate_model(self, model:str):
         if model not in self.config.models:
             raise ProviderError(f"Model {model} is not supported by {self.config.name}")
 

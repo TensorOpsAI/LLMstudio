@@ -3,7 +3,7 @@ import os
 from typing import Any, AsyncGenerator, Coroutine, Dict, Generator, List, Optional
 
 import openai
-from fastapi import ProviderError
+from llmstudio_core.exceptions import ProviderError
 from openai import OpenAI
 from pydantic import BaseModel, Field
 
@@ -28,9 +28,9 @@ class OpenAIRequest(ChatRequest):
 
 @provider
 class OpenAIProvider(Provider):
-    def __init__(self, config):
+    def __init__(self, config, api_key=None):
         super().__init__(config)
-        self.API_KEY = os.getenv("OPENAI_API_KEY")
+        self.API_KEY = api_key or os.getenv("OPENAI_API_KEY")
 
     def validate_request(self, request: OpenAIRequest):
         return OpenAIRequest(**request)
@@ -41,7 +41,7 @@ class OpenAIProvider(Provider):
         """Generate an OpenAI client"""
 
         try:
-            client = OpenAI(api_key=request.api_key or self.API_KEY)
+            client = OpenAI(api_key=self.API_KEY)
             return await asyncio.to_thread(
                 client.chat.completions.create,
                 model=request.model,
@@ -58,7 +58,7 @@ class OpenAIProvider(Provider):
                 **request.parameters.model_dump(),
             )
         except openai._exceptions.APIError as e:
-            raise ProviderError(status_code=e.status_code, detail=e.response.json())
+            raise ProviderError(str(e))
 
     async def parse_response(
         self, response: AsyncGenerator, **kwargs

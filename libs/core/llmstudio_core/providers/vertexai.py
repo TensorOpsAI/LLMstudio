@@ -15,7 +15,7 @@ from typing import (
 )
 
 import requests
-from fastapi import ProviderError
+from llmstudio_core.exceptions import ProviderError
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import (
     Choice,
@@ -118,7 +118,7 @@ class VertexAIProvider(Provider):
             )
 
         except Exception as e:
-            raise ProviderError(status_code=500, detail=str(e))
+            raise ProviderError(str(e))
 
     async def parse_response(
         self, response: AsyncGenerator, **kwargs
