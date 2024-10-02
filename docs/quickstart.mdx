@@ -46,49 +46,56 @@ Using it in a Python notebook is also fairly simple! Just run the following cell
 
 ```python
 from llmstudio import LLM
-model = LLM("anthropic/claude-2.1")
-model.chat("What are Large Language Models?")
+model = LLM("vertexai/gemini-1.5.flash")
+model.chat("Hello! How are you?")
 ```
 
 The output will be a ChatCompletion, using the OpenAI format.
 
 ```python
 ChatCompletion(
-    id='9faa33e3-cda0-4d23-9217-c82ff7325b94',
-    choices=[
-        Choice(
-            finish_reason='stop',
-            index=0,
-            logprobs=None,
-            message=ChatCompletionMessage(
-                content="I am an artificial intelligence called OpenAI. I don't have a personal name because I am not a human.",
-                role='assistant',
-                function_call=None,
-                tool_calls=None
-            )
+  id='80430972-0794-4af1-b32d-dbf70b8cc41d', 
+  choices=[
+    Choice(
+      finish_reason='stop', 
+      index=0, logprobs=None, 
+      message=ChatCompletionMessage(
+            content='I am doing well, thank you for asking! How can I assist you today? 😊 \n', 
+            role='assistant', 
+            function_call=None, 
+            tool_calls=None
+          )
         )
-    ],
-    created=1718623278,
-    model='gpt-4',
-    object='chat.completion',
-    system_fingerprint=None,
-    usage=None,
-    session_id=None,
-    chat_input="What's your name",
-    chat_output="I am an artificial intelligence called OpenAI. I don't have a personal name because I am not a human.",
-    context=[{'role': 'user', 'content': "What's your name"}],
-    provider='openai',
-    timestamp=1718623280.9204,
-    parameters={'temperature': None, 'max_tokens': None, 'top_p': None, 'frequency_penalty': 0, 'presence_penalty': 0},
-    metrics={
-        'input_tokens': 4,
-        'output_tokens': 23,
-        'total_tokens': 27,
-        'cost_usd': 0.0015,
-        'latency_s': 2.6993088722229004,
-        'time_to_first_token_s': 0.9924077987670898,
-        'inter_token_latency_s': 0.0711073378721873,
-        'tokens_per_second': 9.26162998879499
-    }
+      ], 
+      created=1727444910, 
+      model='gemini-1.5-flash', 
+      object='chat.completion', 
+      system_fingerprint=None, 
+      usage=None, 
+      session_id=None, 
+      chat_input='Hello! How are you?', 
+      chat_output='I am doing well, thank you for asking! How can I assist you today? 😊 \n', 
+      context=[{'role': 'user', 'content': 'Hello! How are you?'}], 
+      provider='vertexai', 
+      deployment='gemini-1.5-flash', 
+      timestamp=1727444910.060522, 
+      parameters={
+        'top_p': 1, 
+        'top_k': 1, 
+        'temperature': 1, 
+        'max_output_tokens': 8192, 
+        'frequency_penalty': 0, 
+        'presence_penalty': 0
+        }, 
+        metrics={
+          'input_tokens': 6, 
+          'output_tokens': 20, 
+          'total_tokens': 26, 
+          'cost_usd': 2.31e-05, 
+          'latency_s': 1.0616769790649414, 
+          'time_to_first_token_s': 0.9788949489593506, 
+          'inter_token_latency_s': 0.0174557367960612, 
+          'tokens_per_second': 3.7676243140573225
+          }
 )
 ```

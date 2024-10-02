@@ -44,6 +44,10 @@
       "pages": ["quickstart", "support"]
     },
     {
+      "group": "How to",
+      "pages": ["how-to/build-a-tool-agent"]
+    },
+    {
       "group": "SDK",
       "pages": [
         {
@@ -51,27 +55,15 @@
           "pages":[{
             "group": "Providers",
             "pages":[
-              "sdk/LLM/providers/openai",
-              "sdk/LLM/providers/vertexai",
-              "sdk/LLM/providers/anthropic",
-              "sdk/LLM/providers/ollama",
-              "sdk/LLM/providers/azure"
+              "sdk/llm/providers/openai",
+              "sdk/llm/providers/vertexai",
+              "sdk/llm/providers/anthropic",
+              "sdk/llm/providers/ollama",
+              "sdk/llm/providers/azure"
             ]
           }, 
-          "sdk/LLM/chat",
-          "sdk/LLM/batch_chat"]
-        },
-        {
-          "group": "Langchain",
-          "pages":[{
-            "group": "Providers",
-            "pages":[
-              "sdk/LLM/providers/openai",
-              "sdk/LLM/providers/vertexai"
-            ]
-          }, 
-          "sdk/LLM/chat",
-          "sdk/LLM/batch_chat"]
+          "sdk/llm/chat",
+          "sdk/llm/batch_chat"]
         }
       ]
     },

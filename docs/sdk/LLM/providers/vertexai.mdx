@@ -5,8 +5,6 @@ Interact with your VertexAI models using LLM.
 2. `gemini-1.5-pro`
 3. `gemini-1.0-pro`
 
-<Warning>Want to use another model? Check how to use custom models here.</Warning>
-
 ## Parameters
 A VertexAI LLM interface can have the following parameters:
 | Parameter         | Type   | Description                                                                 |
@@ -20,17 +18,17 @@ A VertexAI LLM interface can have the following parameters:
 
 
 ## Usage
-Here is how you setup an interface to interact with your OpenAI models.
+Here is how you setup an interface to interact with your VertexAI models.
 
 <Tabs>
   <Tab title="w/ .env">
     <Steps>
         <Step>
-            Create a `.env` file with you `OPENAI_API_KEY`
+            Create a `.env` file with you `GOOGLE_API_KEY`
 
-            <Warning>Make sure you call your environment variable OPENAI_API_KEY</Warning>
+            <Warning>Make sure you call your environment variable GOOGLE_API_KEY</Warning>
             ```bash
-            OPENAI_API_KEY="YOUR-KEY"
+            GOOGLE_API_KEY="YOUR-KEY"
             ```
         </Step>
         <Step >
@@ -42,20 +40,20 @@ Here is how you setup an interface to interact with your OpenAI models.
         <Step>
             Create your **llm** instance.
             ```python
-            llm = LLM('openai/{model}')
+            llm = LLM('vertexai/{model}')
             ```
         </Step>
         <Step>
             **Optional:** You can add your parameters as follows:
             ```python
-            llm = LLM('openai/model', 
+            llm = LLM('vertexai/model', 
             temperature= ...,
             max_tokens= ...,
             top_p= ...,
             frequency_penalty= ...,
             presence_penalty= ...)
             ```
-            <Check>You are done setting up your **OpenAI LLM**!</Check>
+            <Check>You are done setting up your **VertexAI LLM**!</Check>
         </Step>
     </Steps>
   </Tab>
@@ -70,20 +68,20 @@ Here is how you setup an interface to interact with your OpenAI models.
         <Step>
             Create your **llm** instance.
             ```python
-            llm = LLM('openai/{model}',api_key="YOUR_API_KEY")
+            llm = LLM('vertexai/{model}',api_key="YOUR_API_KEY")
             ```
         </Step>
         <Step>
             **Optional:** You can add your parameters as follows:
             ```python
-            llm = LLM('openai/model', 
+            llm = LLM('vertexai/model', 
             temperature= ...,
             max_tokens= ...,
             top_p= ...,
             frequency_penalty= ...,
             presence_penalty= ...)
             ```
-            <Check>You are done setting up your **OpenAI LLM**!</Check>
+            <Check>You are done setting up your **VertexAI LLM**!</Check>
         </Step>
     </Steps>
   </Tab>
