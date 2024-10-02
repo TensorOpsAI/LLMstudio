@@ -44,6 +44,29 @@
       "pages": ["quickstart", "support"]
     },
     {
+      "group": "How to",
+      "pages": ["how-to/build-a-tool-agent"]
+    },
+    {
+      "group": "SDK",
+      "pages": [
+        {
+          "group": "LLM",
+          "pages":[{
+            "group": "Providers",
+            "pages":[
+              "sdk/llm/providers/openai",
+              "sdk/llm/providers/vertexai",
+              "sdk/llm/providers/anthropic",
+              "sdk/llm/providers/ollama",
+              "sdk/llm/providers/azure"
+            ]
+          }, 
+          "sdk/llm/chat"]
+        }
+      ]
+    },
+    {
       "group": "Endpoint Examples",
       "pages": [
         {
@@ -68,3 +91,4 @@
     "baseUrl": "http://localhost:8000"
   }
 }
+  
