@@ -17,6 +17,10 @@ class OpenAIProvider(BaseProvider):
         super().__init__(config, **kwargs)
         self.API_KEY = self.API_KEY if self.API_KEY else os.getenv("OPENAI_API_KEY")
 
+    @staticmethod
+    def _provider_config_name():
+        return "openai"
+
     def validate_request(self, request: ChatRequest):
         return ChatRequest(**request)
 

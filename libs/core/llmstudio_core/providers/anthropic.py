@@ -11,7 +11,7 @@ from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
 from pydantic import BaseModel, Field
 
-from llmstudio_core.providers.provider import ChatRequest, Provider, provider
+from llmstudio_core.providers.provider import ChatRequest, BaseProvider, provider
 
 
 class ClaudeParameters(BaseModel):
@@ -27,10 +27,14 @@ class AnthropicRequest(ChatRequest):
 
 
 @provider
-class AnthropicProvider(Provider):
+class AnthropicProvider(BaseProvider):
     def __init__(self, config, api_key=None):
         super().__init__(config)
         self.API_KEY = api_key or os.getenv("ANTHROPIC_API_KEY")
+    
+    @staticmethod
+    def _provider_config_name():
+        return "antropic"
 
     def validate_request(self, request: AnthropicRequest):
         return AnthropicRequest(**request)

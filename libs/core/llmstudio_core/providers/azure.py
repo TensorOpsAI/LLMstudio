@@ -28,7 +28,7 @@ from openai.types.chat.chat_completion_chunk import (
 )
 from pydantic import BaseModel, Field
 
-from llmstudio_core.providers.provider import ChatRequest, Provider, provider
+from llmstudio_core.providers.provider import ChatRequest, BaseProvider, provider
 
 
 class AzureParameters(BaseModel):
@@ -51,7 +51,7 @@ class AzureRequest(ChatRequest):
 
 
 @provider
-class AzureProvider(Provider):
+class AzureProvider(BaseProvider):
     def __init__(self, config, api_key=None):
         super().__init__(config)
         self.API_KEY = api_key or os.getenv("AZURE_API_KEY")
@@ -61,6 +61,10 @@ class AzureProvider(Provider):
         self.is_llama = False
         self.has_tools = False
         self.has_functions = False
+
+    @staticmethod
+    def _provider_config_name():
+        return "azure"
 
     def validate_request(self, request: AzureRequest):
         return AzureRequest(**request)

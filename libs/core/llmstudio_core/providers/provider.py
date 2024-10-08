@@ -1,7 +1,4 @@
-from abc import ABC
-import asyncio
-import json
-import os
+from abc import ABC, abstractmethod
 import time
 import uuid
 from pathlib import Path
@@ -30,7 +27,7 @@ from openai.types.chat import (
 from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion_message import FunctionCall
 from openai.types.chat.chat_completion_message_tool_call import Function
-from pydantic import BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ValidationError
 
 
 provider_registry = {}
@@ -38,8 +35,10 @@ provider_registry = {}
 
 def provider(cls):
     """Decorator to register a new provider."""
-    provider_registry[cls.__name__] = cls
+    provider_registry[cls._provider_config_name()] = cls
+
     return cls
+
 
 class ChatRequest(BaseModel):
     model: str
@@ -67,15 +66,22 @@ class ProviderABC(ABC):
         self.tokenizer = tokenizer if tokenizer else self._get_tokenizer()
         self.count = 0
         
+    @abstractmethod
     async def achat(
         self, request: ChatRequest
     ) -> Union[StreamingResponse, JSONResponse]:
         raise NotImplementedError("Providers needs to have achat method implemented.")
     
+    @abstractmethod
     def achat(
         self, request: ChatRequest
     ) -> Union[StreamingResponse, JSONResponse]:
         raise NotImplementedError("Providers needs to have chat method implemented.")
+    
+    @staticmethod
+    @abstractmethod
+    def _provider_config_name():
+        raise NotImplementedError("Providers need to implement the '_provider_config_name' property.")
 
 
 class BaseProvider(ProviderABC):
@@ -306,7 +312,6 @@ class BaseProvider(ProviderABC):
 
         yield ChatCompletionChunk(**response)
 
-
     async def ahandle_response(
         self, request: ChatRequest, response: ChatCompletion, start_time: float
     ) -> AsyncGenerator[ChatCompletion, None]:
@@ -453,7 +458,6 @@ class BaseProvider(ProviderABC):
 
         yield ChatCompletionChunk(**response)
 
-
     def join_chunks(self, chunks, request):
 
         finish_reason = chunks[-1].get("choices")[0].get("finish_reason")
@@ -547,7 +551,7 @@ class BaseProvider(ProviderABC):
             )
 
         elif finish_reason == "stop" or finish_reason == "length":
-            if self.__class__.__name__ in ("OpenAIProvider", "AzureProvider"): # or isinstance(request, OpenAIRequest):
+            if self.__class__.__name__ in ("OpenAIProvider", "AzureProvider"):
                 start_index = 1
             else:
                 start_index = 0
@@ -653,7 +657,6 @@ class BaseProvider(ProviderABC):
             "tokens_per_second": usage.get("total_tokens") / total_time,
         }
 
-
     def calculate_cost(
         self, token_count: int, token_cost: Union[float, List[Dict[str, Any]]]
     ) -> float:
@@ -701,4 +704,4 @@ class BaseProvider(ProviderABC):
 
     def _get_tokenizer(self):
         return {}.get(self.config.id, tiktoken.get_encoding("cl100k_base"))
-    
+

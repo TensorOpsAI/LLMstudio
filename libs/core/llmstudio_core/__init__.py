@@ -1,27 +1,10 @@
 from abc import ABC
 from typing import Optional
-from llmstudio_core.providers import (
-    # AnthropicProvider
-# , AzureProvider
-# , OllamaProvider
-OpenAIProvider
-, provider_registry
-# , VertexAIProvider
-)
-
-from llmstudio_core.providers.provider import BaseProvider
+from llmstudio_core.providers.provider import BaseProvider, provider_registry
 
 from llmstudio_core.providers import _load_engine_config
 
 _engine_config = _load_engine_config()
-
-_providers_map = dict(
-    # anthropic=AnthropicProvider,
-    # azure=AzureProvider,
-    # ollama=OllamaProvider,
-    openai=OpenAIProvider,
-    # vertexai=VertexAIProvider
-)
 
 
 def LLM(provider: str, api_key: Optional[str] = None) -> BaseProvider:
@@ -39,25 +22,11 @@ def LLM(provider: str, api_key: Optional[str] = None) -> BaseProvider:
         NotImplementedError: If the provider is not found in the provider map.
     """
     provider_config = _engine_config.providers.get(provider)
-    provider_class = _providers_map.get(provider_config.id)
+    provider_class = provider_registry.get(provider_config.id)
     if provider_class:
         return provider_class(config=provider_config, api_key=api_key)
-    raise NotImplementedError(f"BaseProvider not found: {provider_config.id}. Available providers: {str(_providers_map.keys())}")
+    raise NotImplementedError(f"BaseProvider not found: {provider_config.id}. Available providers: {str(provider_registry.keys())}")
 
-class LLMStudioTracker(ABC):
-    pass
-
-#@SDK
-class LLM_:
-    def __init__(self,provider: str ,tracker: LLMStudioTracker=None, **kwargs) -> None:
-
-        self.provider = LLM(provider=provider,**kwargs)
-        self.tracker = tracker
-
-    def chat(self, chat_input, **kwargs):
-        response = self.provider.chat(chat_input, **kwargs)
-        self.tracker.log(response["metrics"])
-        return response
 
 if __name__ == "__main__":
     from pprint import pprint
