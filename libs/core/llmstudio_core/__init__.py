@@ -106,10 +106,14 @@ if __name__ == "__main__":
         
         response_async = await llm.achat(chat_request)
         async for p in response_async:
-            pprint(p)
+            pprint(p.chat_output)
+            pprint(p.choices[0].delta.content==p.chat_output)
+            print("metrics: ",p.metrics)
+            if p.metrics:
+                pprint(p)
     asyncio.run(async_stream())
     print("how to get the metrics out?")
-    
+
     # response_sync = llm.chat(chat_request)
     # pprint(response_sync)
 
