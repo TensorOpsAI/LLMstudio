@@ -112,9 +112,51 @@ if __name__ == "__main__":
             if p.metrics:
                 pprint(p)
     asyncio.run(async_stream())
-    print("how to get the metrics out?")
+    
+    
+    print("# Now sync calls")
+    chat_request = {
+        "chat_input": "Hello, my name is Json",
+        "model": "gpt-3.5-turbo",
+        "is_stream": False,
+        "retries": 0,
+        "parameters": {
+            "temperature": 0,
+            "max_tokens": 100,
+            "response_format": {"type": "json_object"},
+            "functions": None,
+        }
+    }
 
-    # response_sync = llm.chat(chat_request)
-    # pprint(response_sync)
+    provider = "openai"
 
-    # assert response_sync == response_async
+    llm = LLM(provider=provider, api_key=os.environ["OPENAI_API_KEY"])
+    
+    response_sync = llm.chat(chat_request)
+    pprint(response_sync)
+
+    print("# Now sync calls streaming")
+    chat_request = {
+        "chat_input": "Hello, my name is Json",
+        "model": "gpt-3.5-turbo",
+        "is_stream": True,
+        "retries": 0,
+        "parameters": {
+            "temperature": 0,
+            "max_tokens": 100,
+            "response_format": {"type": "json_object"},
+            "functions": None,
+        }
+    }
+
+    provider = "openai"
+
+    llm = LLM(provider=provider, api_key=os.environ["OPENAI_API_KEY"])
+    
+    response_sync_stream = llm.chat(chat_request)
+    for p in response_sync_stream:
+        pprint(p.chat_output)
+        pprint(p.choices[0].delta.content==p.chat_output)
+        print("metrics: ",p.metrics)
+        if p.metrics:
+            pprint(p)

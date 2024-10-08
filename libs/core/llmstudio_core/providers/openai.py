@@ -40,9 +40,35 @@ class OpenAIProvider(BaseProvider):
             )
         except openai._exceptions.APIError as e:
             raise ProviderError(str(e))
+        
+    def generate_client(
+        self, request: ChatRequest
+    ) -> Coroutine[Any, Any, Generator]:
+        """Generate an OpenAI client"""
+
+        try:
+            client = OpenAI(api_key=self.API_KEY)
+            return client.chat.completions.create(
+                model=request.model,
+                messages=(
+                    [{"role": "user", "content": request.chat_input}]
+                    if isinstance(request.chat_input, str)
+                    else request.chat_input
+                ),
+                stream=request.is_stream,
+                **request.parameters,
+            )
+        except openai._exceptions.APIError as e:
+            raise ProviderError(str(e))
 
     async def aparse_response(
         self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:
+        for chunk in response:
+            yield chunk.model_dump()
+
+    def parse_response(
+        self, response: AsyncGenerator, **kwargs
+    ) -> Generator:
         for chunk in response:
             yield chunk.model_dump()

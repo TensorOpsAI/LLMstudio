@@ -114,6 +114,37 @@ class BaseProvider(ProviderABC):
                 )  # Raise other exceptions as HTTP 500
         raise HTTPException(status_code=429, detail="Too many requests")
 
+    def chat(
+        self, request: ChatRequest
+    ):
+        """Makes a chat connection with the provider's API"""
+        try:
+            request = self.validate_request(request)
+        except ValidationError as e:
+            raise HTTPException(status_code=422, detail=e.errors())
+
+        self.validate_model(request)
+
+        for _ in range(request.retries + 1):
+            try:
+                start_time = time.time()
+                response = self.generate_client(request)
+
+                if request.is_stream:
+                    response_handler = self.handle_response_stream(request, response, start_time)
+                    return response_handler
+                else:
+                    return self.handle_response(request, response, start_time)
+
+            except HTTPException as e:
+                if e.status_code == 429:
+                    continue  # Retry on rate limit error
+                else:
+                    raise e  # Raise other HTTP exceptions
+            except Exception as e:
+                raise ProviderError(str(e))
+        raise HTTPException(status_code=429, detail="Too many requests")
+
     def validate_request(self, request: ChatRequest):
         pass
 
@@ -128,6 +159,153 @@ class BaseProvider(ProviderABC):
         self, request: ChatRequest
     ) -> Coroutine[Any, Any, Generator]:
         """Generate the provider's client"""
+
+    def handle_response(
+        self, request: ChatRequest, response: ChatCompletion, start_time: float
+    ) -> ChatCompletion:
+        """Handles the response from an API"""
+        model = response.model
+        
+        metrics = self.calculate_metrics(
+            usage=response.usage.model_dump(),
+            model=request.model,
+            start_time=start_time,
+            end_time=time.time(),
+        )
+
+        response = {
+            **response.model_dump(),
+            "id": str(uuid.uuid4()),
+            "chat_input": (
+                request.chat_input
+                if isinstance(request.chat_input, str)
+                else request.chat_input[-1]["content"]
+            ),
+            "chat_output": response.choices[0].message.content,
+            "context": (
+                [{"role": "user", "content": request.chat_input}]
+                if isinstance(request.chat_input, str)
+                else request.chat_input
+            ),
+            "provider": self.config.id,
+            "model": (
+                request.model
+                if model and model.startswith(request.model)
+                else (model or request.model)
+            ),
+            "deployment": (
+                model
+                if model and model.startswith(request.model)
+                else (request.model if model != request.model else None)
+            ),
+            "timestamp": time.time(),
+            "parameters": request.parameters,
+            "metrics": metrics,
+        }
+
+        return ChatCompletion(**response)
+
+    def handle_response_stream(
+        self, request: ChatRequest, response: AsyncGenerator, start_time: float
+    ) -> Generator:
+        """Handles the response from an API"""
+        first_token_time = None
+        previous_token_time = None
+        token_times = []
+        token_count = 0
+        chunks = []
+
+        for chunk in self.parse_response(response, request=request):
+            token_count += 1
+            current_time = time.time()
+            first_token_time = first_token_time or current_time
+            if previous_token_time is not None:
+                token_times.append(current_time - previous_token_time)
+            previous_token_time = current_time
+
+            chunks.append(chunk)
+            chunk = chunk[0] if isinstance(chunk, tuple) else chunk
+            if chunk.get("choices")[0].get("finish_reason") != "stop":
+                model = chunk.get("model")
+                response = {
+                            **chunk,
+                            "id": str(uuid.uuid4()),
+                            "chat_input": (
+                                request.chat_input
+                                if isinstance(request.chat_input, str)
+                                else request.chat_input[-1]["content"]
+                            ),
+                            "chat_output": chunk.get("choices")[0].get("delta").get("content"),
+                            "context": (
+                                [{"role": "user", "content": request.chat_input}]
+                                if isinstance(request.chat_input, str)
+                                else request.chat_input
+                            ),
+                            "provider": self.config.id,
+                            "model": (
+                                request.model
+                                if model and model.startswith(request.model)
+                                else (model or request.model)
+                            ),
+                            "deployment": (
+                                model
+                                if model and model.startswith(request.model)
+                                else (request.model if model != request.model else None)
+                            ),
+                            "timestamp": time.time(),
+                            "parameters": request.parameters,
+                            "metrics": None,
+                        }
+                yield ChatCompletionChunk(**response)
+
+        chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
+        model = next(chunk["model"] for chunk in chunks if chunk.get("model"))
+
+        response, _ = self.join_chunks(chunks, request)
+
+        metrics = self.calculate_metrics_stream(
+            request.chat_input,
+            response,
+            request.model,
+            start_time,
+            time.time(),
+            first_token_time,
+            token_times,
+            token_count,
+        )
+
+        response = {
+            **chunk,
+            "id": str(uuid.uuid4()),
+            "chat_input": (
+                request.chat_input
+                if isinstance(request.chat_input, str)
+                else request.chat_input[-1]["content"]
+            ),
+            "chat_output": None,
+            "context": (
+                [{"role": "user", "content": request.chat_input}]
+                if isinstance(request.chat_input, str)
+                else request.chat_input
+            ),
+            "provider": self.config.id,
+            "model": (
+                request.model
+                if model and model.startswith(request.model)
+                else (model or request.model)
+            ),
+            "deployment": (
+                model
+                if model and model.startswith(request.model)
+                else (request.model if model != request.model else None)
+            ),
+            "timestamp": time.time(),
+            "parameters": request.parameters,
+            "metrics": metrics,
+        }
+
+        yield ChatCompletionChunk(**response)
+
 
     async def ahandle_response(
         self, request: ChatRequest, response: ChatCompletion, start_time: float
@@ -409,7 +587,12 @@ class BaseProvider(ProviderABC):
 
     async def aparse_response(
         self, response: AsyncGenerator
-    ) -> AsyncGenerator[str, None]:
+    ) -> AsyncGenerator[str, ChatCompletionChunk]:
+        pass
+
+    def parse_response(
+        self, response: AsyncGenerator
+    ) -> ChatCompletionChunk:
         pass
 
     def calculate_metrics_stream(
