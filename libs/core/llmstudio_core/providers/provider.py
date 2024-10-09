@@ -41,8 +41,8 @@ def provider(cls):
 
 
 class ChatRequest(BaseModel):
-    model: str
     chat_input: Any
+    model: str
     is_stream: Optional[bool] = False
     retries: Optional[int] = 0
     parameters: Optional[dict] = None
@@ -68,13 +68,23 @@ class ProviderABC(ABC):
         
     @abstractmethod
     async def achat(
-        self, request: ChatRequest
+        self, 
+        chat_input: Any,
+        model: str,
+        is_stream: Optional[bool] = False,
+        retries: Optional[int] = 0,
+        parameters: Optional[dict] = {}
     ) -> Union[StreamingResponse, JSONResponse]:
         raise NotImplementedError("Providers needs to have achat method implemented.")
     
     @abstractmethod
     def achat(
-        self, request: ChatRequest
+        self, 
+        chat_input: Any,
+        model: str,
+        is_stream: Optional[bool] = False,
+        retries: Optional[int] = 0,
+        parameters: Optional[dict] = {}
     ) -> Union[StreamingResponse, JSONResponse]:
         raise NotImplementedError("Providers needs to have chat method implemented.")
     
@@ -88,11 +98,23 @@ class BaseProvider(ProviderABC):
     END_TOKEN = "<END_TOKEN>"
 
     async def achat(
-        self, request: ChatRequest
+        self, 
+        chat_input: Any,
+        model: str,
+        is_stream: Optional[bool] = False,
+        retries: Optional[int] = 0,
+        parameters: Optional[dict] = {}
     ):
+
         """Makes a chat connection with the provider's API"""
         try:
-            request = self.validate_request(request)
+            request = self.validate_request(dict(
+            chat_input=chat_input,
+            model=model,
+            is_stream=is_stream,
+            retries=retries,
+            parameters=parameters
+        ))
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
 
@@ -113,19 +135,28 @@ class BaseProvider(ProviderABC):
                 if e.status_code == 429:
                     continue  # Retry on rate limit error
                 else:
-                    raise e  # Raise other HTTP exceptions
+                    raise e
             except Exception as e:
-                raise HTTPException(
-                    status_code=500, detail=str(e)
-                )  # Raise other exceptions as HTTP 500
-        raise HTTPException(status_code=429, detail="Too many requests")
+                raise ProviderError(str(e)) 
+        raise ProviderError("Too many requests")
 
     def chat(
-        self, request: ChatRequest
+        self, 
+        chat_input: Any,
+        model: str,
+        is_stream: Optional[bool] = False,
+        retries: Optional[int] = 0,
+        parameters: Optional[dict] = {}
     ):
         """Makes a chat connection with the provider's API"""
         try:
-            request = self.validate_request(request)
+            request = self.validate_request(dict(
+            chat_input=chat_input,
+            model=model,
+            is_stream=is_stream,
+            retries=retries,
+            parameters=parameters
+        ))
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
 
@@ -161,10 +192,19 @@ class BaseProvider(ProviderABC):
                 detail=f"Model {request.model} is not supported by {self.config.name}",
             )
 
+    @abstractmethod
     async def agenerate_client(
         self, request: ChatRequest
     ) -> Coroutine[Any, Any, Generator]:
         """Generate the provider's client"""
+        raise NotImplementedError("agenerate_client method must be implemented for async calls.")
+    
+    @abstractmethod
+    def generate_client(
+        self, request: ChatRequest
+    ) -> ChatCompletion:
+        """Generate the provider's client"""
+        raise NotImplementedError("generate_client method must be implemented.")
 
     def handle_response(
         self, request: ChatRequest, response: ChatCompletion, start_time: float
@@ -288,7 +328,7 @@ class BaseProvider(ProviderABC):
                 if isinstance(request.chat_input, str)
                 else request.chat_input[-1]["content"]
             ),
-            "chat_output": None,
+            "chat_output": "",
             "context": (
                 [{"role": "user", "content": request.chat_input}]
                 if isinstance(request.chat_input, str)
@@ -377,6 +417,7 @@ class BaseProvider(ProviderABC):
 
             chunks.append(chunk)
             chunk = chunk[0] if isinstance(chunk, tuple) else chunk
+
             if chunk.get("choices")[0].get("finish_reason") != "stop":
                 model = chunk.get("model")
                 response = {
@@ -590,12 +631,12 @@ class BaseProvider(ProviderABC):
             )
 
     async def aparse_response(
-        self, response: AsyncGenerator
+        self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, ChatCompletionChunk]:
         pass
 
     def parse_response(
-        self, response: AsyncGenerator
+        self, response: AsyncGenerator, **kwargs
     ) -> ChatCompletionChunk:
         pass
 
