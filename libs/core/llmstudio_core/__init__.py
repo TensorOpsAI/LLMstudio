@@ -25,7 +25,7 @@ def LLM(provider: str, api_key: Optional[str] = None) -> BaseProvider:
     provider_class = provider_registry.get(provider_config.id)
     if provider_class:
         return provider_class(config=provider_config, api_key=api_key)
-    raise NotImplementedError(f"BaseProvider not found: {provider_config.id}. Available providers: {str(provider_registry.keys())}")
+    raise NotImplementedError(f"Provider not found: {provider_config.id}. Available providers: {str(provider_registry.keys())}")
 
 
 if __name__ == "__main__":
@@ -33,33 +33,85 @@ if __name__ == "__main__":
     import os
     from dotenv import load_dotenv
     load_dotenv()
-    chat_request = {
-        "chat_input": "Hello, my name is Json",
-        "model": "gpt-3.5-turbo",
-        "is_stream": False,
-        "retries": 0,
-        "parameters": {
-            "temperature": 0,
-            "max_tokens": 100,
-            "response_format": {"type": "json_object"},
-            "functions": None,
-        }
-    }
 
-    provider = "openai"
-
-    llm = LLM(provider=provider, api_key=os.environ["OPENAI_API_KEY"])
-    
-    import asyncio
-    response_async = asyncio.run(llm.achat(chat_request))
-    pprint(response_async)
-
-    # stream
-    print("\nasync stream")
-    async def async_stream():
+    def test_stuff(provider, model, api_key):
+        latencies = {}
         chat_request = {
             "chat_input": "Hello, my name is Json",
-            "model": "gpt-3.5-turbo",
+            "model": model,
+            "is_stream": False,
+            "retries": 0,
+            "parameters": {
+                "temperature": 0,
+                "max_tokens": 100,
+                "response_format": {"type": "json_object"},
+                "functions": None,
+            }
+        }
+
+
+        llm = LLM(provider=provider, api_key=api_key)
+        
+        import asyncio
+        response_async = asyncio.run(llm.achat(**chat_request))
+        pprint(response_async)
+        latencies["async (ms)"]= response_async.metrics["latency_s"]*1000
+
+        # stream
+        print("\nasync stream")
+        async def async_stream():
+            chat_request = {
+                "chat_input": "Hello, my name is Json",
+                "model": model,
+                "is_stream": True,
+                "retries": 0,
+                "parameters": {
+                    "temperature": 0,
+                    "max_tokens": 100,
+                    "response_format": {"type": "json_object"},
+                    "functions": None,
+                }
+            }
+
+            llm = LLM(provider=provider, api_key=api_key)
+            
+            response_async = await llm.achat(**chat_request)
+            async for p in response_async:
+                print("that: ",p.chat_output)
+                # pprint(p.choices[0].delta.content==p.chat_output)
+                # print("metrics: ", p.metrics)
+                # print(p)
+                if p.metrics:
+                    pprint(p)
+                    latencies["async_stream (ms)"]= p.metrics["latency_s"]*1000
+        asyncio.run(async_stream())
+        
+        
+        print("# Now sync calls")
+        chat_request = {
+            "chat_input": "Hello, my name is Json",
+            "model": model,
+            "is_stream": False,
+            "retries": 0,
+            "parameters": {
+                "temperature": 0,
+                "max_tokens": 100,
+                "response_format": {"type": "json_object"},
+                "functions": None,
+            }
+        }
+
+
+        llm = LLM(provider=provider, api_key=api_key)
+        
+        response_sync = llm.chat(**chat_request)
+        pprint(response_sync)
+        latencies["sync (ms)"]= response_sync.metrics["latency_s"]*1000
+
+        print("# Now sync calls streaming")
+        chat_request = {
+            "chat_input": "Hello, my name is Json",
+            "model": model,
             "is_stream": True,
             "retries": 0,
             "parameters": {
@@ -70,62 +122,38 @@ if __name__ == "__main__":
             }
         }
 
-        provider = "openai"
-        llm = LLM(provider=provider, api_key=os.environ["OPENAI_API_KEY"])
+        llm = LLM(provider=provider, api_key=api_key)
         
-        response_async = await llm.achat(chat_request)
-        async for p in response_async:
-            pprint(p.chat_output)
-            pprint(p.choices[0].delta.content==p.chat_output)
-            print("metrics: ",p.metrics)
+        response_sync_stream = llm.chat(**chat_request)
+        for p in response_sync_stream:
+            # pprint(p.chat_output)
+            # pprint(p.choices[0].delta.content==p.chat_output)
+            # print("metrics: ",p.metrics)
             if p.metrics:
                 pprint(p)
-    asyncio.run(async_stream())
-    
-    
-    print("# Now sync calls")
-    chat_request = {
-        "chat_input": "Hello, my name is Json",
-        "model": "gpt-3.5-turbo",
-        "is_stream": False,
-        "retries": 0,
-        "parameters": {
-            "temperature": 0,
-            "max_tokens": 100,
-            "response_format": {"type": "json_object"},
-            "functions": None,
-        }
-    }
+                latencies["sync stream (ms)"]= p.metrics["latency_s"]*1000
 
-    provider = "openai"
+        print(f"\n\n### REPORT for {provider}, {model} ###")
+        return latencies
 
-    llm = LLM(provider=provider, api_key=os.environ["OPENAI_API_KEY"])
-    
-    response_sync = llm.chat(chat_request)
-    pprint(response_sync)
 
-    print("# Now sync calls streaming")
-    chat_request = {
-        "chat_input": "Hello, my name is Json",
-        "model": "gpt-3.5-turbo",
-        "is_stream": True,
-        "retries": 0,
-        "parameters": {
-            "temperature": 0,
-            "max_tokens": 100,
-            "response_format": {"type": "json_object"},
-            "functions": None,
-        }
-    }
+    # provider = "openai"
+    # model = "gpt-4o-mini"
+    # for _ in range(1):
+    #     latencies = test_stuff(provider=provider, model=model, api_key=os.environ["OPENAI_API_KEY"])
+    #     pprint(latencies)
 
-    provider = "openai"
+    # provider = "anthropic"
+    # model = "claude-3-opus-20240229"
+    # for _ in range(1):
+    #     latencies = test_stuff(provider=provider, model=model, api_key=os.environ["ANTHROPIC_API_KEY"])
+    #     pprint(latencies)
+    # we need credits
 
-    llm = LLM(provider=provider, api_key=os.environ["OPENAI_API_KEY"])
-    
-    response_sync_stream = llm.chat(chat_request)
-    for p in response_sync_stream:
-        pprint(p.chat_output)
-        pprint(p.choices[0].delta.content==p.chat_output)
-        print("metrics: ",p.metrics)
-        if p.metrics:
-            pprint(p)
+    provider = "azure"
+    model = "gpt-4o"
+    for _ in range(1):
+        latencies = test_stuff(provider=provider, model=model, 
+                               api_key=os.environ["AZURE_API_KEY"]
+                               )
+        pprint(latencies)
