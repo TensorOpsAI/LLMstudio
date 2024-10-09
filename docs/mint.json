@@ -45,7 +45,10 @@
     },
     {
       "group": "How to",
-      "pages": ["how-to/build-a-tool-agent"]
+      "pages": [
+        "how-to/build-a-tool-agent",
+        "how-to/deploy-on-gcp/deploy-on-google-cloud-platform"
+      ]
     },
     {
       "group": "SDK",

@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  llmstudio:
+    container_name: llmstudio
+    build: .
+    restart: always
+    volumes:
+      - ./shared_folder:${GENERAL_SHAREDFOLDER}
+    ports:
+      - 3000:3000
+      - 8001:8001
+      - 8002:8002
+    env_file: ".env"
+    platform: linux/amd64
