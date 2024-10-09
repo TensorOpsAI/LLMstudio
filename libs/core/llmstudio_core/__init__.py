@@ -137,11 +137,11 @@ if __name__ == "__main__":
         return latencies
 
 
-    # provider = "openai"
-    # model = "gpt-4o-mini"
-    # for _ in range(1):
-    #     latencies = test_stuff(provider=provider, model=model, api_key=os.environ["OPENAI_API_KEY"])
-    #     pprint(latencies)
+    provider = "openai"
+    model = "gpt-4o-mini"
+    for _ in range(1):
+        latencies = test_stuff(provider=provider, model=model, api_key=os.environ["OPENAI_API_KEY"])
+        pprint(latencies)
 
     # provider = "anthropic"
     # model = "claude-3-opus-20240229"
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     # we need credits
 
     provider = "azure"
-    model = "gpt-4o"
+    model = "gpt-4o-mini"
     for _ in range(1):
         latencies = test_stuff(provider=provider, model=model, 
                                api_key=os.environ["AZURE_API_KEY"]

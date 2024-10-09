@@ -34,12 +34,12 @@ class AnthropicProvider(BaseProvider):
     
     @staticmethod
     def _provider_config_name():
-        return "antropic"
+        return "anthropic"
 
     def validate_request(self, request: AnthropicRequest):
         return AnthropicRequest(**request)
 
-    async def generate_client(
+    async def agenerate_client(
         self, request: AnthropicRequest
     ) -> Coroutine[Any, Any, Generator]:
         """Generate an Anthropic client"""
@@ -62,13 +62,47 @@ class AnthropicProvider(BaseProvider):
                 **request.parameters.model_dump(),
             }
 
-            return await asyncio.to_thread(
+            result = await asyncio.to_thread(
                 requests.post,
                 url,
                 headers=headers,
                 json=data,
                 stream=True,
             )
+            if result.status_code != 200:
+                raise ProviderError(result.status_code, result.text)
+        except Exception as e:
+            raise ProviderError(str(e))
+
+    def generate_client(
+        self, request: AnthropicRequest
+    ) -> Coroutine[Any, Any, Generator]:
+        """Generate an Anthropic client"""
+        try:
+            url = f"https://api.anthropic.com/v1/messages"
+            headers = {
+                "content-type": "application/json",
+                "x-api-key": self.API_KEY,
+                "anthropic-version": "2023-06-01",
+            }
+            data = {
+                "model": request.model,
+                "stream": True,
+                # "tools": request.tools,
+                "messages": (
+                    [{"role": "user", "content": request.chat_input}]
+                    if isinstance(request.chat_input, str)
+                    else request.chat_input
+                ),
+                **request.parameters.model_dump(),
+            }
+
+            return requests.post(
+                        url,
+                        headers=headers,
+                        json=data,
+                        stream=True,
+                    )
         except Exception as e:
             raise ProviderError(str(e))
 

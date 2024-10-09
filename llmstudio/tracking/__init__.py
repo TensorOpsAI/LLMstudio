@@ -5,7 +5,6 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from llmstudio.config import TRACKING_HOST, TRACKING_PORT
-from llmstudio.engine.providers import *
 from llmstudio.tracking.logs.endpoints import LogsRoutes
 from llmstudio.tracking.session.endpoints import SessionsRoutes
 
