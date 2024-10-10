@@ -71,6 +71,7 @@ class AnthropicProvider(BaseProvider):
             )
             if result.status_code != 200:
                 raise ProviderError(result.status_code, result.text)
+            return result
         except Exception as e:
             raise ProviderError(str(e))
 
