@@ -9,10 +9,11 @@ from llmstudio.config import ENGINE_HOST, ENGINE_PORT
 from llmstudio.llm.semaphore import DynamicSemaphore
 from llmstudio.server import start_server
 
-start_server()
+
 
 
 class LLM:
+    start_server()
     def __init__(self, model_id: str, **kwargs):
         self.provider, self.model = model_id.split("/")
         self.session_id = kwargs.get("session_id")
