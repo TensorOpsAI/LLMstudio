@@ -26,7 +26,6 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDeltaToolCall,
     ChoiceDeltaToolCallFunction,
 )
-from pydantic import BaseModel, Field
 
 from llmstudio_core.providers.provider import ChatRequest, BaseProvider, provider
 

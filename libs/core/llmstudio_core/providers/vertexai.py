@@ -14,17 +14,17 @@ from typing import (
     Union,
 )
 
-import requests
 from llmstudio_core.exceptions import ProviderError
-from openai.types.chat import ChatCompletion, ChatCompletionChunk
+import requests
+from fastapi import HTTPException
+from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import (
     Choice,
     ChoiceDelta,
     ChoiceDeltaToolCall,
     ChoiceDeltaToolCallFunction,
 )
-
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ValidationError
 
 from llmstudio_core.providers.provider import ChatRequest, BaseProvider, provider
 
@@ -74,15 +74,15 @@ class VertexAI(BaseModel):
 
 @provider
 class VertexAIProvider(BaseProvider):
-    def __init__(self, config, api_key):
-        super().__init__(config, api_key=api_key)
-        self.GOOGLE_API_KEY = api_key or os.getenv("GOOGLE_API_KEY")
-
+    def __init__(self, config, **kwargs):
+        super().__init__(config, **kwargs)
+        self.API_KEY = self.API_KEY if self.API_KEY else os.getenv("GOOGLE_API_KEY")
+    
     @staticmethod
     def _provider_config_name():
         return "vertexai"
     
-    def validate_request(self, request):
+    def validate_request(self, request: ChatRequest):
         return ChatRequest(**request)
 
     async def agenerate_client(
@@ -91,13 +91,11 @@ class VertexAIProvider(BaseProvider):
         """Initialize Vertex AI"""
 
         try:
-            if request.is_stream:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{request.model}:streamGenerateContent?alt=sse"
-            else:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{request.model}:generateContent?alt=sse"
+            # Init genai
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{request.model}:streamGenerateContent?alt=sse"
             headers = {
                 "Content-Type": "application/json",
-                "x-goog-api-key": self.GOOGLE_API_KEY,
+                "x-goog-api-key": self.API_KEY,
             }
 
             # Convert the chat input into VertexAI format
@@ -106,7 +104,7 @@ class VertexAIProvider(BaseProvider):
 
             # Generate content
             return await asyncio.to_thread(
-                requests.post, url, headers=headers, json=message, stream=request.is_stream
+                requests.post, url, headers=headers, json=message, stream=True
             )
 
         except Exception as e:
@@ -114,64 +112,31 @@ class VertexAIProvider(BaseProvider):
 
     def generate_client(
         self, request: ChatRequest
-    ) -> Any:
+    ) -> Coroutine[Any, Any, Generator]:
         """Initialize Vertex AI"""
 
-        return asyncio.run(self.agenerate_client(request=request))
-
-    async def aparse_response(
-        self, response: AsyncGenerator, **kwargs
-    ) -> Any:
-        
-        if not kwargs.get("request").is_stream:
-            response_dict = json.loads(response.text.lstrip("data :"))
-
-            usage = dict(
-                prompt_tokens=response_dict["usageMetadata"].get("promptTokenCount"),
-                output_tokens=response_dict["usageMetadata"].get("candidatesTokenCount"),
-                total_tokens=response_dict["usageMetadata"].get("totalTokenCount")
-                         )
-
-            completion = {
-            **response_dict,
-            "id": str(uuid.uuid4()),
-            "chat_input": (
-                kwargs.get("request").chat_input
-                if isinstance(kwargs.get("request").chat_input, str)
-                else kwargs.get("request").chat_input[-1]["content"]
-            ),
-            "chat_output": response_dict.get("candidates")[0].get("content").get("parts")[0].get("text"),
-            "context": (
-                [{"role": "user", "content": kwargs.get("request").chat_input}]
-                if isinstance(kwargs.get("request").chat_input, str)
-                else kwargs.get("request").chat_input
-            ),
-            "provider": self.config.id,
-            "model": kwargs.get("request").model,
-            "deployment": kwargs.get("request").model,
-            "timestamp": time.time(),
-            "parameters": kwargs.get("request").parameters,
-            "usage":usage
+        try:
+            # Init genai
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{request.model}:streamGenerateContent?alt=sse"
+            headers = {
+                "Content-Type": "application/json",
+                "x-goog-api-key": self.API_KEY,
             }
-            ChatCompletion(
-                    ChatCompletionChunk(
-                    id=str(uuid.uuid4()),
-                    choices=[
-                        Choice(
-                            delta=ChoiceDelta(
-                                content=response_dict.get("candidates")[0].get("content").get("parts")[0].get("text"),
-                                role="assistant",
-                            ),
-                            finish_reason="stop",
-                            index=0,
-                        )
-                    ],
-                    created=int(time.time()),
-                    model=kwargs.get("request").model
-                ).model_dump()
-            completion = ChatCompletion(**completion)
-            yield completion.model_dump()
 
+            # Convert the chat input into VertexAI format
+            tool_payload = self.process_tools(request.parameters.get("tools"))
+            message = self.convert_input_to_vertexai(request.chat_input, tool_payload)
+
+            # Generate content
+            return requests.post(url, headers=headers, json=message, stream=True)
+
+        except Exception as e:
+            raise ProviderError(str(e))
+
+    def parse_response(self, 
+                       response: AsyncGenerator[Any, None], 
+                       **kwargs) -> Any:
+        
         for chunk in response.iter_content(chunk_size=None):
 
             chunk = json.loads(chunk.decode("utf-8").lstrip("data: "))
@@ -304,9 +269,143 @@ class VertexAIProvider(BaseProvider):
                     model=kwargs.get("request").model,
                     object="chat.completion.chunk",
                 ).model_dump()
-    def parse_response(self, response: AsyncGenerator[Any, None], **kwargs) -> ChatCompletionChunk:
-        return asyncio.run(self.aparse_response(response, **kwargs))
-    
+        
+    async def aparse_response(
+        self, response: AsyncGenerator, **kwargs
+    ) -> AsyncGenerator[str, None]:
+        for chunk in response.iter_content(chunk_size=None):
+
+            chunk = json.loads(chunk.decode("utf-8").lstrip("data: "))
+            chunk = chunk.get("candidates")[0].get("content")
+
+            # Check if it is a function call
+            if (
+                "functionCall" in chunk["parts"][0]
+                and chunk["parts"][0]["functionCall"] is not None
+            ):
+                first_chunk = ChatCompletionChunk(
+                    id="chatcmpl-9woLM1b1qGErhTbXA3UBQf2FhUAho",
+                    choices=[
+                        Choice(
+                            delta=ChoiceDelta(
+                                content=None,
+                                function_call=None,
+                                role="assistant",
+                                tool_calls=None,
+                            ),
+                            index=0,
+                        )
+                    ],
+                    created=int(time.time()),
+                    model=kwargs.get("request").model,
+                    object="chat.completion.chunk",
+                    usage=None,
+                )
+                yield first_chunk.model_dump()
+
+                for index, functioncall in enumerate(chunk["parts"]):
+
+                    name_chunk = ChatCompletionChunk(
+                        id=str(uuid.uuid4()),
+                        choices=[
+                            Choice(
+                                delta=ChoiceDelta(
+                                    role="assistant",
+                                    tool_calls=[
+                                        ChoiceDeltaToolCall(
+                                            index=index,
+                                            id="call_" + str(uuid.uuid4())[:29],
+                                            function=ChoiceDeltaToolCallFunction(
+                                                name=functioncall["functionCall"][
+                                                    "name"
+                                                ],
+                                                arguments="",
+                                                type="function",
+                                            ),
+                                        )
+                                    ],
+                                ),
+                                finish_reason=None,
+                                index=index,
+                            )
+                        ],
+                        created=int(time.time()),
+                        model=kwargs.get("request").model,
+                        object="chat.completion.chunk",
+                    )
+                    yield name_chunk.model_dump()
+
+                    args_chunk = ChatCompletionChunk(
+                        id=str(uuid.uuid4()),
+                        choices=[
+                            Choice(
+                                delta=ChoiceDelta(
+                                    tool_calls=[
+                                        ChoiceDeltaToolCall(
+                                            index=index,
+                                            function=ChoiceDeltaToolCallFunction(
+                                                arguments=json.dumps(
+                                                    functioncall["functionCall"]["args"]
+                                                ),
+                                            ),
+                                        )
+                                    ],
+                                ),
+                                finish_reason=None,
+                                index=index,
+                            )
+                        ],
+                        created=int(time.time()),
+                        model=kwargs.get("request").model,
+                        object="chat.completion.chunk",
+                    )
+                    yield args_chunk.model_dump()
+
+                final_chunk = ChatCompletionChunk(
+                    id=str(uuid.uuid4()),
+                    choices=[
+                        Choice(
+                            delta=ChoiceDelta(),
+                            finish_reason="tool_calls",
+                            index=0,
+                        )
+                    ],
+                    created=int(time.time()),
+                    model=kwargs.get("request").model,
+                    object="chat.completion.chunk",
+                )
+                yield final_chunk.model_dump()
+            # Check if it is a normal call
+            elif chunk.get("parts")[0].get("text"):
+                # Parse google chunk response into ChatCompletionChunk
+                yield ChatCompletionChunk(
+                    id=str(uuid.uuid4()),
+                    choices=[
+                        Choice(
+                            delta=ChoiceDelta(
+                                content=chunk.get("parts")[0].get("text"),
+                                role="assistant",
+                            ),
+                            finish_reason=None,
+                            index=0,
+                        )
+                    ],
+                    created=int(time.time()),
+                    model=kwargs.get("request").model,
+                    object="chat.completion.chunk",
+                ).model_dump()
+
+                # Create the closing chunk
+                yield ChatCompletionChunk(
+                    id=str(uuid.uuid4()),
+                    choices=[
+                        Choice(delta=ChoiceDelta(), finish_reason="stop", index=0)
+                    ],
+                    created=int(time.time()),
+                    model=kwargs.get("request").model,
+                    object="chat.completion.chunk",
+                ).model_dump()
+
     def convert_input_to_vertexai(
         self, input_data: Union[Dict, str, List[Dict]], tool_payload: Optional[Any]
     ) -> Dict:

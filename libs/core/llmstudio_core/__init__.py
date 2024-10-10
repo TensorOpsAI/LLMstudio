@@ -133,11 +133,11 @@ if __name__ == "__main__":
         return latencies
 
 
-    provider = "openai"
-    model = "gpt-4o-mini"
-    for _ in range(1):
-        latencies = test_stuff(provider=provider, model=model, api_key=os.environ["OPENAI_API_KEY"])
-        pprint(latencies)
+    # provider = "openai"
+    # model = "gpt-4o-mini"
+    # for _ in range(1):
+    #     latencies = test_stuff(provider=provider, model=model, api_key=os.environ["OPENAI_API_KEY"])
+    #     pprint(latencies)
 
     # provider = "anthropic"
     # model = "claude-3-opus-20240229"
@@ -146,20 +146,29 @@ if __name__ == "__main__":
     #     pprint(latencies)
     # we need credits
 
-    provider = "azure"
-    model = "gpt-4o-mini"
-    for _ in range(1):
-        latencies = test_stuff(provider=provider, model=model, 
-                               api_key=os.environ["AZURE_API_KEY"], 
-                               api_version=os.environ["AZURE_API_VERSION"],
-                               api_endpoint=os.environ["AZURE_API_ENDPOINT"])
-        pprint(latencies)
+    # provider = "azure"
+    # model = "gpt-4o-mini"
+    # for _ in range(1):
+    #     latencies = test_stuff(provider=provider, model=model, 
+    #                            api_key=os.environ["AZURE_API_KEY"], 
+    #                            api_version=os.environ["AZURE_API_VERSION"],
+    #                            api_endpoint=os.environ["AZURE_API_ENDPOINT"])
+    #     pprint(latencies)
 
-    provider = "azure"
-    model = "Meta-Llama-3.1-70B-Instruct"
+    # provider = "azure"
+    # model = "Meta-Llama-3.1-70B-Instruct"
+    # for _ in range(1):
+    #     latencies = test_stuff(provider=provider, model=model, 
+    #                            api_key=os.environ["AZURE_API_KEY_llama"], 
+    #                            base_url=os.environ["AZURE_BASE_URL"]
+    #                            )
+    #     pprint(latencies)
+
+
+    provider = "vertexai"
+    model = "gemini-1.5-pro-latest"
     for _ in range(1):
         latencies = test_stuff(provider=provider, model=model, 
-                               api_key=os.environ["AZURE_API_KEY_llama"], 
-                               base_url=os.environ["AZURE_BASE_URL"]
+                               api_key=os.environ["GOOGLE_API_KEY"], 
                                )
         pprint(latencies)
