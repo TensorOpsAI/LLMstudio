@@ -13,8 +13,8 @@ from llmstudio.server import start_server
 
 
 class LLM:
-    start_server()
     def __init__(self, model_id: str, **kwargs):
+        start_server()
         self.provider, self.model = model_id.split("/")
         self.session_id = kwargs.get("session_id")
         self.api_key = kwargs.get("api_key")
