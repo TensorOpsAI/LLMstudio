@@ -353,49 +353,51 @@ class BaseProvider(ProviderABC):
         yield ChatCompletionChunk(**response)
 
     async def ahandle_response(
-        self, request: ChatRequest, response: ChatCompletion, start_time: float
+        self, request: ChatRequest, response: dict, start_time: float
     ) -> AsyncGenerator[ChatCompletion, None]:
         """Handles the response from an API"""
-        model = response.model
         
-        metrics = self.calculate_metrics(
-            usage=response.usage.model_dump(),
-            model=request.model,
-            start_time=start_time,
-            end_time=time.time(),
-        )
+        async for chunk in self.aparse_response(response, request=request):
+            model = chunk.get("model")
+            
+            metrics = self.calculate_metrics(
+                usage=response.usage.model_dump(),
+                model=request.model,
+                start_time=start_time,
+                end_time=time.time(),
+            )
 
-        response = {
-            **response.model_dump(),
-            "id": str(uuid.uuid4()),
-            "chat_input": (
-                request.chat_input
-                if isinstance(request.chat_input, str)
-                else request.chat_input[-1]["content"]
-            ),
-            "chat_output": response.choices[0].message.content,
-            "context": (
-                [{"role": "user", "content": request.chat_input}]
-                if isinstance(request.chat_input, str)
-                else request.chat_input
-            ),
-            "provider": self.config.id,
-            "model": (
-                request.model
-                if model and model.startswith(request.model)
-                else (model or request.model)
-            ),
-            "deployment": (
-                model
-                if model and model.startswith(request.model)
-                else (request.model if model != request.model else None)
-            ),
-            "timestamp": time.time(),
-            "parameters": request.parameters,
-            "metrics": metrics,
-        }
+            response = {
+                **response.model_dump(),
+                "id": str(uuid.uuid4()),
+                "chat_input": (
+                    request.chat_input
+                    if isinstance(request.chat_input, str)
+                    else request.chat_input[-1]["content"]
+                ),
+                "chat_output": response.choices[0].message.content,
+                "context": (
+                    [{"role": "user", "content": request.chat_input}]
+                    if isinstance(request.chat_input, str)
+                    else request.chat_input
+                ),
+                "provider": self.config.id,
+                "model": (
+                    request.model
+                    if model and model.startswith(request.model)
+                    else (model or request.model)
+                ),
+                "deployment": (
+                    model
+                    if model and model.startswith(request.model)
+                    else (request.model if model != request.model else None)
+                ),
+                "timestamp": time.time(),
+                "parameters": request.parameters,
+                "metrics": metrics,
+            }
 
-        yield ChatCompletion(**response)
+            yield ChatCompletion(**response)
 
     async def ahandle_response_stream(
         self, request: ChatRequest, response: AsyncGenerator, start_time: float
@@ -630,15 +632,17 @@ class BaseProvider(ProviderABC):
                 stop_content,
             )
 
+    @abstractmethod
     async def aparse_response(
         self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, ChatCompletionChunk]:
-        pass
+        raise NotImplementedError("BaseProvider needs a aparse_response method.")
 
+    @abstractmethod
     def parse_response(
         self, response: AsyncGenerator, **kwargs
     ) -> ChatCompletionChunk:
-        pass
+        raise NotImplementedError("BaseProvider needs a parse_response method.")
 
     def calculate_metrics_stream(
         self,
@@ -745,4 +749,3 @@ class BaseProvider(ProviderABC):
 
     def _get_tokenizer(self):
         return {}.get(self.config.id, tiktoken.get_encoding("cl100k_base"))
-

@@ -57,7 +57,7 @@ class AzureProvider(BaseProvider):
         self.has_tools_functions = (request.parameters.get("functions") or request.parameters.get("tools"))
 
         try:
-            if self.BASE_URL:
+            if self.BASE_URL and (not self.API_ENDPOINT):
                 client = OpenAI(
                     api_key=self.API_KEY,
                     base_url=self.BASE_URL,
@@ -105,7 +105,7 @@ class AzureProvider(BaseProvider):
             if self.BASE_URL:
                 client = OpenAI(
                     api_key=self.API_KEY,
-                    base_url=request.base_url or self.BASE_URL,
+                    base_url=self.BASE_URL,
                 )
             else:
                 client = AzureOpenAI(

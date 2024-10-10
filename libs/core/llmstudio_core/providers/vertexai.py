@@ -16,31 +16,17 @@ from typing import (
 
 import requests
 from llmstudio_core.exceptions import ProviderError
-from openai.types.chat import ChatCompletionChunk
+from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import (
     Choice,
     ChoiceDelta,
     ChoiceDeltaToolCall,
     ChoiceDeltaToolCallFunction,
 )
+
 from pydantic import BaseModel, Field, ValidationError
 
 from llmstudio_core.providers.provider import ChatRequest, BaseProvider, provider
-
-
-class VertexParameters(BaseModel):
-    top_p: Optional[float] = Field(default=1, ge=0, le=1)
-    top_k: Optional[float] = Field(default=1, ge=0, le=1)
-    temperature: Optional[float] = Field(default=1, ge=0, le=2)
-    max_output_tokens: Optional[float] = Field(default=8192, ge=0, le=8192)
-    frequency_penalty: Optional[float] = Field(default=0, ge=0, le=1)
-    presence_penalty: Optional[float] = Field(default=0, ge=0, le=1)
-
-
-class VertexAIRequest(ChatRequest):
-    parameters: Optional[VertexParameters] = VertexParameters()
-    tools: Any = None
-    chat_input: Union[str, List[Dict[str, Any]]]
 
 
 class OpenAIToolParameter(BaseModel):
@@ -96,37 +82,96 @@ class VertexAIProvider(BaseProvider):
     def _provider_config_name():
         return "vertexai"
     
-    def validate_request(self, request: VertexAIRequest):
-        return VertexAIRequest(**request)
+    def validate_request(self, request):
+        return ChatRequest(**request)
 
-    async def generate_client(
-        self, request: VertexAIRequest
+    async def agenerate_client(
+        self, request: ChatRequest
     ) -> Coroutine[Any, Any, Generator]:
         """Initialize Vertex AI"""
 
         try:
-            # Init genai
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{request.model}:streamGenerateContent?alt=sse"
+            if request.is_stream:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{request.model}:streamGenerateContent?alt=sse"
+            else:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{request.model}:generateContent?alt=sse"
             headers = {
                 "Content-Type": "application/json",
                 "x-goog-api-key": self.GOOGLE_API_KEY,
             }
 
             # Convert the chat input into VertexAI format
-            tool_payload = self.process_tools(request.tools)
+            tool_payload = self.process_tools(request.parameters.get("tools"))
             message = self.convert_input_to_vertexai(request.chat_input, tool_payload)
 
             # Generate content
             return await asyncio.to_thread(
-                requests.post, url, headers=headers, json=message, stream=True
+                requests.post, url, headers=headers, json=message, stream=request.is_stream
             )
 
         except Exception as e:
             raise ProviderError(str(e))
 
-    async def parse_response(
+    def generate_client(
+        self, request: ChatRequest
+    ) -> Any:
+        """Initialize Vertex AI"""
+
+        return asyncio.run(self.agenerate_client(request=request))
+
+    async def aparse_response(
         self, response: AsyncGenerator, **kwargs
-    ) -> AsyncGenerator[str, None]:
+    ) -> Any:
+        
+        if not kwargs.get("request").is_stream:
+            response_dict = json.loads(response.text.lstrip("data :"))
+
+            usage = dict(
+                prompt_tokens=response_dict["usageMetadata"].get("promptTokenCount"),
+                output_tokens=response_dict["usageMetadata"].get("candidatesTokenCount"),
+                total_tokens=response_dict["usageMetadata"].get("totalTokenCount")
+                         )
+
+            completion = {
+            **response_dict,
+            "id": str(uuid.uuid4()),
+            "chat_input": (
+                kwargs.get("request").chat_input
+                if isinstance(kwargs.get("request").chat_input, str)
+                else kwargs.get("request").chat_input[-1]["content"]
+            ),
+            "chat_output": response_dict.get("candidates")[0].get("content").get("parts")[0].get("text"),
+            "context": (
+                [{"role": "user", "content": kwargs.get("request").chat_input}]
+                if isinstance(kwargs.get("request").chat_input, str)
+                else kwargs.get("request").chat_input
+            ),
+            "provider": self.config.id,
+            "model": kwargs.get("request").model,
+            "deployment": kwargs.get("request").model,
+            "timestamp": time.time(),
+            "parameters": kwargs.get("request").parameters,
+            "usage":usage
+            }
+            ChatCompletion(
+                    ChatCompletionChunk(
+                    id=str(uuid.uuid4()),
+                    choices=[
+                        Choice(
+                            delta=ChoiceDelta(
+                                content=response_dict.get("candidates")[0].get("content").get("parts")[0].get("text"),
+                                role="assistant",
+                            ),
+                            finish_reason="stop",
+                            index=0,
+                        )
+                    ],
+                    created=int(time.time()),
+                    model=kwargs.get("request").model
+                ).model_dump()
+            completion = ChatCompletion(**completion)
+            yield completion.model_dump()
+
         for chunk in response.iter_content(chunk_size=None):
 
             chunk = json.loads(chunk.decode("utf-8").lstrip("data: "))
@@ -259,7 +304,9 @@ class VertexAIProvider(BaseProvider):
                     model=kwargs.get("request").model,
                     object="chat.completion.chunk",
                 ).model_dump()
-
+    def parse_response(self, response: AsyncGenerator[Any, None], **kwargs) -> ChatCompletionChunk:
+        return asyncio.run(self.aparse_response(response, **kwargs))
+    
     def convert_input_to_vertexai(
         self, input_data: Union[Dict, str, List[Dict]], tool_payload: Optional[Any]
     ) -> Dict:
