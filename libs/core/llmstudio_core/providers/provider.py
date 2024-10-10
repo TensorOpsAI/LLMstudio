@@ -300,7 +300,7 @@ class BaseProvider(ProviderABC):
             yield ChatCompletion(**response)
 
     def handle_response(
-        self, request: ChatRequest, response: AsyncGenerator, start_time: float
+        self, request: ChatRequest, response: Generator, start_time: float
     ) -> Generator:
         """Handles the response from an API"""
         first_token_time = None

@@ -1,8 +1,8 @@
 import os
 import yaml
-from llmstudio_core.providers.anthropic import AnthropicProvider
+# from llmstudio_core.providers.anthropic import AnthropicProvider #TODO: adpat it
 from llmstudio_core.providers.azure import AzureProvider
-from llmstudio_core.providers.ollama import OllamaProvider
+# from llmstudio_core.providers.ollama import OllamaProvider #TODO: adapt it
 from llmstudio_core.providers.openai import OpenAIProvider
 from llmstudio_core.providers.vertexai import VertexAIProvider
 
