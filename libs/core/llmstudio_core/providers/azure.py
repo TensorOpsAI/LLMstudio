@@ -36,9 +36,9 @@ class AzureProvider(BaseProvider):
     def __init__(self, config, api_key=None, api_endpoint=None, api_version=None, base_url=None):
         super().__init__(config)
         self.API_KEY = api_key or os.getenv("AZURE_API_KEY")
-        self.API_ENDPOINT = api_endpoint or os.getenv("AZURE_API_ENDPOINT")
+        self.API_ENDPOINT = api_endpoint
         self.API_VERSION = api_version or os.getenv("AZURE_API_VERSION")
-        self.BASE_URL = base_url or os.getenv("AZURE_BASE_URL")
+        self.BASE_URL = base_url
         self.is_llama = False
         self.has_tools_functions = False
     @staticmethod
@@ -54,52 +54,9 @@ class AzureProvider(BaseProvider):
         """Generate an AzureOpenAI client"""
 
         self.is_llama = "llama" in request.model.lower()
-        self.has_tools_functions = (request.parameters.get("functions") or request.parameters.get("tools"))
-
-        try:
-            if self.BASE_URL and (not self.API_ENDPOINT):
-                client = OpenAI(
-                    api_key=self.API_KEY,
-                    base_url=self.BASE_URL,
-                )
-            else:
-                client = AzureOpenAI(
-                    api_key=self.API_KEY,
-                    azure_endpoint=self.API_ENDPOINT,
-                    api_version=self.API_VERSION,
-                )
-
-            messages = self.prepare_messages(request)
-
-            # Prepare the base arguments
-            base_args = {
-                "model": request.model,
-                "messages": messages,
-                "stream": request.is_stream
-            }
-
-            # Combine all arguments
-            combined_args = {
-                **base_args,
-                **request.parameters,
-            }
-            # Perform the asynchronous call
-            return await asyncio.to_thread(
-                client.chat.completions.create, **combined_args
-            )
-        except openai._exceptions.APIConnectionError as e:
-            raise ProviderError(f"There was an error reaching the endpoint: {e}")
-
-        except openai._exceptions.APIStatusError as e:
-            raise ProviderError(e.response.json())
-        
-    def generate_client(
-        self, request: ChatRequest
-    ) -> Any:
-        """Generate an AzureOpenAI client"""
-
-        self.is_llama = "llama" in request.model.lower()
-        self.has_tools_functions = (request.parameters.get("functions") or request.parameters.get("tools"))
+        self.is_openai = "gpt" in request.model.lower()
+        self.has_tools = request.parameters.get("tools") is not None
+        self.has_functions = request.parameters.get("functions") is not None
 
         try:
             if self.BASE_URL:
@@ -116,15 +73,101 @@ class AzureProvider(BaseProvider):
 
             messages = self.prepare_messages(request)
 
+            # Prepare the optional tool-related arguments
+            tool_args = {}
+            if not self.is_llama and self.has_tools and self.is_openai:
+                tool_args = {
+                    "tools": request.parameters.get("tools"),
+                    "tool_choice": "auto" if request.parameters.get("tools") else None,
+                }
+
+            # Prepare the optional function-related arguments
+            function_args = {}
+            if not self.is_llama and self.has_functions and self.is_openai:
+                function_args = {
+                    "functions": request.parameters.get("functions"),
+                    "function_call": "auto" if request.parameters.get("functions") else None,
+                }
+
+            # Prepare the base arguments
             base_args = {
                 "model": request.model,
                 "messages": messages,
-                "stream": request.is_stream
+                "stream": True,
             }
 
             # Combine all arguments
             combined_args = {
                 **base_args,
+                **tool_args,
+                **function_args,
+                **request.parameters,
+            }
+            # Perform the asynchronous call
+            return await asyncio.to_thread(
+                client.chat.completions.create, **combined_args
+            )
+
+        except openai._exceptions.APIConnectionError as e:
+            raise ProviderError(f"There was an error reaching the endpoint: {e}")
+
+        except openai._exceptions.APIStatusError as e:
+            raise ProviderError(e.response.json())
+
+        
+    def generate_client(
+        self, request: ChatRequest
+    ) -> Any:
+        """Generate an AzureOpenAI client"""
+
+        self.is_llama = "llama" in request.model.lower()
+        self.is_openai = "gpt" in request.model.lower()
+        self.has_tools = request.parameters.get("tools") is not None
+        self.has_functions = request.parameters.get("functions") is not None
+
+        try:
+            if self.BASE_URL:
+                client = OpenAI(
+                    api_key=self.API_KEY,
+                    base_url=self.BASE_URL,
+                )
+            else:
+                client = AzureOpenAI(
+                    api_key=self.API_KEY,
+                    azure_endpoint=self.API_ENDPOINT,
+                    api_version=self.API_VERSION,
+                )
+
+            messages = self.prepare_messages(request)
+
+            # Prepare the optional tool-related arguments
+            tool_args = {}
+            if not self.is_llama and self.has_tools and self.is_openai:
+                tool_args = {
+                    "tools": request.parameters.get("tools"),
+                    "tool_choice": "auto" if request.parameters.get("tools") else None,
+                }
+
+            # Prepare the optional function-related arguments
+            function_args = {}
+            if not self.is_llama and self.has_functions and self.is_openai:
+                function_args = {
+                    "functions": request.parameters.get("functions"),
+                    "function_call": "auto" if request.parameters.get("functions") else None,
+                }
+
+            # Prepare the base arguments
+            base_args = {
+                "model": request.model,
+                "messages": messages,
+                "stream": True,
+            }
+
+            # Combine all arguments
+            combined_args = {
+                **base_args,
+                **tool_args,
+                **function_args,
                 **request.parameters,
             }
             return client.chat.completions.create(**combined_args)
@@ -135,8 +178,9 @@ class AzureProvider(BaseProvider):
         except openai._exceptions.APIStatusError as e:
             raise ProviderError(e.response.json())
 
+
     def prepare_messages(self, request: ChatRequest):
-        if self.is_llama:
+        if self.is_llama and (self.has_tools or self.has_functions):
             user_message = self.convert_to_openai_format(request.chat_input)
             content = "<|begin_of_text|>"
             content = self.add_system_message(
@@ -154,7 +198,7 @@ class AzureProvider(BaseProvider):
     async def aparse_response(
         self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:
-        if self.is_llama and self.has_tools_functions:
+        if self.is_llama and (self.has_tools or self.has_functions):
             for chunk in self.handle_tool_response(response, **kwargs):
                 if chunk:
                     yield chunk
@@ -167,7 +211,7 @@ class AzureProvider(BaseProvider):
     def parse_response(
         self, response: Generator, **kwargs
     ) -> Any:
-        if self.is_llama and self.has_tools_functions:
+        if self.is_llama and (self.has_tools or self.has_functions):
             for chunk in self.handle_tool_response(response, **kwargs):
                 if chunk:
                     yield chunk

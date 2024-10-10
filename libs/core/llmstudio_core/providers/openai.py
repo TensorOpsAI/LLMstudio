@@ -10,17 +10,16 @@ from pydantic import BaseModel, Field
 from llmstudio_core.providers.provider import ChatRequest, BaseProvider, provider
 
 
-
 @provider
 class OpenAIProvider(BaseProvider):
     def __init__(self, config, **kwargs):
         super().__init__(config, **kwargs)
         self.API_KEY = self.API_KEY if self.API_KEY else os.getenv("OPENAI_API_KEY")
-
+    
     @staticmethod
     def _provider_config_name():
         return "openai"
-
+    
     def validate_request(self, request: ChatRequest):
         return ChatRequest(**request)
 
@@ -39,7 +38,7 @@ class OpenAIProvider(BaseProvider):
                     if isinstance(request.chat_input, str)
                     else request.chat_input
                 ),
-                stream=request.is_stream,
+                stream=True,
                 **request.parameters,
             )
         except openai._exceptions.APIError as e:
@@ -59,7 +58,7 @@ class OpenAIProvider(BaseProvider):
                     if isinstance(request.chat_input, str)
                     else request.chat_input
                 ),
-                stream=request.is_stream,
+                stream=True,
                 **request.parameters,
             )
         except openai._exceptions.APIError as e:
@@ -72,7 +71,7 @@ class OpenAIProvider(BaseProvider):
             yield chunk.model_dump()
 
     def parse_response(
-        self, response: AsyncGenerator, **kwargs
+        self, response: Generator, **kwargs
     ) -> Generator:
         for chunk in response:
             yield chunk.model_dump()

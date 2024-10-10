@@ -7,7 +7,7 @@ from llmstudio_core.providers import _load_engine_config
 _engine_config = _load_engine_config()
 
 
-def LLM(provider: str, api_key: Optional[str] = None) -> BaseProvider:
+def LLM(provider: str, api_key: Optional[str] = None, **kwargs) -> BaseProvider:
     """
     Factory method to create an instance of a provider.
 
@@ -24,7 +24,7 @@ def LLM(provider: str, api_key: Optional[str] = None) -> BaseProvider:
     provider_config = _engine_config.providers.get(provider)
     provider_class = provider_registry.get(provider_config.id)
     if provider_class:
-        return provider_class(config=provider_config, api_key=api_key)
+        return provider_class(config=provider_config, api_key=api_key, **kwargs)
     raise NotImplementedError(f"Provider not found: {provider_config.id}. Available providers: {str(provider_registry.keys())}")
 
 
@@ -34,7 +34,9 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
 
-    def test_stuff(provider, model, api_key):
+    def test_stuff(provider, model, api_key, **kwargs):
+        llm = LLM(provider=provider, api_key=api_key, **kwargs)
+
         latencies = {}
         chat_request = {
             "chat_input": "Hello, my name is Json",
@@ -50,7 +52,6 @@ if __name__ == "__main__":
         }
 
 
-        llm = LLM(provider=provider, api_key=api_key)
         
         import asyncio
         response_async = asyncio.run(llm.achat(**chat_request))
@@ -72,11 +73,11 @@ if __name__ == "__main__":
                     "functions": None,
                 }
             }
-
-            llm = LLM(provider=provider, api_key=api_key)
             
             response_async = await llm.achat(**chat_request)
             async for p in response_async:
+                if "}" in p.chat_output:
+                    p.chat_output
                 print("that: ",p.chat_output)
                 # pprint(p.choices[0].delta.content==p.chat_output)
                 # print("metrics: ", p.metrics)
@@ -100,9 +101,6 @@ if __name__ == "__main__":
                 "functions": None,
             }
         }
-
-
-        llm = LLM(provider=provider, api_key=api_key)
         
         response_sync = llm.chat(**chat_request)
         pprint(response_sync)
@@ -121,8 +119,6 @@ if __name__ == "__main__":
                 "functions": None,
             }
         }
-
-        llm = LLM(provider=provider, api_key=api_key)
         
         response_sync_stream = llm.chat(**chat_request)
         for p in response_sync_stream:
@@ -137,11 +133,11 @@ if __name__ == "__main__":
         return latencies
 
 
-    provider = "openai"
-    model = "gpt-4o-mini"
-    for _ in range(1):
-        latencies = test_stuff(provider=provider, model=model, api_key=os.environ["OPENAI_API_KEY"])
-        pprint(latencies)
+    # provider = "openai"
+    # model = "gpt-4o-mini"
+    # for _ in range(1):
+    #     latencies = test_stuff(provider=provider, model=model, api_key=os.environ["OPENAI_API_KEY"])
+    #     pprint(latencies)
 
     # provider = "anthropic"
     # model = "claude-3-opus-20240229"
@@ -150,10 +146,46 @@ if __name__ == "__main__":
     #     pprint(latencies)
     # we need credits
 
+    # provider = "azure"
+    # model = "gpt-4o-mini"
+    # for _ in range(1):
+    #     latencies = test_stuff(provider=provider, model=model, 
+    #                            api_key=os.environ["AZURE_API_KEY"], 
+    #                            api_version=os.environ["AZURE_API_VERSION"],
+    #                            api_endpoint=os.environ["AZURE_API_ENDPOINT"])
+    #     pprint(latencies)
+
     provider = "azure"
-    model = "gpt-4o-mini"
+    model = "gpt-4o"
     for _ in range(1):
         latencies = test_stuff(provider=provider, model=model, 
-                               api_key=os.environ["AZURE_API_KEY"]
+                               api_key=os.environ["AZURE_API_KEY_llama"], 
+                               base_url=os.environ["AZURE_BASE_URL"]
+                               )
+        pprint(latencies)
+
+#     'model' =
+# 'gpt-4o'
+# 'messages' =
+# [{'role': 'user', 'content': 'Hello, my name is Json'}]
+# 'stream' =
+# True
+# 'temperature' =
+# 0
+# 'max_tokens' =
+# 100
+# 'response_format' =
+# {'type': 'json_object'}
+# 'functions' =
+# None
+
+# '<|begin_of_text|>\n      <|start_header_id|>system<|end_header_id|>\n      You are a helpful AI assistant.\n      \n<|eot_id|>\n    <|start_header_id|>user<|end_header_id|>\n    Hello, my name is Json\n    <|eot_id|>\n    '
+
+    provider = "azure"
+    model = "Meta-Llama-3.1-70B-Instruct"
+    for _ in range(1):
+        latencies = test_stuff(provider=provider, model=model, 
+                               api_key=os.environ["AZURE_API_KEY_llama"], 
+                               base_url=os.environ["AZURE_BASE_URL"]
                                )
         pprint(latencies)
