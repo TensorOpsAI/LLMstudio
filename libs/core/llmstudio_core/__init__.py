@@ -133,11 +133,11 @@ if __name__ == "__main__":
         return latencies
 
 
-    # provider = "openai"
-    # model = "gpt-4o-mini"
-    # for _ in range(1):
-    #     latencies = test_stuff(provider=provider, model=model, api_key=os.environ["OPENAI_API_KEY"])
-    #     pprint(latencies)
+    provider = "openai"
+    model = "gpt-4o-mini"
+    for _ in range(1):
+        latencies = test_stuff(provider=provider, model=model, api_key=os.environ["OPENAI_API_KEY"])
+        pprint(latencies)
 
     # provider = "anthropic"
     # model = "claude-3-opus-20240229"
@@ -146,40 +146,14 @@ if __name__ == "__main__":
     #     pprint(latencies)
     # we need credits
 
-    # provider = "azure"
-    # model = "gpt-4o-mini"
-    # for _ in range(1):
-    #     latencies = test_stuff(provider=provider, model=model, 
-    #                            api_key=os.environ["AZURE_API_KEY"], 
-    #                            api_version=os.environ["AZURE_API_VERSION"],
-    #                            api_endpoint=os.environ["AZURE_API_ENDPOINT"])
-    #     pprint(latencies)
-
     provider = "azure"
-    model = "gpt-4o"
+    model = "gpt-4o-mini"
     for _ in range(1):
         latencies = test_stuff(provider=provider, model=model, 
-                               api_key=os.environ["AZURE_API_KEY_llama"], 
-                               base_url=os.environ["AZURE_BASE_URL"]
-                               )
+                               api_key=os.environ["AZURE_API_KEY"], 
+                               api_version=os.environ["AZURE_API_VERSION"],
+                               api_endpoint=os.environ["AZURE_API_ENDPOINT"])
         pprint(latencies)
-
-#     'model' =
-# 'gpt-4o'
-# 'messages' =
-# [{'role': 'user', 'content': 'Hello, my name is Json'}]
-# 'stream' =
-# True
-# 'temperature' =
-# 0
-# 'max_tokens' =
-# 100
-# 'response_format' =
-# {'type': 'json_object'}
-# 'functions' =
-# None
-
-# '<|begin_of_text|>\n      <|start_header_id|>system<|end_header_id|>\n      You are a helpful AI assistant.\n      \n<|eot_id|>\n    <|start_header_id|>user<|end_header_id|>\n    Hello, my name is Json\n    <|eot_id|>\n    '
 
     provider = "azure"
     model = "Meta-Llama-3.1-70B-Instruct"

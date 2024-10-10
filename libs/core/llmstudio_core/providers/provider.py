@@ -74,11 +74,11 @@ class ProviderABC(ABC):
         is_stream: Optional[bool] = False,
         retries: Optional[int] = 0,
         parameters: Optional[dict] = {}
-    ) -> Union[ChatCompletionChunk, ChatCompletion]:
+    ) -> Coroutine[Any, Any, Union[ChatCompletionChunk, ChatCompletion]]:
         raise NotImplementedError("Providers needs to have achat method implemented.")
     
     @abstractmethod
-    def achat(
+    def chat(
         self, 
         chat_input: Any,
         model: str,
@@ -134,11 +134,11 @@ class BaseProvider(ProviderABC):
                 if e.status_code == 429:
                     continue  # Retry on rate limit error
                 else:
-                    raise e
+                    raise e  # Raise other HTTP exceptions
             except Exception as e:
-                raise ProviderError(str(e)) 
+                raise ProviderError(str(e))
         raise ProviderError("Too many requests")
-
+    
     def chat(
         self, 
         chat_input: Any,
@@ -179,54 +179,100 @@ class BaseProvider(ProviderABC):
                     raise e  # Raise other HTTP exceptions
             except Exception as e:
                 raise ProviderError(str(e))
-        raise HTTPException(status_code=429, detail="Too many requests")
+        raise ProviderError("Too many requests")
 
     def validate_request(self, request: ChatRequest):
         pass
 
     def validate_model(self, request: ChatRequest):
         if request.model not in self.config.models:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Model {request.model} is not supported by {self.config.name}",
-            )
+            raise ProviderError(f"Model {request.model} is not supported by {self.config.name}")
 
-    @abstractmethod
     async def agenerate_client(
         self, request: ChatRequest
     ) -> Coroutine[Any, Any, Generator]:
         """Generate the provider's client"""
-        raise NotImplementedError("agenerate_client method must be implemented for async calls.")
-    
-    @abstractmethod
-    def generate_client(
-        self, request: ChatRequest
-    ) -> ChatCompletion:
-        """Generate the provider's client"""
-        raise NotImplementedError("generate_client method must be implemented.")
 
-    def handle_response(
-        self, request: ChatRequest, response: ChatCompletion, start_time: float
-    ) -> ChatCompletion:
+    async def ahandle_response(
+        self, request: ChatRequest, response: AsyncGenerator, start_time: float
+    ) -> AsyncGenerator[str, None]:
         """Handles the response from an API"""
-        model = response.model
-        
+        first_token_time = None
+        previous_token_time = None
+        token_times = []
+        token_count = 0
+        chunks = []
+
+        async for chunk in self.aparse_response(response, request=request):
+            token_count += 1
+            current_time = time.time()
+            first_token_time = first_token_time or current_time
+            if previous_token_time is not None:
+                token_times.append(current_time - previous_token_time)
+            previous_token_time = current_time
+
+            chunks.append(chunk)
+            if request.is_stream:
+                chunk = chunk[0] if isinstance(chunk, tuple) else chunk
+                model = chunk.get("model")
+                if chunk.get("choices")[0].get("finish_reason") != "stop":
+                    chat_output = chunk.get("choices")[0].get("delta").get("content")
+                    chunk = {
+                            **chunk,
+                            "id": str(uuid.uuid4()),
+                            "chat_input": (
+                                request.chat_input
+                                if isinstance(request.chat_input, str)
+                                else request.chat_input[-1]["content"]
+                            ),
+                            "chat_output": chat_output if chat_output else "",
+                            "context": (
+                                [{"role": "user", "content": request.chat_input}]
+                                if isinstance(request.chat_input, str)
+                                else request.chat_input
+                            ),
+                            "provider": self.config.id,
+                            "model": (
+                                request.model
+                                if model and model.startswith(request.model)
+                                else (model or request.model)
+                            ),
+                            "deployment": (
+                                model
+                                if model and model.startswith(request.model)
+                                else (request.model if model != request.model else None)
+                            ),
+                            "timestamp": time.time(),
+                            "parameters": request.parameters,
+                            "metrics": None,
+                        }
+                    yield ChatCompletionChunk(**chunk)
+
+        chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
+        model = next(chunk["model"] for chunk in chunks if chunk.get("model"))
+
+        response, output_string = self.join_chunks(chunks, request)
+
         metrics = self.calculate_metrics(
-            usage=response.usage.model_dump(),
-            model=request.model,
-            start_time=start_time,
-            end_time=time.time(),
+            request.chat_input,
+            response,
+            request.model,
+            start_time,
+            time.time(),
+            first_token_time,
+            token_times,
+            token_count,
         )
 
         response = {
-            **response.model_dump(),
+            **(chunk if request.is_stream else response.model_dump()),
             "id": str(uuid.uuid4()),
             "chat_input": (
                 request.chat_input
                 if isinstance(request.chat_input, str)
                 else request.chat_input[-1]["content"]
             ),
-            "chat_output": response.choices[0].message.content,
+            "chat_output": "" if request.is_stream else output_string,
             "context": (
                 [{"role": "user", "content": request.chat_input}]
                 if isinstance(request.chat_input, str)
@@ -248,7 +294,10 @@ class BaseProvider(ProviderABC):
             "metrics": metrics,
         }
 
-        return ChatCompletion(**response)
+        if request.is_stream:
+            yield ChatCompletionChunk(**response)
+        else:
+            yield ChatCompletion(**response)
 
     def handle_response(
         self, request: ChatRequest, response: AsyncGenerator, start_time: float
@@ -302,7 +351,7 @@ class BaseProvider(ProviderABC):
                             "parameters": request.parameters,
                             "metrics": None,
                         }
-                    yield ChatCompletionChunk(**chunk) #chunk.get("choices")[0].get("delta").get("content")
+                    yield ChatCompletionChunk(**chunk)
 
         chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
         model = next(chunk["model"] for chunk in chunks if chunk.get("model"))
@@ -489,13 +538,13 @@ class BaseProvider(ProviderABC):
     @abstractmethod
     async def aparse_response(
         self, response: AsyncGenerator, **kwargs
-    ) -> AsyncGenerator[str, ChatCompletionChunk]:
+    ) -> Any:
         raise NotImplementedError("BaseProvider needs a aparse_response method.")
 
     @abstractmethod
     def parse_response(
         self, response: AsyncGenerator, **kwargs
-    ) -> ChatCompletionChunk:
+    ) -> Any:
         raise NotImplementedError("BaseProvider needs a parse_response method.")
 
     def calculate_metrics(
@@ -529,6 +578,19 @@ class BaseProvider(ProviderABC):
             "tokens_per_second": token_count / total_time,
         }
     
+    def calculate_cost(
+        self, token_count: int, token_cost: Union[float, List[Dict[str, Any]]]
+    ) -> float:
+        if isinstance(token_cost, list):
+            for cost_range in token_cost:
+                if token_count >= cost_range.range[0] and (
+                    token_count <= cost_range.range[1] or cost_range.range[1] is None
+                ):
+                    return cost_range.cost * token_count
+        else:
+            return token_cost * token_count
+        return 0
+
     def input_to_string(self, input):
         if isinstance(input, str):
             return input
