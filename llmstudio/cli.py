@@ -4,6 +4,7 @@ import signal
 import click
 
 from llmstudio.server import start_server
+import threading
 
 
 def handle_shutdown(signum, frame):
@@ -18,6 +19,8 @@ def main():
 
 @main.command()
 @click.option("--ui", is_flag=True, help="Start the UI server.")
+
+
 def server(ui):
     signal.signal(signal.SIGINT, handle_shutdown)
 
@@ -25,8 +28,9 @@ def server(ui):
 
     print("Servers are running. Press CTRL+C to stop.")
 
+    stop_event = threading.Event()
     try:
-        signal.pause()
+        stop_event.wait()  # Wait indefinitely until the event is set
     except KeyboardInterrupt:
         print("Shutting down servers...")
 
