@@ -1,20 +1,23 @@
-Learn how to deploy LLMstudio as a containerized application on Google Kubernetes Engine.
+Learn how to deploy LLMstudio as a containerized application on Google Kubernetes Engine and make calls from a local repository.
+
 
 ## Prerequisites
+To follow this guide you need to have the following set-up:
 
-- **Required APIs:** `Google Kubernetes Engine`
-- **Required Role:** `roles/container.admin`
+- A **project** on google cloud platform.
+- **Kubernetes Engine** API enabled on your project.
+- **Kubernetes Engine Admin** role for the user performing the guide.
 
-## Deploy step-by-step
+## LLMstudio deployment
 
 <Steps>
   <Step title="Navigate to Kubernetes Engine">
     Begin by navigating to the Kubernetes Engine page.
   </Step>
   <Step title="Select Deploy">
-    Initiate the deployment process by clicking on **Deploy** in the top bar.
+    Go to **Workloads** and **Create a new Deployment**.
     <Frame>
-      <img src="how-to/deploy-on-gcp/step-1.jpg" />
+      <img src="how-to/deploy-on-gcp/step-2.png" />
     </Frame>
   </Step>
   <Step title="Name Your Deployment">
@@ -31,15 +34,20 @@ Learn how to deploy LLMstudio as a containerized application on Google Kubernete
     </Frame>
   </Step>
   <Step title="Proceed to Container Details">
-    Once your cluster is created, proceed to **Container details**.
+    Once done done with the **Deployment configuration**, proceed to **Container details**.
   </Step>
   <Step title="Set Image Path">
+    In the new container section, select **Existing container image**.
+
+
     Copy the path to LLMstudio's image available on Docker Hub.
     ```bash Image Path
     diogoazevedotai/llmstudio:latest
     ```
-    Set this as your image path.
-    <img src="how-to/deploy-on-gcp/step-5.png" />
+    Set it as the **Image path** to your container.
+    <Frame>
+      <img src="how-to/deploy-on-gcp/step-6.png" />
+    </Frame>
   </Step>
   <Step title="Set Environment Variables">
     Configure the following mandatory environment variables:
@@ -62,9 +70,16 @@ Additionally, set the `GOOGLE_API_KEY` environment variable to enable calls to G
     After configuring your container, proceed to **Expose (Optional)**.
   </Step>
   <Step title="Expose Ports">
-    Choose **Expose deployment as a new service**, and expose the ports you defined when setting up the environment variables.
+    Select **Expose deployment as a new service** and leave the first item as is.
+
     <Frame>
-      <img src="how-to/deploy-on-gcp/step-9.png" />
+      <img src="how-to/deploy-on-gcp/step-9-1.png" />
+    </Frame>
+    
+    Add two other items, and expose the ports defined in the **Set Environment Variables** step.
+
+    <Frame>
+      <img src="how-to/deploy-on-gcp/step-9-2.png" />
     </Frame>
   </Step>
   <Step title="Deploy">
@@ -73,3 +88,66 @@ Additionally, set the `GOOGLE_API_KEY` environment variable to enable calls to G
   </Step>
   
 </Steps>
+
+## Make a Call
+Now let's make a call to our LLMstudio instance on GCP!
+
+
+
+<Steps>
+  <Step title="Set Up project">
+    Setup a simple project with this two files:
+    1. `simple-call.ipynb`
+    2. `.env`
+  </Step>
+
+  <Step title="Set Up Files">
+    <Tabs>
+      <Tab title=".env">
+
+        Go to your newly deployed **Workload**, scroll to the **Exposing services** section, and take note of the Host of your endpoint.
+        <Frame>
+          <img src="how-to/deploy-on-gcp/step-env.png" />
+        </Frame>
+
+        Create your `.env` file with the following:
+
+        ```env .env
+        LLMSTUDIO_ENGINE_HOST = "YOUR_HOST"
+        LLMSTUDIO_ENGINE_PORT = "YOUR_ENGINE_PORT"
+        LLMSTUDIO_TRACKING_HOST = "YOUR_TRACKING_PORT"
+        LLMSTUDIO_TRACKING_PORT = "YOUR_HOST"
+        ```
+
+        <Check>You are done seting up you **.env** file!</Check>
+
+
+
+      
+      </Tab>
+      <Tab title="simple-call.ipynb">
+        Start by importing llmstudio:
+        ```python 1st cell
+        from llmstudio import LLM
+        ```
+
+        Set up your LLM. We will be using `gemini-1.5-flash` for this guide.
+        ```python 2nd cell
+        llm = LLM('vertexai/gemini-1.5-flash')
+        ```
+
+        Chat with your model.
+        ```python 3rd cell
+        llm.chat('Hello!')
+        ```
+        
+        <Check>You are done calling llmstudio on GCP!</Check>
+
+      </Tab>
+
+    </Tabs>
+  </Step>
+  
+
+</Steps>
+
