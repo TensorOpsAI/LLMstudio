@@ -171,8 +171,7 @@ class BedrockProvider(Provider):
         """
         return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
 
-    @classmethod
-    def _get_signature_key(cls, key: str, date_stamp: str, region_name: str, service_name: str) -> bytes:
+    def _get_signature_key(self, key: str, date_stamp: str, region_name: str, service_name: str) -> bytes:
         """
         Generate a signing key for AWS Signature Version 4.
 
@@ -185,10 +184,10 @@ class BedrockProvider(Provider):
         Returns:
             bytes: The signing key used in the AWS Signature Version 4 process.
         """
-        k_date = cls._sign(('AWS4' + key).encode('utf-8'), date_stamp)
-        k_region = cls._sign(k_date, region_name)
-        k_service = cls._sign(k_region, service_name)
-        k_signing = cls._sign(k_service, 'aws4_request')
+        k_date = self._sign(('AWS4' + key).encode('utf-8'), date_stamp)
+        k_region = self._sign(k_date, region_name)
+        k_service = self._sign(k_region, service_name)
+        k_signing = self._sign(k_service, 'aws4_request')
         return k_signing
 
     @staticmethod
@@ -233,8 +232,7 @@ class BedrockProvider(Provider):
         # Need to get access to Anthropic to try models that support system message.
         return None
 
-    @classmethod
-    def _create_headers(cls, method: str, uri: str, host: str, region: str, service: str, access_key: str, secret_key: str, request_parameters: str, content_type: str, accept: str) -> Dict[str, str]:
+    def _create_headers(self, method: str, uri: str, host: str, region: str, service: str, access_key: str, secret_key: str, request_parameters: str, content_type: str, accept: str) -> Dict[str, str]:
         """
         Create headers for AWS Bedrock API request.
 
@@ -303,7 +301,7 @@ class BedrockProvider(Provider):
         ])
 
         # Calculate the signature
-        signing_key = cls._get_signature_key(secret_key, date_stamp, region, service)
+        signing_key = self._get_signature_key(secret_key, date_stamp, region, service)
         signature = hmac.new(signing_key, string_to_sign.encode('utf-8'), hashlib.sha256).hexdigest()
 
         # Create authorization header
@@ -320,8 +318,7 @@ class BedrockProvider(Provider):
 
         return request_headers
     
-    @classmethod
-    def _parse_event_stream(cls, buffer: bytes) -> Tuple[List[Tuple[Dict[str, str], bytes]], bytes]:
+    def _parse_event_stream(self, buffer: bytes) -> Tuple[List[Tuple[Dict[str, str], bytes]], bytes]:
         """
         Parse an event stream buffer into individual messages.
 
@@ -341,7 +338,7 @@ class BedrockProvider(Provider):
                 # Not enough data to read the whole message
                 break
             message = buffer[offset:offset+total_length]
-            headers, payload = cls._parse_event_stream_message(message)
+            headers, payload = self._parse_event_stream_message(message)
             messages.append((headers, payload))
             offset += total_length
         remaining_buffer = buffer[offset:]
@@ -402,8 +399,7 @@ class BedrockProvider(Provider):
 
         return headers, payload
 
-    @classmethod
-    def _parse_chunk(cls, chunk: bytes, buffer: bytes) -> Tuple[List[Dict[str, Any]], bytes]:
+    def _parse_chunk(self, chunk: bytes, buffer: bytes) -> Tuple[List[Dict[str, Any]], bytes]:
         """
         Parse a chunk of data and update the buffer.
 
@@ -419,7 +415,7 @@ class BedrockProvider(Provider):
         buffer += chunk  # Add the new chunk to the buffer
         messages = []
         while True:
-            parsed_messages, buffer = cls._parse_event_stream(buffer)
+            parsed_messages, buffer = self._parse_event_stream(buffer)
             if not parsed_messages:
                 break  # Wait for more data
             messages.extend(parsed_messages)
