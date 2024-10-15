@@ -1,5 +1,6 @@
 import os
 import signal
+import threading
 
 import click
 
@@ -25,11 +26,14 @@ def server(ui):
 
     print("Servers are running. Press CTRL+C to stop.")
 
+    stop_event = threading.Event()
     try:
-        signal.pause()
+        stop_event.wait()  # Wait indefinitely until the event is set
     except KeyboardInterrupt:
         print("Shutting down servers...")
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    server()
+    print(4)

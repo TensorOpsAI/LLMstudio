@@ -10,10 +10,23 @@ from langchain_core.language_models.chat_models import BaseChatModel
 
 from llmstudio.llm import LLM
 
+from pydantic import BaseModel
+
+class ProxyConfig(BaseModel):
+    host: str
+    port: int
+    username: Optional[str] = None
+    password: Optional[str] = None
+
+class TrackingConfig(BaseModel):
+    database_uri: str
+
 
 class ChatLLMstudio(BaseChatModel):
     model_id: str
     llm: LLM = None
+    proxy_config: Optional[ProxyConfig] = None
+    tracking_config: Optional[TrackingConfig] = None
 
     def __init__(self, model_id: str, **kwargs):
         super().__init__(model_id=model_id, **kwargs)

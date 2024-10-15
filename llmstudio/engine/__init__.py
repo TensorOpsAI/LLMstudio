@@ -9,10 +9,11 @@ import yaml
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 from llmstudio.config import ENGINE_HOST, ENGINE_PORT
-from llmstudio.engine.providers import *
+from llmstudio_core.providers import _load_engine_config
+from llmstudio_core.providers.provider import provider_registry
 
 ENGINE_BASE_ENDPOINT = "/api/engine"
 ENGINE_HEALTH_ENDPOINT = "/health"
@@ -45,38 +46,6 @@ class ProviderConfig(BaseModel):
 
 class EngineConfig(BaseModel):
     providers: Dict[str, ProviderConfig]
-
-
-def _load_engine_config() -> EngineConfig:
-    default_config_path = Path(os.path.join(os.path.dirname(__file__), "config.yaml"))
-    local_config_path = Path(os.getcwd(), "config.yaml")
-
-    def _merge_configs(config1, config2):
-        for key in config2:
-            if key in config1:
-                if isinstance(config1[key], dict) and isinstance(config2[key], dict):
-                    _merge_configs(config1[key], config2[key])
-                elif isinstance(config1[key], list) and isinstance(config2[key], list):
-                    config1[key].extend(config2[key])
-                else:
-                    config1[key] = config2[key]
-            else:
-                config1[key] = config2[key]
-        return config1
-
-    try:
-        default_config_data = yaml.safe_load(default_config_path.read_text())
-        local_config_data = (
-            yaml.safe_load(local_config_path.read_text())
-            if local_config_path.exists()
-            else {}
-        )
-        config_data = _merge_configs(default_config_data, local_config_data)
-        return EngineConfig(**config_data)
-    except yaml.YAMLError as e:
-        raise RuntimeError(f"Error parsing YAML configuration: {e}")
-    except ValidationError as e:
-        raise RuntimeError(f"Error in configuration data: {e}")
 
 
 def create_engine_app(
@@ -124,9 +93,11 @@ def create_engine_app(
     def create_chat_handler(provider_config):
         async def chat_handler(request: Request):
             """Endpoint for chat functionality."""
-            provider_class = provider_registry.get(f"{provider_config.name}Provider")
+            provider_class = provider_registry.get(f"{provider_config.name}".lower())
             provider_instance = provider_class(provider_config)
-            return await provider_instance.chat(await request.json())
+            request_dict = await request.json()
+            result = await provider_instance.achat(**request_dict)
+            return result
 
         return chat_handler
 

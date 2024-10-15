@@ -24,6 +24,7 @@ tiktoken = "^0.7"
 python-dotenv = "^0"
 sqlalchemy = "^2"
 langchain-experimental = "^0.0"
+llmstudio-core = {path = "libs/core", develop = true}
 
 [tool.poetry.scripts]
 llmstudio = "llmstudio.cli:main"

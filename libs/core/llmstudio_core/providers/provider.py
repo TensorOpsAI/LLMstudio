@@ -73,7 +73,8 @@ class ProviderABC(ABC):
         model: str,
         is_stream: Optional[bool] = False,
         retries: Optional[int] = 0,
-        parameters: Optional[dict] = {}
+        parameters: Optional[dict] = {},
+        **kwargs
     ) -> Coroutine[Any, Any, Union[ChatCompletionChunk, ChatCompletion]]:
         raise NotImplementedError("Providers needs to have achat method implemented.")
     
@@ -84,7 +85,8 @@ class ProviderABC(ABC):
         model: str,
         is_stream: Optional[bool] = False,
         retries: Optional[int] = 0,
-        parameters: Optional[dict] = {}
+        parameters: Optional[dict] = {},
+        **kwargs
     ) -> Union[ChatCompletionChunk, ChatCompletion]:
         raise NotImplementedError("Providers needs to have chat method implemented.")
     
@@ -103,7 +105,8 @@ class BaseProvider(ProviderABC):
         model: str,
         is_stream: Optional[bool] = False,
         retries: Optional[int] = 0,
-        parameters: Optional[dict] = {}
+        parameters: Optional[dict] = {},
+        **kwargs
     ):
 
         """Makes a chat connection with the provider's API"""
@@ -145,7 +148,8 @@ class BaseProvider(ProviderABC):
         model: str,
         is_stream: Optional[bool] = False,
         retries: Optional[int] = 0,
-        parameters: Optional[dict] = {}
+        parameters: Optional[dict] = {},
+        **kwargs
     ):
 
         """Makes a chat connection with the provider's API"""
