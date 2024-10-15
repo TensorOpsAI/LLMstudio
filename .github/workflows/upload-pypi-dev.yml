@@ -60,7 +60,6 @@ jobs:
           docker build \
             --build-arg LLMSTUDIO_VERSION=${{ env.VERSION }} \
             -t your-docker-hub-username/llmstudio:${{ env.VERSION }} \
-            -f docker/Dockerfile \
             .
 
       - name: Push Docker image to Docker Hub
