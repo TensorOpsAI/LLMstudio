@@ -1,0 +1,101 @@
+Interact with your Anthropic models using LLMstudios LLM.
+
+## Supported models
+1. `claude-3-opus-20240229`
+2. `claude-3-sonnet-2024022`
+3. `claude-3-haiku-20240307`
+4. `claude-2.1`
+5. `claude-2`
+6. `claude-instant-1.2`
+
+## Parameters
+An Anthropic LLM interface can have the following parameters:
+| Parameter         | Type   | Description                                                                 |
+|-------------------|--------|-----------------------------------------------------------------------------|
+| `api_key`         | str    | The API key for authentication.                                              |
+| `temperature`     | float  | The temperature parameter for the model.                                     |
+| `top_p`           | float  | The top-p parameter for the model.                                           |
+| `max_tokens`      | int    | The maximum number of tokens for the model's output.                         |
+| `top_k`           | int    | The top-k parameter for the model.                                           |
+
+
+## Usage
+Here is how you setup an interface to interact with your Anthropic models.
+
+<Tabs>
+  <Tab title="w/ .env">
+    <Steps>
+        <Step>
+            Create a `.env` file with you `ANTHROPIC_API_KEY`
+
+            <Warning>Make sure you call your environment variable ANTHROPIC_API_KEY</Warning>
+            ```bash
+            ANTHROPIC_API_KEY="YOUR-KEY"
+            ```
+        </Step>
+        <Step >
+            In your python code, import LLM from llmstudio.
+            ```python
+            from llmstudio import LLM
+            ```
+        </Step>
+        <Step>
+            Create your **llm** instance.
+            ```python
+            llm = LLM('anthropic/{model}')
+            ```
+        </Step>
+        <Step>
+            **Optional:** You can add your parameters as follows:
+            ```python
+            llm = LLM('anthropic/model', 
+            temperature= ...,
+            max_tokens= ...,
+            top_p= ...,
+            frequency_penalty= ...,
+            presence_penalty= ...)
+            ```
+            <Check>You are done setting up your **Anthropic LLM**!</Check>
+        </Step>
+    </Steps>
+  </Tab>
+  <Tab title="w/o .env">
+    <Steps>
+        <Step >
+            In your python code, import LLM from llmstudio.
+            ```python
+            from llmstudio import LLM
+            ```
+        </Step>
+        <Step>
+            Create your **llm** instance.
+            ```python
+            llm = LLM('anthropic/{model}',api_key="YOUR_API_KEY")
+            ```
+        </Step>
+        <Step>
+            **Optional:** You can add your parameters as follows:
+            ```python
+            llm = LLM('anthropic/model', 
+            temperature= ...,
+            max_tokens= ...,
+            top_p= ...,
+            frequency_penalty= ...,
+            presence_penalty= ...)
+            ```
+            <Check>You are done setting up your **Anthropic LLM**!</Check>
+        </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+
+## What's next?
+<CardGroup cols={2}>
+    <Card title="LLM.chat()" icon="link" href="../chat">
+    Learn how to send messeges and recieve responses next!
+    </Card>
+    <Card title="Tool calling Agent" icon="link" href="../../../how-to/build-a-tool-agent">
+    Learn how to build a tool calling agent using llmstudio.
+    </Card>
+</CardGroup>
