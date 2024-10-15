@@ -78,9 +78,9 @@ jobs:
         run: |
           docker build \
             --build-arg LLMSTUDIO_VERSION=${{ env.VERSION }} \
-            -t your-docker-hub-username/llmstudio:${{ env.VERSION }} \
+            -t tensoropsai/llmstudio:${{ env.VERSION }} \
             .
 
       - name: Push Docker image to Docker Hub
         run: |
-          docker push your-docker-hub-username/llmstudio:${{ env.VERSION }}
+          docker push tensoropsai/llmstudio:${{ env.VERSION }}
