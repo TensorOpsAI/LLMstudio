@@ -39,7 +39,8 @@ class OpenAIProvider(Provider):
         self, request: OpenAIRequest
     ) -> Coroutine[Any, Any, Generator]:
         """Generate an OpenAI client"""
-
+        print(f'openai.py - request.tools: {request.tools}')
+        print(f'openai.py - request.functions: {request.functions}')
         try:
             client = OpenAI(api_key=request.api_key or self.API_KEY)
             return await asyncio.to_thread(
@@ -64,4 +65,5 @@ class OpenAIProvider(Provider):
         self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:
         for chunk in response:
+            print(f'openai.py - chunk: {chunk}')
             yield chunk.model_dump()
