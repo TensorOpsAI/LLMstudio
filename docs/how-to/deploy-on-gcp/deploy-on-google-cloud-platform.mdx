@@ -55,9 +55,9 @@ This example demonstrates a public deployment. For a private service accessible 
 | Environment Variable       | Value     |
 |----------------------------|-----------|
 | `LLMSTUDIO_ENGINE_HOST`    | 0.0.0.0   |
-| `LLMSTUDIO_ENGINE_PORT`    | YOUR_DESIRED_PORT     |
+| `LLMSTUDIO_ENGINE_PORT`    | 8001      |
 | `LLMSTUDIO_TRACKING_HOST`  | 0.0.0.0   |
-| `LLMSTUDIO_TRACKING_PORT`  | YOUR_DESIRED_PORT     |
+| `LLMSTUDIO_TRACKING_PORT`  | 8002      |
 
 Additionally, set the `GOOGLE_API_KEY` environment variable to enable calls to Google's Gemini models.
 <Tip>Refer to **SDK/LLM/Providers** for instructions on setting up other providers.</Tip>
@@ -115,16 +115,13 @@ Now let's make a call to our LLMstudio instance on GCP!
 
         ```env .env
         LLMSTUDIO_ENGINE_HOST = "YOUR_HOST"
-        LLMSTUDIO_ENGINE_PORT = "YOUR_ENGINE_PORT"
+        LLMSTUDIO_ENGINE_PORT = "8001"
         LLMSTUDIO_TRACKING_HOST = "YOUR_TRACKING_PORT"
-        LLMSTUDIO_TRACKING_PORT = "YOUR_HOST"
+        LLMSTUDIO_TRACKING_PORT = "8002"
         ```
 
         <Check>You are done seting up you **.env** file!</Check>
 
-
-
-      
       </Tab>
       <Tab title="simple-call.ipynb">
         Start by importing llmstudio:
