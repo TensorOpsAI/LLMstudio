@@ -1,4 +1,4 @@
-name: Upload Python package to PyPI and build Docker image
+name: Upload Python package to PyPI as dev release, build and push Docker image to hub.
 
 on:
   workflow_dispatch:
