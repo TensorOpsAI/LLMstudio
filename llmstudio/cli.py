@@ -1,10 +1,10 @@
 import os
 import signal
+import threading
 
 import click
 
 from llmstudio.server import start_server
-import threading
 
 
 def handle_shutdown(signum, frame):
@@ -19,8 +19,6 @@ def main():
 
 @main.command()
 @click.option("--ui", is_flag=True, help="Start the UI server.")
-
-
 def server(ui):
     signal.signal(signal.SIGINT, handle_shutdown)
 

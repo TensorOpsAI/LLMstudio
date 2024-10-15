@@ -75,8 +75,6 @@ class AzureProvider(Provider):
         self.is_openai = "gpt" in request.model.lower()
         self.has_tools = request.tools is not None
         self.has_functions = request.functions is not None
-        
-        
 
         try:
             if request.base_url or self.BASE_URL:
@@ -156,7 +154,6 @@ class AzureProvider(Provider):
     async def parse_response(
         self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:
-        
 
         if self.is_llama and (self.has_tools or self.has_functions):
             async for chunk in self.handle_tool_response(response, **kwargs):
