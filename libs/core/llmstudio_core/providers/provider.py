@@ -328,6 +328,7 @@ class BaseProvider(ProviderABC):
                 chunk = chunk[0] if isinstance(chunk, tuple) else chunk
                 model = chunk.get("model")
                 if chunk.get("choices")[0].get("finish_reason") != "stop":
+                    chat_output = chunk.get("choices")[0].get("delta").get("content")
                     chunk = {
                             **chunk,
                             "id": str(uuid.uuid4()),
@@ -336,7 +337,8 @@ class BaseProvider(ProviderABC):
                                 if isinstance(request.chat_input, str)
                                 else request.chat_input[-1]["content"]
                             ),
-                            "chat_output": chunk.get("choices")[0].get("delta").get("content"),
+                            "chat_output": None,
+                            "chat_output_stream": chat_output if chat_output else "",
                             "context": (
                                 [{"role": "user", "content": request.chat_input}]
                                 if isinstance(request.chat_input, str)
@@ -383,7 +385,8 @@ class BaseProvider(ProviderABC):
                 if isinstance(request.chat_input, str)
                 else request.chat_input[-1]["content"]
             ),
-            "chat_output": "" if request.is_stream else output_string,
+            "chat_output": output_string,
+            "chat_output_stream": "",
             "context": (
                 [{"role": "user", "content": request.chat_input}]
                 if isinstance(request.chat_input, str)
