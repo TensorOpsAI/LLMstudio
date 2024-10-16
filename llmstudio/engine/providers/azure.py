@@ -61,7 +61,6 @@ class AzureProvider(Provider):
         self.is_llama = False
         self.has_tools = False
         self.has_functions = False
-        self.model_instace = None
 
     def validate_request(self, request: AzureRequest):
         return AzureRequest(**request)
