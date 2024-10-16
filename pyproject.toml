@@ -15,10 +15,12 @@ keywords = ["ml", "ai", "llm", "llmops", "openai", "langchain", "chatgpt", "llms
 
 [tool.poetry.dependencies]
 python = "^3.9"
+
+[tool.poetry.group.dev.dependencies]
 llmstudio = { path = "libs/llmstudio/", develop = true }
 llmstudio-core = { path = "libs/core/", develop = true }
 llmstudio-tracker = { path = "libs/tracker/", develop = true }
-llmstudio-proxy = { path = "libs/proxy/", develop = true }
+langchain-proxy = { path = "libs/proxy/", develop = true }
 
 [tool.poetry.scripts]
 llmstudio = "llmstudio.cli:main"

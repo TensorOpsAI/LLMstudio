@@ -23,6 +23,17 @@ openai = "^1.26"
 tiktoken = "^0.7"
 python-dotenv = "^0"
 langchain-experimental = "^0.0"
+llmstudio-core = "^0"
+llmstudio-tracker = "^0"
+llmstudio-proxy = "^0"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4"
+mypy = "^1.5"
+ruff = "^0.0.284"
+black = "^23.7"
+pre-commit = "^3.7"
 llmstudio-core = { path = "../core/", develop = true }
 llmstudio-tracker = { path = "../tracker/", develop = true }
 llmstudio-proxy = { path = "../proxy/", develop = true }
