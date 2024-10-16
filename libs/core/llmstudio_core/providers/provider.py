@@ -229,7 +229,8 @@ class BaseProvider(ProviderABC):
                                 if isinstance(request.chat_input, str)
                                 else request.chat_input[-1]["content"]
                             ),
-                            "chat_output": chat_output if chat_output else "",
+                            "chat_output": None,
+                            "chat_output_stream": chat_output if chat_output else "",
                             "context": (
                                 [{"role": "user", "content": request.chat_input}]
                                 if isinstance(request.chat_input, str)
@@ -276,7 +277,8 @@ class BaseProvider(ProviderABC):
                 if isinstance(request.chat_input, str)
                 else request.chat_input[-1]["content"]
             ),
-            "chat_output": "" if request.is_stream else output_string,
+            "chat_output": output_string,
+            "chat_output_stream": "",
             "context": (
                 [{"role": "user", "content": request.chat_input}]
                 if isinstance(request.chat_input, str)

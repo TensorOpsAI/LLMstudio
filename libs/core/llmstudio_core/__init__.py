@@ -7,7 +7,7 @@ from llmstudio_core.providers import _load_engine_config
 _engine_config = _load_engine_config()
 
 
-def LLM(provider: str, api_key: Optional[str] = None, **kwargs) -> BaseProvider:
+def LLMCore(provider: str, api_key: Optional[str] = None, **kwargs) -> BaseProvider:
     """
     Factory method to create an instance of a provider.
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     load_dotenv()
 
     def test_stuff(provider, model, api_key, **kwargs):
-        llm = LLM(provider=provider, api_key=api_key, **kwargs)
+        llm = LLMCore(provider=provider, api_key=api_key, **kwargs)
 
         latencies = {}
         chat_request = {
@@ -76,9 +76,8 @@ if __name__ == "__main__":
             
             response_async = await llm.achat(**chat_request)
             async for p in response_async:
-                if "}" in p.chat_output:
-                    p.chat_output
-                print("that: ",p.chat_output)
+                if not p.metrics:
+                    print("that: ",p.chat_output_stream)
                 # pprint(p.choices[0].delta.content==p.chat_output)
                 # print("metrics: ", p.metrics)
                 # print(p)

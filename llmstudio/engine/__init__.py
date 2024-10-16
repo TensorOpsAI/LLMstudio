@@ -96,7 +96,13 @@ def create_engine_app(
             provider_class = provider_registry.get(f"{provider_config.name}".lower())
             provider_instance = provider_class(provider_config)
             request_dict = await request.json()
+
             result = await provider_instance.achat(**request_dict)
+            if request_dict.get("is_stream", False):
+                async def result_generator():
+                    async for chunk in result:
+                        yield json.dumps(chunk.dict())
+                return StreamingResponse(result_generator(), media_type="application/json")
             return result
 
         return chat_handler

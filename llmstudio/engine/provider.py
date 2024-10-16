@@ -1,27 +1,40 @@
 import asyncio
-from typing import Any, Coroutine, Dict, List, Union
+import json
+from typing import Any, Coroutine, Dict, List, Optional, Union
 
+from pydantic import BaseModel
 import requests
-from libs.core.llmstudio_core.providers.provider import BaseProvider, ProviderABC
+from llmstudio_core.providers.provider import ProviderABC
 from llmstudio.server import is_server_running
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from tqdm.asyncio import tqdm_asyncio
 
-from llmstudio.config import ENGINE_HOST, ENGINE_PORT
 from llmstudio.llm.semaphore import DynamicSemaphore
 
+
+class ProxyConfig(BaseModel):
+    host: Optional[str] = None
+    port: Optional[str] = None
+    url: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    def __init__(self, **data):
+        super().__init__(**data)
+        if (self.host is None and self.port is None) and self.url is None:
+            raise ValueError("Either both 'host' and 'port' must be provided, or 'url' must be specified.")
+        
+        
 class LLMProxyProvider(ProviderABC):
     def __init__(self, provider: str,                 
-                 host: str,
-                 port: str,
-        **kwargs):
+                 proxy_config: ProxyConfig):
         self.provider = provider
-        self.engine_host = host
-        self.engine_port = port
-        if is_server_running(host=host, port=port):
-            print(f"Connected to LLMStudio Proxy @ {host}:{port}")
+        
+        self.engine_host = proxy_config.host
+        self.engine_port = proxy_config.port
+        if is_server_running(host=self.engine_host, port=self.engine_port):
+            print(f"Connected to LLMStudio Proxy @ {self.engine_host}:{self.engine_port}")
         else:
-            raise Exception(f"LLMStudio Proxy is not running @ {host}:{port}")
+            raise Exception(f"LLMStudio Proxy is not running @ {self.engine_host}:{self.engine_port}")
     
     @staticmethod
     def _provider_config_name():
@@ -59,7 +72,7 @@ class LLMProxyProvider(ProviderABC):
     def generate_chat(self, response):
         for chunk in response.iter_content(chunk_size=None):
             if chunk:
-                yield chunk.decode("utf-8")
+                yield ChatCompletionChunk(**json.loads(chunk.decode("utf-8")))
 
     async def achat(self, chat_input: Any, 
               model: str, 
@@ -233,4 +246,4 @@ class LLMProxyProvider(ProviderABC):
 
         for chunk in response.iter_content(chunk_size=None):
             if chunk:
-                yield chunk.decode("utf-8")
+                yield ChatCompletionChunk(**json.loads(chunk.decode("utf-8")))

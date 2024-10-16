@@ -1,24 +1,25 @@
 from typing import Any, Coroutine, Optional
-from llmstudio_core import LLM as LLM_factory
+from llmstudio_core import LLMCore
 from llmstudio_core.providers.provider import ProviderABC
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from pydantic import BaseModel
 
-from llmstudio.engine.provider import LLMProxyProvider
+from llmstudio.engine.provider import LLMProxyProvider, ProxyConfig
 from llmstudio.tracking.database import create_tracking_engine
 from llmstudio.tracking.logs import crud, schemas
 
-from sqlalchemy.orm import declarative_base, sessionmaker
-
-
-class ProxyConfig(BaseModel):
-    host: str
-    port: int
-    username: Optional[str] = None
-    password: Optional[str] = None
+from sqlalchemy.orm import sessionmaker
 
 class TrackingConfig(BaseModel):
-    database_uri: str
+    database_uri: Optional[str] = None
+    host: Optional[str] = None
+    port: Optional[int] = None
+    url: Optional[str] = None
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        if (self.host and self.port) or self.url or self.database_uri:
+            raise ValueError("You must provide either both 'host' and 'port', or 'url', or 'database_uri'.")
 
 
 class LLM(ProviderABC):
@@ -26,18 +27,18 @@ class LLM(ProviderABC):
 
     def __init__(self,
                  provider: str,
+                 api_key: Optional[str] = None,
                  proxy_config: Optional[ProxyConfig] = None,
                  tracking_config: Optional[TrackingConfig] = None,
                  **kwargs):
         
         if proxy_config is not None:
             self._provider = LLMProxyProvider(provider=provider,
-                                              host=proxy_config.host,
-                                              port=proxy_config.port,
-                                              **kwargs
-                                              )
+                                              proxy_config=proxy_config)
         else:
-            self._provider = LLM_factory(provider, **kwargs)
+            self._provider = LLMCore(provider=provider,
+                                     api_key=api_key, 
+                                     **kwargs)
 
         self._session_local = None
         if tracking_config is not None:
