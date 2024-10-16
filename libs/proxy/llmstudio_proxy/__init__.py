@@ -13,7 +13,7 @@ from llmstudio_proxy.config import ENGINE_HOST, ENGINE_PORT
 from llmstudio_core.providers import _load_providers_config
 from llmstudio_core.providers.provider import provider_registry
 
-ENGINE_BASE_ENDPOINT = "/api/proxy"
+ENGINE_BASE_ENDPOINT = "/api/engine"
 ENGINE_HEALTH_ENDPOINT = "/health"
 ENGINE_TITLE = "LLMstudio Proxy API"
 ENGINE_DESCRIPTION = "The core API for LLM interactions"

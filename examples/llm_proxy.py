@@ -1,10 +1,14 @@
-from llmstudio.server import start_server
-start_server()
+from llmstudio.server import start_servers
+start_servers()
 
-from llmstudio_proxy.provider import LLMProxyProvider
+from llmstudio_proxy.provider import LLMProxyProvider as LLM
+from llmstudio_proxy.provider import ProxyConfig
 
+# from llmstudio_core import LLMCore as LLM
+# from llmstudio import LLM
 
-llm = LLMProxyProvider(provider="openai", host="0.0.0.0", port="8001")
+llm = LLM(provider="openai", 
+          proxy_config=ProxyConfig(host="0.0.0.0", port="8001"))
 
 result = llm.chat("Write a paragfraph about space", model="gpt-4o")
 print(result)

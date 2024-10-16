@@ -16,7 +16,7 @@ from llmstudio_tracker.config import (
 from llmstudio_proxy import run_proxy_app
 from llmstudio_tracker import run_tracker_app
 
-_proxy_started, _tracker_started = False, False
+_servers_started = False
 
 
 def is_server_running(host, port, path="/health"):
@@ -41,56 +41,27 @@ def start_server_component(host, port, run_func, server_name):
         return None
 
 
-def setup_servers(proxy, tracking):
+def setup_servers(engine, tracking):
     global _servers_started
-    proxy_thread, tracking_thread = None, None
+    engine_thread, tracking_thread = None, None
     if _servers_started:
-        return proxy_thread, tracking_thread
+        return engine_thread, tracking_thread
 
-    if proxy:
-        proxy_thread = start_server_component(
+    if engine:
+        engine_thread = start_server_component(
             ENGINE_HOST, ENGINE_PORT, run_proxy_app, "Proxy"
         )
 
     if tracking:
         tracking_thread = start_server_component(
-            TRACKING_HOST, TRACKING_PORT, run_tracking_app, "Tracker"
+            TRACKING_HOST, TRACKING_PORT, run_tracker_app, "Tracker"
         )
 
     _servers_started = True
-    return proxy_thread, tracking_thread
-
-def setup_proxy(proxy_host, proxy_port):
-    global _proxy_started
-    proxy_thread = None
-    if _proxy_started:
-        return proxy_thread
-
-    proxy_thread = start_server_component(
-        proxy_host, proxy_port, run_proxy_app, "proxy"
-    )
-
-    _proxy_started = True
-    return proxy_thread
-
-def setup_tracker(tracker_host, tracker_port):
-    global _tracker_started
-    tracker_thread = None
-    if _tracker_started:
-        return tracker_thread
-
-    tracker_thread = start_server_component(
-        tracker_host, tracker_port, run_tracker_app, "Tracker"
-    )
-
-    _tracker_started = True
-    return tracker_thread
+    return engine_thread, tracking_thread
 
 
-def start_servers(proxy=True, tracker=True):
-    global _proxy_started, _tracker_started
-    if proxy and not _proxy_started:
-        setup_proxy(ENGINE_HOST, ENGINE_PORT)
-    
-    if tracker and not _tracker_started:
-        setup_tracker(TRACKING_HOST, TRACKING_PORT)
+def start_servers(engine=True, tracking=True):
+    global _servers_started
+    if not _servers_started:
+        setup_servers(engine, tracking)
