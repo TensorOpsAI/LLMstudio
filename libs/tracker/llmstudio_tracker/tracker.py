@@ -1,17 +1,31 @@
 import json
+from typing import Optional
+from pydantic import BaseModel
 
 import requests
 
-from llmstudio.config import TRACKING_HOST, TRACKING_PORT
 
+class TrackingConfig(BaseModel):
+    database_uri: Optional[str] = None
+    host: Optional[str] = None
+    port: Optional[int] = None
+    url: Optional[str] = None
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        if (self.host is None and self.port is None) and self.url is None:
+            raise ValueError("You must provide either both 'host' and 'port', or 'url', or 'database_uri'.")
+        
 
 class Tracker:
-    def __init__(self):
+    def __init__(self, tracking_config: TrackingConfig):
+        self.tracking_host = tracking_config.host
+        self.tracking_port = tracking_config.port
         self._session = requests.Session()
 
     def log(self, data: dict):
         req = self._session.post(
-            f"http://{TRACKING_HOST}:{TRACKING_PORT}/api/tracking/logs",
+            f"http://{self.tracking_host}:{self.tracking_port}/api/tracking/logs",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             data=json.dumps(data),
             timeout=100,
@@ -20,7 +34,7 @@ class Tracker:
 
     def update_session(self, data: dict):
         req = self._session.post(
-            f"http://{TRACKING_HOST}:{TRACKING_PORT}/api/tracking/session",
+            f"http://{self.tracking_host}:{self.tracking_port}/api/tracking/session",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             data=json.dumps(data),
             timeout=100,
@@ -29,7 +43,7 @@ class Tracker:
 
     def get_session(self, session_id: str):
         req = self._session.get(
-            f"http://{TRACKING_HOST}:{TRACKING_PORT}/api/tracking/session/{session_id}",
+            f"http://{self.tracking_host}:{self.tracking_port}/api/tracking/session/{session_id}",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             timeout=100,
         )
@@ -37,11 +51,8 @@ class Tracker:
 
     def add_extras(self, message_id: int):
         req = self._session.patch(
-            f"http://{TRACKING_HOST}:{TRACKING_PORT}/api/tracking/session/{message_id}",
+            f"http://{self.tracking_host}:{self.tracking_port}/api/tracking/session/{message_id}",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             timeout=100,
         )
         return req
-
-
-tracker = Tracker()

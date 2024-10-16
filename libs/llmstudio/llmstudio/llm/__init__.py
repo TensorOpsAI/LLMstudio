@@ -2,24 +2,9 @@ from typing import Any, Coroutine, Optional
 from llmstudio_core import LLMCore
 from llmstudio_core.providers.provider import ProviderABC
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
-from pydantic import BaseModel
 
 from llmstudio_proxy.provider import LLMProxyProvider, ProxyConfig
-from llmstudio_tracker.database import create_tracking_engine
-from llmstudio_tracker.logs import crud, schemas
-
-from sqlalchemy.orm import sessionmaker
-
-class TrackingConfig(BaseModel):
-    database_uri: Optional[str] = None
-    host: Optional[str] = None
-    port: Optional[int] = None
-    url: Optional[str] = None
-
-    def __init__(self, **data):
-        super().__init__(**data)
-        if (self.host and self.port) or self.url or self.database_uri:
-            raise ValueError("You must provide either both 'host' and 'port', or 'url', or 'database_uri'.")
+from llmstudio_tracker.tracker import Tracker, TrackingConfig
 
 
 class LLM(ProviderABC):
@@ -40,20 +25,12 @@ class LLM(ProviderABC):
                                      api_key=api_key, 
                                      **kwargs)
 
-        self._session_local = None
+        self._tracker = None
         if tracking_config is not None:
-            engine = create_tracking_engine(tracking_config.database_uri)
-            self._session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+            self._tracker = Tracker(tracking_config=tracking_config)
 
     def _provider_config_name(self):
         return self._provider._provider_config_name()
-    
-    def get_db(self):
-        db = self.session_local()
-        try:
-            yield db
-        finally:
-            db.close()
 
     def chat(self, chat_input: Any, 
              model: str, is_stream: bool | None = False, 
@@ -61,10 +38,22 @@ class LLM(ProviderABC):
              parameters: Optional[dict] = {},
              **kwargs) -> ChatCompletionChunk | ChatCompletion:
         result = self._provider.chat(chat_input, model, is_stream, retries, parameters, **kwargs)
-        if self._session_local:
-            log = schemas.LogDefaultCreate(**result.metrics)
-            crud.add_log(db=self._session_local, log=log)
-        return result
+        
+        if isinstance(result, (ChatCompletionChunk, ChatCompletion)):
+            if self._tracker:
+                result_dict = result.model_dump()
+                result_dict["session_id"] = kwargs.get("session_id")
+                self._tracker.log(result_dict)
+            return result
+        else:
+            def generator_wrapper():
+                for item in result:
+                    yield item
+                    if self._tracker and item.metrics:
+                        result_dict = item.model_dump()
+                        result_dict["session_id"] = kwargs.get("session_id")
+                        self._tracker.log(result_dict)           
+            return generator_wrapper()
     
     async def achat(self, chat_input: Any, 
               model: str, 
@@ -73,7 +62,18 @@ class LLM(ProviderABC):
               parameters: Optional[dict] = {},
               **kwargs) -> Coroutine[Any, Any, Coroutine[Any, Any, ChatCompletionChunk | ChatCompletion]]:
         result = await self._provider.achat(chat_input, model, is_stream, retries, parameters, **kwargs)
-        if self._session_local and result.metrics:
-            log = schemas.LogDefaultCreate(**result.metrics)
-            crud.add_log(db=self._session_local, log=log)
-        return result
+        if isinstance(result, (ChatCompletionChunk, ChatCompletion)):
+            if self._tracker:
+                result_dict = result.model_dump()
+                result_dict["session_id"] = kwargs.get("session_id")
+                self._tracker.log(result_dict)
+                return result
+        else:
+            async def async_generator_wrapper():
+                async for item in result:
+                    yield item
+                    if self._tracker and item.metrics:
+                        result_dict = item.model_dump()
+                        result_dict["session_id"] = kwargs.get("session_id")
+                        self._tracker.log(result_dict)            
+            return async_generator_wrapper()

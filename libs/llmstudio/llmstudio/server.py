@@ -14,7 +14,7 @@ from llmstudio_tracker.config import (
 )
 
 from llmstudio_proxy import run_proxy_app
-from llmstudio_tracker import run_tracker_app
+from llmstudio_tracker.server import run_tracker_app
 
 _servers_started = False
 
