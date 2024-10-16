@@ -1,0 +1,126 @@
+Interact with your Azure models using LLM.
+
+## Parameters
+An Azure LLM interface can have the following parameters:
+| Parameter           | Type   | Description                                                                 |
+|---------------------|--------|-----------------------------------------------------------------------------|
+| `temperature`       | float  | The temperature parameter for the model.                                     |
+| `max_tokens`        | int    | The maximum number of tokens to generate.                                    |
+| `top_p`             | float  | The top-p parameter for the model.                                           |
+| `frequency_penalty` | float  | The frequency penalty parameter for the model.                               |
+| `presence_penalty`  | float  | The presence penalty parameter for the model.                                |
+
+
+## Usage
+Here is how you setup an interface to interact with your Azure models.
+<Tabs>
+    <Tab title="OpenAI Models">
+        <Steps>
+            <Step>
+                Create a `config.yaml` file in the same directory as your code.
+                1. 📁 src
+                    1. 🐍 PythonCode.py
+                    2. 🐍 PyNotebook.ipynb
+                    3. 📄 **config.yaml**
+            </Step>
+            <Step >
+            Define your Azure OpenAI provider and models inside the `config.yaml` file.
+            ```yaml
+                providers:
+                    azure:
+                        id: azure
+                        name: Azure
+                        chat: true
+                        embed: true
+                        models:
+                            YOUR_MODEL: <- Replace with your model name
+                                mode: chat
+                                max_tokens: ...
+                                input_token_cost: ...
+                                output_token_cost: ...
+                ```
+                <Tip>If you are not sure, you can leave `max_tokens`, `input_tokens` and the other parameters as **0**</Tip>
+            </Step>
+            <Step>
+                Create your **llm** instance.
+                ```python
+                llm = LLM('azure/YOUR_MODEL',
+                        api_key = YOUR_API_KEY,
+                        api_endpoint = YOUR_ENDPOINT,
+                        api_version = YOUR_API_VERSION)
+                ```
+            </Step>
+            <Step>
+                **Optional:** You can add your parameters as follows:
+                ```python
+                llm = LLM('azure/model', 
+                temperature= ...,
+                max_tokens= ...,
+                top_p= ...,
+                frequency_penalty= ...,
+                presence_penalty= ...)
+                ```
+                <Check>You are done setting up your **Azure LLM**!</Check>
+            </Step>
+        </Steps>
+  </Tab>
+  <Tab title="Other Models">
+    <Steps>
+        <Step>
+            Create a `config.yaml` file in the same directory as your code.
+            1. 📁 src
+                1. 🐍 PythonCode.py
+                2. 🐍 PyNotebook.ipynb
+                3. 📄 **config.yaml**
+        </Step>
+        <Step >
+        Define your Azure provider and models inside the `config.yaml` file.
+        ```yaml
+            providers:
+                azure:
+                    id: azure
+                    name: Azure
+                    chat: true
+                    embed: true
+                    models:
+                        YOUR_MODEL: <- Replace with your model name
+                            mode: chat
+                            max_tokens: ...
+                            input_token_cost: ...
+                            output_token_cost: ...
+            ```
+            <Tip>If you are not sure, you can leave `max_tokens`, `input_tokens` and the other parameters as **0**</Tip>
+        </Step>
+        <Step>
+            Create your **llm** instance.
+            ```python
+            llm = LLM('azure/YOUR_MODEL',
+                       api_key = YOUR_API_KEY,
+                       base_url = YOUR_ENDPOINT)
+            ```
+        </Step>
+        <Step>
+            **Optional:** You can add your parameters as follows:
+            ```python
+            llm = LLM('azure/model', 
+            temperature= ...,
+            max_tokens= ...,
+            top_p= ...,
+            frequency_penalty= ...,
+            presence_penalty= ...)
+            ```
+            <Check>You are done setting up your **Azure LLM**!</Check>
+        </Step>
+    </Steps>
+    </Tab>
+  </Tabs>
+
+## What's next?
+<CardGroup cols={2}>
+    <Card title="LLM.chat()" icon="link" href="../chat">
+    Learn how to send messeges and recieve responses next!
+    </Card>
+    <Card title="Tool calling Agent" icon="link" href="../../../how-to/build-a-tool-agent">
+    Learn how to build a tool calling agent using llmstudio.
+    </Card>
+</CardGroup>
