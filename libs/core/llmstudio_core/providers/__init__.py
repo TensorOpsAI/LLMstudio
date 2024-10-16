@@ -38,7 +38,7 @@ class EngineConfig(BaseModel):
     providers: Dict[str, ProviderConfig]
 
 
-def _load_engine_config() -> EngineConfig:
+def _load_providers_config() -> EngineConfig:
     #TODO read from github
     default_config_path = Path(os.path.join(os.path.dirname(__file__), "config.yaml"))
     local_config_path = Path(os.getcwd(), "config.yaml")

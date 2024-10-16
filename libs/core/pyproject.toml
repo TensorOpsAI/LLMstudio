@@ -14,8 +14,6 @@ fastapi = "^0.109"
 uvicorn = "^0.27"
 openai = "^1.26"
 tiktoken = "^0.7"
-python-dotenv = "^0"
-langchain-experimental = "^0.0"
 
 
 [build-system]

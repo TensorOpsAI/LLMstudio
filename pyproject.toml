@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "llmstudio"
-version = "0.3.11"
+name = "llmstudio-monorepo"
+version = "0.0.1"
 description = "Prompt Perfection at Your Fingertips"
 authors = ["Cláudio Lemos <claudio@tensorops.ai>"]
 license = "MIT"
@@ -15,16 +15,10 @@ keywords = ["ml", "ai", "llm", "llmops", "openai", "langchain", "chatgpt", "llms
 
 [tool.poetry.dependencies]
 python = "^3.9"
-pydantic = "^2.5"
-requests = "^2.31"
-fastapi = "^0.109"
-uvicorn = "^0.27"
-openai = "^1.26"
-tiktoken = "^0.7"
-python-dotenv = "^0"
-sqlalchemy = "^2"
-langchain-experimental = "^0.0"
-llmstudio-core = {path = "libs/core", develop = true}
+llmstudio = { path = "libs/llmstudio/", develop = true }
+llmstudio-core = { path = "libs/core/", develop = true }
+llmstudio-tracker = { path = "libs/tracker/", develop = true }
+llmstudio-proxy = { path = "libs/proxy/", develop = true }
 
 [tool.poetry.scripts]
 llmstudio = "llmstudio.cli:main"

@@ -1,7 +1,7 @@
 from llmstudio.server import start_server
 start_server()
 
-from llmstudio.engine.provider import LLMProxyProvider
+from llmstudio_proxy.provider import LLMProxyProvider
 
 
 llm = LLMProxyProvider(provider="openai", host="0.0.0.0", port="8001")

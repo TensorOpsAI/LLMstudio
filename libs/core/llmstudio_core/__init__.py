@@ -2,9 +2,9 @@ from abc import ABC
 from typing import Optional
 from llmstudio_core.providers.provider import BaseProvider, provider_registry
 
-from llmstudio_core.providers import _load_engine_config
+from llmstudio_core.providers import _load_providers_config
 
-_engine_config = _load_engine_config()
+_engine_config = _load_providers_config()
 
 
 def LLMCore(provider: str, api_key: Optional[str] = None, **kwargs) -> BaseProvider:
