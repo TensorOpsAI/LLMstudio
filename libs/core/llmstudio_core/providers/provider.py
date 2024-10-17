@@ -45,7 +45,13 @@ class ChatRequest(BaseModel):
     model: str
     is_stream: Optional[bool] = False
     retries: Optional[int] = 0
-    parameters: Optional[dict] = None
+    parameters: Optional[dict] = {}
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        base_model_fields = self.model_fields.keys()
+        additional_params = {k: v for k, v in data.items() if k not in base_model_fields}
+        self.parameters.update(additional_params)
 
 class ProviderABC(ABC):
     END_TOKEN = "<END_TOKEN>"
@@ -116,7 +122,8 @@ class BaseProvider(ProviderABC):
             model=model,
             is_stream=is_stream,
             retries=retries,
-            parameters=parameters
+            parameters=parameters,
+            **kwargs
         ))
         except ValidationError as e:
             raise ProviderError(str(e))
@@ -159,7 +166,8 @@ class BaseProvider(ProviderABC):
             model=model,
             is_stream=is_stream,
             retries=retries,
-            parameters=parameters
+            parameters=parameters,
+            **kwargs
         ))
         except ValidationError as e:
             raise ProviderError(str(e))
@@ -467,7 +475,7 @@ class BaseProvider(ProviderABC):
         elif finish_reason == "function_call":
             function_calls = [
                 chunk.get("choices")[0].get("delta").get("function_call")
-                for chunk in chunks[1:-1]
+                for chunk in chunks[:-1]
                 if chunk.get("choices")
                 and chunk.get("choices")[0].get("delta")
                 and chunk.get("choices")[0].get("delta").get("function_call")

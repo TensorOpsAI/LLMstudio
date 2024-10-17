@@ -10,27 +10,17 @@ from langchain_core.language_models.chat_models import BaseChatModel
 
 from llmstudio.llm import LLM
 
-from pydantic import BaseModel
-
-class ProxyConfig(BaseModel):
-    host: str
-    port: int
-    username: Optional[str] = None
-    password: Optional[str] = None
-
-class TrackingConfig(BaseModel):
-    database_uri: str
-
 
 class ChatLLMstudio(BaseChatModel):
-    model_id: str
-    llm: LLM = None
-    proxy_config: Optional[ProxyConfig] = None
-    tracking_config: Optional[TrackingConfig] = None
+    llm: LLM
+    model: str
+    is_stream: bool = False
+    retries: int = 0
+    parameters: dict = {}
 
-    def __init__(self, model_id: str, **kwargs):
-        super().__init__(model_id=model_id, **kwargs)
-        self.llm = LLM(model_id=self.model_id, **kwargs)
+    def __init__(self, **data):
+        super().__init__(**data)
+
 
     @property
     def _llm_type(self):
@@ -70,5 +60,10 @@ class ChatLLMstudio(BaseChatModel):
 
     def _generate(self, messages: List[BaseMessage], **kwargs) -> ChatResult:
         messages_dicts = self._create_message_dicts(messages, [])
-        response = self.llm.chat(messages_dicts, **kwargs)
+        response = self.llm.chat(messages_dicts,
+                                 model=kwargs.get("model", self.model),
+                                 is_stream=kwargs.get("is_stream", self.is_stream),
+                                 retries=kwargs.get("retries", self.retries),
+                                 parameters=kwargs.get("parameters", self.parameters),
+                                 **kwargs)
         return self._create_chat_result(response)
