@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Tuple, Type, Union
 
 from langchain.schema.messages import BaseMessage
 from langchain.schema.output import ChatGeneration, ChatResult
@@ -7,8 +7,14 @@ from langchain_community.adapters.openai import (
     convert_message_to_dict,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.base import LanguageModelInput
+# from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from llmstudio.llm import LLM
+from openai import BaseModel
 
 
 class ChatLLMstudio(BaseChatModel):
@@ -57,6 +63,65 @@ class ChatLLMstudio(BaseChatModel):
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
         return ChatResult(generations=generations, llm_output=llm_output)
+    
+    def bind_tools(
+        self,
+        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        *,
+        tool_choice: Optional[
+            Union[dict, str, Literal["auto", "any", "none"], bool]
+        ] = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        """Bind tool-like objects to this chat model.
+
+        Args:
+            tools: A list of tool definitions to bind to this chat model.
+                Can be a dictionary, pydantic model, callable, or BaseTool. Pydantic
+                models, callables, and BaseTools will be automatically converted to
+                their schema dictionary representation.
+            tool_choice: Which tool to require the model to call.
+                Must be the name of the single provided function,
+                "auto" to automatically determine which function to call
+                with the option to not call any function, "any" to enforce that some
+                function is called, or a dict of the form:
+                {"type": "function", "function": {"name": <<tool_name>>}}.
+            **kwargs: Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
+        """
+        formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+        if tool_choice is not None and tool_choice:
+            if isinstance(tool_choice, str) and (
+                tool_choice not in ("auto", "any", "none")
+            ):
+                tool_choice = {"type": "function", "function": {"name": tool_choice}}
+            if isinstance(tool_choice, dict) and (len(formatted_tools) != 1):
+                raise ValueError(
+                    "When specifying `tool_choice`, you must provide exactly one "
+                    f"tool. Received {len(formatted_tools)} tools."
+                )
+            if isinstance(tool_choice, dict) and (
+                formatted_tools[0]["function"]["name"]
+                != tool_choice["function"]["name"]
+            ):
+                raise ValueError(
+                    f"Tool choice {tool_choice} was specified, but the only "
+                    f"provided tool was {formatted_tools[0]['function']['name']}."
+                )
+            if isinstance(tool_choice, bool):
+                if len(tools) > 1:
+                    raise ValueError(
+                        "tool_choice can only be True when there is one tool. Received "
+                        f"{len(tools)} tools."
+                    )
+                tool_name = formatted_tools[0]["function"]["name"]
+                tool_choice = {
+                    "type": "function",
+                    "function": {"name": tool_name},
+                }
+
+            kwargs["tool_choice"] = tool_choice
+        return super().bind(tools=formatted_tools, **kwargs)
 
     def _generate(self, messages: List[BaseMessage], **kwargs) -> ChatResult:
         messages_dicts = self._create_message_dicts(messages, [])

@@ -425,18 +425,34 @@ class BaseProvider(ProviderABC):
 
         finish_reason = chunks[-1].get("choices")[0].get("finish_reason")
         if finish_reason == "tool_calls":
-            tool_calls = [
-                chunk.get("choices")[0].get("delta").get("tool_calls")[0]
-                for chunk in chunks[1:-1]
-            ]
+            tool_calls = {}
+            for chunk in chunks:
+                try:
+                    data = chunk.get("choices")[0].get("delta").get("tool_calls")[0]
+                    tool_calls.setdefault(data["index"], []).append(data)
+                except TypeError:
+                    continue
 
-            tool_call_id = tool_calls[0].get("id")
-            tool_call_name = tool_calls[0].get("function").get("name")
-            tool_call_type = tool_calls[0].get("function").get("type")
-            tool_call_arguments = "".join(
-                chunk.get("function", {}).get("arguments", "")
-                for chunk in tool_calls[1:]
-            )
+            tool_call_ids = [t[0].get("id") for t in tool_calls.values()]
+            tool_call_names = [t[0].get("function").get("name") for t in tool_calls.values()]
+            tool_call_types = [t[0].get("function").get("type", "function") for t in tool_calls.values()]
+
+            tool_call_arguments_all = []
+            for t in tool_calls.values():
+                tool_call_arguments_all.append("".join(
+                    chunk.get("function", {}).get("arguments", "")
+                    for chunk in t))
+                
+            tool_calls_parsed = [
+                ChatCompletionMessageToolCall(
+                    id=tool_call_id,
+                    function=Function(
+                        arguments=tool_call_arguments,
+                        name=tool_call_name
+                        ),
+                        type=tool_call_type)
+                        for tool_call_arguments, tool_call_name, tool_call_type, tool_call_id in
+                          zip(tool_call_arguments_all, tool_call_names, tool_call_types, tool_call_ids)]
 
             try:
                 return (
@@ -454,21 +470,12 @@ class BaseProvider(ProviderABC):
                                     content=None,
                                     role="assistant",
                                     function_call=None,
-                                    tool_calls=[
-                                        ChatCompletionMessageToolCall(
-                                            id=tool_call_id,
-                                            function=Function(
-                                                arguments=tool_call_arguments,
-                                                name=tool_call_name,
-                                            ),
-                                            type=tool_call_type,
-                                        )
-                                    ],
+                                    tool_calls=tool_calls_parsed
                                 ),
                             )
                         ],
                     ),
-                    tool_call_arguments,
+                    str(tool_call_arguments_all),
                 )
             except Exception as e:
                 raise e
