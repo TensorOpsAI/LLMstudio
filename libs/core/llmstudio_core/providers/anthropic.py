@@ -6,12 +6,12 @@ import uuid
 from typing import Any, AsyncGenerator, Coroutine, Generator, Optional
 
 import requests
-from fastapi import HTTPException
+from llmstudio_core.exceptions import ProviderError
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
 from pydantic import BaseModel, Field
 
-from llmstudio.engine.providers.provider import ChatRequest, Provider, provider
+from llmstudio_core.providers.provider import ChatRequest, BaseProvider, provider
 
 
 class ClaudeParameters(BaseModel):
@@ -27,24 +27,27 @@ class AnthropicRequest(ChatRequest):
 
 
 @provider
-class AnthropicProvider(Provider):
-    def __init__(self, config):
+class AnthropicProvider(BaseProvider):
+    def __init__(self, config, api_key=None):
         super().__init__(config)
-        self.API_KEY = os.getenv("ANTHROPIC_API_KEY")
+        self.API_KEY = api_key or os.getenv("ANTHROPIC_API_KEY")
+    
+    @staticmethod
+    def _provider_config_name():
+        return "anthropic"
 
     def validate_request(self, request: AnthropicRequest):
         return AnthropicRequest(**request)
 
-    async def generate_client(
+    async def agenerate_client(
         self, request: AnthropicRequest
     ) -> Coroutine[Any, Any, Generator]:
         """Generate an Anthropic client"""
         try:
-            api_key = request.api_key or self.API_KEY
             url = f"https://api.anthropic.com/v1/messages"
             headers = {
                 "content-type": "application/json",
-                "x-api-key": api_key,
+                "x-api-key": self.API_KEY,
                 "anthropic-version": "2023-06-01",
             }
             data = {
@@ -59,15 +62,50 @@ class AnthropicProvider(Provider):
                 **request.parameters.model_dump(),
             }
 
-            return await asyncio.to_thread(
+            result = await asyncio.to_thread(
                 requests.post,
                 url,
                 headers=headers,
                 json=data,
                 stream=True,
             )
+            if result.status_code != 200:
+                raise ProviderError(result.status_code, result.text)
+            return result
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise ProviderError(str(e))
+
+    def generate_client(
+        self, request: AnthropicRequest
+    ) -> Coroutine[Any, Any, Generator]:
+        """Generate an Anthropic client"""
+        try:
+            url = f"https://api.anthropic.com/v1/messages"
+            headers = {
+                "content-type": "application/json",
+                "x-api-key": self.API_KEY,
+                "anthropic-version": "2023-06-01",
+            }
+            data = {
+                "model": request.model,
+                "stream": True,
+                # "tools": request.tools,
+                "messages": (
+                    [{"role": "user", "content": request.chat_input}]
+                    if isinstance(request.chat_input, str)
+                    else request.chat_input
+                ),
+                **request.parameters.model_dump(),
+            }
+
+            return requests.post(
+                        url,
+                        headers=headers,
+                        json=data,
+                        stream=True,
+                    )
+        except Exception as e:
+            raise ProviderError(str(e))
 
     async def parse_response(
         self, response: AsyncGenerator, **kwargs
