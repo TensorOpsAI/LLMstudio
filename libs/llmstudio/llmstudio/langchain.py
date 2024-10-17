@@ -8,12 +8,11 @@ from langchain_community.adapters.openai import (
 )
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.base import LanguageModelInput
-# from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
-from llmstudio.llm import LLM
+from llmstudio.providers import LLM
 from openai import BaseModel
 
 

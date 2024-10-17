@@ -1,5 +1,4 @@
-import threading
-from threading import Event
+from threading import Event, Thread
 
 import requests
 
@@ -13,7 +12,7 @@ from llmstudio_tracker.config import (
     TRACKING_PORT,
 )
 
-from llmstudio_proxy import run_proxy_app
+from llmstudio_proxy.server import run_proxy_app
 from llmstudio_tracker.server import run_tracker_app
 
 _servers_started = False
@@ -32,7 +31,7 @@ def is_server_running(host, port, path="/health"):
 def start_server_component(host, port, run_func, server_name):
     if not is_server_running(host, port):
         started_event = Event()
-        thread = threading.Thread(target=run_func, daemon=True, args=(started_event,))
+        thread = Thread(target=run_func, daemon=True, args=(started_event,))
         thread.start()
         started_event.wait()  # wait for startup, this assumes the event is set somewhere
         return thread

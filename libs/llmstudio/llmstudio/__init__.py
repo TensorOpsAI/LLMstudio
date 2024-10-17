@@ -1,1 +1,1 @@
-from llmstudio.llm import LLM
+from llmstudio.providers.provider import LLM

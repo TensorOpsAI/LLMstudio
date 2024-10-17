@@ -3,8 +3,12 @@ from llmstudio_core import LLMCore
 from llmstudio_core.providers.provider import ProviderABC
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
-from llmstudio_proxy.provider import LLMProxyProvider, ProxyConfig
-from llmstudio_tracker.tracker import Tracker, TrackingConfig
+from llmstudio.providers import (
+    Tracker, 
+    TrackingConfig,
+    LLMProxyProvider,
+    ProxyConfig
+    )
 
 
 class LLM(ProviderABC):
