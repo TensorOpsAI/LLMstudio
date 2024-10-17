@@ -2,11 +2,11 @@ from llmstudio_tracker.tracker import TrackingConfig
 from llmstudio.server import start_servers
 start_servers()
 
-from llmstudio import LLM
+from llmstudio.providers import LLM
 from llmstudio_proxy.provider import ProxyConfig
 
-# from llmstudio_core import LLMCore as LLM
-# from llmstudio import LLM
+# from llmstudio_core.providers import LLMCore as LLM
+# from llmstudio.providers import LLM
 
 llm = LLM(provider="openai", 
           proxy_config=ProxyConfig(host="0.0.0.0", port="8001"),

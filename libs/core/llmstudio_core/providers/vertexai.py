@@ -26,7 +26,7 @@ from openai.types.chat.chat_completion_chunk import (
 )
 from pydantic import BaseModel, ValidationError
 
-from llmstudio_core.providers.provider import ChatRequest, BaseProvider, provider
+from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
 
 
 class OpenAIToolParameter(BaseModel):
@@ -73,7 +73,7 @@ class VertexAI(BaseModel):
 
 
 @provider
-class VertexAIProvider(BaseProvider):
+class VertexAIProvider(ProviderCore):
     def __init__(self, config, **kwargs):
         super().__init__(config, **kwargs)
         self.API_KEY = self.API_KEY if self.API_KEY else os.getenv("GOOGLE_API_KEY")

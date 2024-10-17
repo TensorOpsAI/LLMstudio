@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-from llmstudio.config import TRACKING_URI
+from llmstudio_tracker.config import TRACKING_URI
 
 
 def create_tracking_engine(uri: str):

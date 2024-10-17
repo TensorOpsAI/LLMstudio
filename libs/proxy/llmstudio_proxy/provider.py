@@ -4,10 +4,9 @@ from typing import Any, Coroutine, Dict, List, Optional, Union
 
 from pydantic import BaseModel
 import requests
-from llmstudio_core.providers.provider import ProviderABC
+from llmstudio_core.providers.provider import Provider
 from llmstudio.server import is_server_running
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
-from tqdm.asyncio import tqdm_asyncio
 
 
 class ProxyConfig(BaseModel):
@@ -22,7 +21,7 @@ class ProxyConfig(BaseModel):
             raise ValueError("Either both 'host' and 'port' must be provided, or 'url' must be specified.")
         
         
-class LLMProxyProvider(ProviderABC):
+class LLMProxyProvider(Provider):
     def __init__(self, provider: str,                 
                  proxy_config: ProxyConfig):
         self.provider = provider

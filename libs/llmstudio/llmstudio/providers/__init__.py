@@ -23,3 +23,5 @@ except ImportError:
     class ProxyConfig:
         def __init__(self, *args, **kwargs):
             raise ImportError(message.format(name="ProxyConfig"))
+
+from llmstudio.providers.provider import LLM

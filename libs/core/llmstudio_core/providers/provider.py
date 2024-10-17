@@ -53,7 +53,7 @@ class ChatRequest(BaseModel):
         additional_params = {k: v for k, v in data.items() if k not in base_model_fields}
         self.parameters.update(additional_params)
 
-class ProviderABC(ABC):
+class Provider(ABC):
     END_TOKEN = "<END_TOKEN>"
 
     def __init__(self, 
@@ -102,9 +102,43 @@ class ProviderABC(ABC):
         raise NotImplementedError("Providers need to implement the '_provider_config_name' property.")
 
 
-class BaseProvider(ProviderABC):
+class ProviderCore(Provider):
     END_TOKEN = "<END_TOKEN>"
 
+    @abstractmethod
+    def validate_request(self, request: ChatRequest):
+        raise NotImplementedError("Providers need to implement the 'validate_request'.")
+
+    @abstractmethod
+    async def agenerate_client(
+        self, request: ChatRequest
+    ) -> Coroutine[Any, Any, Generator]:
+        """Generate the provider's client"""
+        raise NotImplementedError("Providers need to implement the 'agenerate_client'.")
+
+    @abstractmethod    
+    def generate_client(
+        self, request: ChatRequest
+    ) -> Generator:
+        """Generate the provider's client"""
+        raise NotImplementedError("Providers need to implement the 'generate_client'.")
+    
+    @abstractmethod
+    async def aparse_response(
+        self, response: AsyncGenerator, **kwargs
+    ) -> Any:
+        raise NotImplementedError("ProviderCore needs a aparse_response method.")
+
+    @abstractmethod
+    def parse_response(
+        self, response: AsyncGenerator, **kwargs
+    ) -> Any:
+        raise NotImplementedError("ProviderCore needs a parse_response method.")
+
+    def validate_model(self, request: ChatRequest):
+        if request.model not in self.config.models:
+            raise ProviderError(f"Model {request.model} is not supported by {self.config.name}")
+    
     async def achat(
         self, 
         chat_input: Any,
@@ -192,18 +226,6 @@ class BaseProvider(ProviderABC):
             except Exception as e:
                 raise ProviderError(str(e))
         raise ProviderError("Too many requests")
-
-    def validate_request(self, request: ChatRequest):
-        pass
-
-    def validate_model(self, request: ChatRequest):
-        if request.model not in self.config.models:
-            raise ProviderError(f"Model {request.model} is not supported by {self.config.name}")
-
-    async def agenerate_client(
-        self, request: ChatRequest
-    ) -> Coroutine[Any, Any, Generator]:
-        """Generate the provider's client"""
 
     async def ahandle_response(
         self, request: ChatRequest, response: AsyncGenerator, start_time: float
@@ -475,7 +497,7 @@ class BaseProvider(ProviderABC):
                             )
                         ],
                     ),
-                    str(tool_call_arguments_all),
+                    str(tool_call_names + tool_call_arguments_all),
                 )
             except Exception as e:
                 raise e
@@ -558,18 +580,6 @@ class BaseProvider(ProviderABC):
                 ),
                 stop_content,
             )
-
-    @abstractmethod
-    async def aparse_response(
-        self, response: AsyncGenerator, **kwargs
-    ) -> Any:
-        raise NotImplementedError("BaseProvider needs a aparse_response method.")
-
-    @abstractmethod
-    def parse_response(
-        self, response: AsyncGenerator, **kwargs
-    ) -> Any:
-        raise NotImplementedError("BaseProvider needs a parse_response method.")
 
     def calculate_metrics(
         self,

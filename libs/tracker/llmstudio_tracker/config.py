@@ -23,6 +23,7 @@ def assign_port(default_port=None):
 defaults = {
     "LLMSTUDIO_TRACKING_HOST": "localhost",
     "LLMSTUDIO_TRACKING_PORT": str(assign_port(50002)),
+    "LLMSTUDIO_TRACKING_URI": "sqlite:///./llmstudio_mgmt.db"
 }
 
 for key, default in defaults.items():
@@ -30,3 +31,4 @@ for key, default in defaults.items():
 
 TRACKING_HOST = os.environ["LLMSTUDIO_TRACKING_HOST"]
 TRACKING_PORT = os.environ["LLMSTUDIO_TRACKING_PORT"]
+TRACKING_URI = os.environ["LLMSTUDIO_TRACKING_URI"]

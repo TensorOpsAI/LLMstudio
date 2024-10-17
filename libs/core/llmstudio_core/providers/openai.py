@@ -7,11 +7,11 @@ from llmstudio_core.exceptions import ProviderError
 from openai import OpenAI
 from pydantic import BaseModel, Field
 
-from llmstudio_core.providers.provider import ChatRequest, BaseProvider, provider
+from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
 
 
 @provider
-class OpenAIProvider(BaseProvider):
+class OpenAIProvider(ProviderCore):
     def __init__(self, config, **kwargs):
         super().__init__(config, **kwargs)
         self.API_KEY = self.API_KEY if self.API_KEY else os.getenv("OPENAI_API_KEY")
@@ -46,7 +46,7 @@ class OpenAIProvider(BaseProvider):
         
     def generate_client(
         self, request: ChatRequest
-    ) -> Coroutine[Any, Any, Generator]:
+    ) -> Generator:
         """Generate an OpenAI client"""
 
         try:

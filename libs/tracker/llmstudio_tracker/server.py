@@ -4,7 +4,7 @@ import uvicorn
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from llmstudio.config import TRACKING_HOST, TRACKING_PORT
+from llmstudio_tracker.config import TRACKING_HOST, TRACKING_PORT
 from llmstudio_tracker.logs.endpoints import LogsRoutes
 from llmstudio_tracker.session.endpoints import SessionsRoutes
 

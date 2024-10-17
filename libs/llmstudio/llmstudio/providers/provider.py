@@ -1,6 +1,6 @@
 from typing import Any, Coroutine, Optional
-from llmstudio_core import LLMCore
-from llmstudio_core.providers.provider import ProviderABC
+from llmstudio_core.providers import LLMCore
+from llmstudio_core.providers.provider import Provider
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 
 from llmstudio.providers import (
@@ -11,7 +11,7 @@ from llmstudio.providers import (
     )
 
 
-class LLM(ProviderABC):
+class LLM(Provider):
 
 
     def __init__(self,

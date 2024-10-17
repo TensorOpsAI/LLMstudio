@@ -27,11 +27,11 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDeltaToolCallFunction,
 )
 
-from llmstudio_core.providers.provider import ChatRequest, BaseProvider, provider
+from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
 
 
 @provider
-class AzureProvider(BaseProvider):
+class AzureProvider(ProviderCore):
     def __init__(self, config, api_key=None, api_endpoint=None, api_version=None, base_url=None):
         super().__init__(config)
         self.API_KEY = api_key or os.getenv("AZURE_API_KEY")

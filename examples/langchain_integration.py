@@ -7,7 +7,7 @@
 # %%
 import os
 from llmstudio.langchain import ChatLLMstudio
-from llmstudio.llm import LLM
+from llmstudio.providers import LLM
 
 llm = LLM(provider="openai")
 chat_llm = ChatLLMstudio(llm=llm, model = "gpt-4o-mini", parameters={"temperature":0})
@@ -105,13 +105,16 @@ from langchain.agents import AgentType, initialize_agent
 # assistant('Turn this into a party!')
 
 
-# azure
-from llmstudio import LLM
-llm = LLM(provider="azure", 
-          api_key=os.environ["AZURE_API_KEY"], 
-          api_version=os.environ["AZURE_API_VERSION"],
-          api_endpoint=os.environ["AZURE_API_ENDPOINT"])
-chat_llm = ChatLLMstudio(llm=llm, model = "gpt-4o-mini", parameters={"temperature":0})
+# # azure
+# from llmstudio.providers import LLM
+# llm = LLM(provider="azure", 
+#           api_key=os.environ["AZURE_API_KEY"], 
+#           api_version=os.environ["AZURE_API_VERSION"],
+#           api_endpoint=os.environ["AZURE_API_ENDPOINT"])
+# chat_llm = ChatLLMstudio(llm=llm, model = "gpt-4o-mini", parameters={"temperature":0})
+
+# vertex
+
 # chat_llm = ChatLLMstudio(model_id='vertexai/gemini-1.5-flash', temperature=0)
 
 # # %% [markdown]
@@ -254,7 +257,7 @@ def assistant_new(question: str)->str:
 
     return response
 
-from llmstudio import LLM
+from llmstudio.providers import LLM
 llm = LLM(provider="azure", 
           api_key=os.environ["AZURE_API_KEY"], 
           api_version=os.environ["AZURE_API_VERSION"],
@@ -262,3 +265,59 @@ llm = LLM(provider="azure",
 chat_llm = ChatLLMstudio(llm=llm, model = "gpt-4o-mini", parameters={"temperature":0})
 
 print("\n\nresult:\n", assistant_new("Turn this into a party!"),"\n")
+
+
+print("###### vertex")
+import os
+from llmstudio.langchain import ChatLLMstudio
+from llmstudio.providers import LLM
+
+llm = LLM(provider="vertexai", 
+          api_key=os.environ["GOOGLE_API_KEY"])
+chat_llm = ChatLLMstudio(llm=llm, model = "gemini-1.5-pro-latest", parameters={"temperature":0})
+
+from langchain.tools import tool
+
+@tool
+def power_disco_ball(power: bool) -> bool:
+    """Powers the spinning disco ball."""
+    print(f"Disco ball is {'spinning!' if power else 'stopped.'}")
+    return True
+
+@tool
+def start_music(energetic: bool, loud: bool, bpm: int) -> str:
+    """Play some music matching the specified parameters."""
+    print(f"Starting music! {energetic=} {loud=}, {bpm=}")
+    return "Never gonna give you up."
+
+@tool
+def dim_lights(brightness: float) -> bool:
+    """Dim the lights."""
+    print(f"Lights are now set to {brightness:.0%}")
+    return True
+
+from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain_core.prompts import ChatPromptTemplate
+
+
+def assistant_vertex(question: str) -> str:
+    tools = [power_disco_ball, start_music, dim_lights]
+    print(tools)
+
+    # Rebuild agent with new tools
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are a helpful assistant"),
+            ("human", "{input}"),
+            ("placeholder", "{agent_scratchpad}"),
+        ]
+    )
+    agent = create_tool_calling_agent(chat_llm, tools, prompt)
+    agent_executor = AgentExecutor(agent=agent, tools=tools)
+
+    response = agent_executor.invoke({"input": question})
+
+    return response
+
+
+print("\n\nresult:\n", assistant_vertex("Turn this into a party!"),"\n")

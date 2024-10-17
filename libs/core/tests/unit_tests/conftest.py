@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from llmstudio_core.providers.provider import BaseProvider, ChatRequest, ProviderError
+from llmstudio_core.providers.provider import ProviderCore, ChatRequest, ProviderError
 
-class MockProvider(BaseProvider):
+class MockProvider(ProviderCore):
     async def aparse_response(self, response, **kwargs):
         return response
 
