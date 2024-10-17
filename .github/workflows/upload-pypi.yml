@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "llmstudio/**"
+  workflow_dispatch:
 
 jobs:
   deploy:
