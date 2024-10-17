@@ -85,3 +85,4 @@ jobs:
         run: |
           docker push tensoropsai/llmstudio:${{ env.VERSION }}
           docker push tensoropsai/llmstudio:latest
+          
