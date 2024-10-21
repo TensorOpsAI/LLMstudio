@@ -19,7 +19,7 @@ pydantic = "^2.5"
 python-dotenv = "^0"
 langchain = "^0"
 langchain-experimental = "^0"
-llmstudio-core = "^0.0.1"
+llmstudio-core = "^0"
 llmstudio-tracker = { version = "^0", optional = true }
 llmstudio-proxy = { version = "^0", optional = true }
 

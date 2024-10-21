@@ -28,7 +28,7 @@ class LogsRoutes:
         )
 
         # Read logs by session
-        self.router.get("/logs_by_session", response_model=List[schemas.LogDefault])(
+        self.router.get("/logs/{session_id}", response_model=List[schemas.LogDefault])(
             self.read_logs_by_session
         )
 

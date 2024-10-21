@@ -33,6 +33,22 @@ class Tracker:
             timeout=100,
         )
         return req
+    
+    def get_logs(self):
+        req = self._session.get(
+            f"http://{self.tracking_host}:{self.tracking_port}/api/tracking/logs",
+            headers={"accept": "application/json", "Content-Type": "application/json"},
+            timeout=100,
+        )
+        return req
+    
+    def get_session_logs(self, session_id: str):
+        req = self._session.get(
+            f"http://{self.tracking_host}:{self.tracking_port}/api/tracking/logs/{session_id}",
+            headers={"accept": "application/json", "Content-Type": "application/json"},
+            timeout=100,
+        )
+        return req
 
     def update_session(self, data: dict):
         req = self._session.post(

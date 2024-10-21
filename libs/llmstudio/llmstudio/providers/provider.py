@@ -29,10 +29,12 @@ class LLM(Provider):
             self._tracker = Tracker(tracking_config=tracking_config)
 
         self._session_id = None
-        if (session_id is not None) and self._tracker:
+        if (session_id is not None) and tracking_config:
             self._session_id = session_id
-        elif (session_id is not None) and self._tracker is None:
-                raise ValueError(f"'session_id' requires the 'tracking_config' specified and 'llmstudio[tracker]' installation.")
+        elif (session_id is not None) and tracking_config is None:
+            print(tracking_config)
+            print((session_id is not None) and tracking_config is None)
+            raise ValueError(f"'session_id' requires the 'tracking_config' specified and 'llmstudio[tracker]' installation.")
 
     def _provider_config_name(self):
         return self._provider._provider_config_name()
@@ -61,7 +63,7 @@ class LLM(Provider):
                 for item in result:
                     yield item
                     if self._tracker and item.metrics:
-                        result_dict = self._add_session_id(result, kwargs.get("session_id", self._session_id))
+                        result_dict = self._add_session_id(item, kwargs.get("session_id", self._session_id))
                         self._tracker.log(result_dict)
 
             return generator_wrapper()

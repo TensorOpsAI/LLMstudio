@@ -51,7 +51,7 @@ def setup_servers(engine, tracking):
     return engine_thread, tracking_thread
 
 
-def start_servers(engine=True, tracking=True):
+def start_servers(proxy=True, tracker=True):
     global _servers_started
     if not _servers_started:
-        setup_servers(engine, tracking)
+        setup_servers(proxy, tracker)
