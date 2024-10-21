@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "llmstudio-proxy"
-version = "0.1.0"
+version = "0.0.1a1"
 description = ""
 authors = ["Diogo Goncalves <diogo.goncalves@tensorops.ai>"]
 readme = "README.md"
@@ -15,7 +15,7 @@ tiktoken = "^0.7"
 python-dotenv = "^0"
 llmstudio-core = "^0"
 
-[tool.poetry.group.deve.dependencies]
+[tool.poetry.group.dev.dependencies]
 llmstudio-core = { path = "../core/", develop = true }
 
 [build-system]

@@ -136,6 +136,9 @@ class VertexAIProvider(ProviderCore):
             chunk = json.loads(chunk.decode("utf-8").lstrip("data: "))
             chunk = chunk.get("candidates")[0].get("content")
 
+            if not chunk:
+                continue
+
             # Check if it is a function call
             if (
                 "functionCall" in chunk["parts"][0]
