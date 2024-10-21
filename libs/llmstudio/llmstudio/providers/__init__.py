@@ -6,7 +6,7 @@ except ImportError:
 
     class Tracker:
         def __init__(self, *args, **kwargs):
-            raise ImportError(message.format(name="Tracker"))
+            raise ImportError(message.format(name="Tracker"))   
 
     class TrackingConfig:
         def __init__(self, *args, **kwargs):

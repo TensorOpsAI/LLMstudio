@@ -20,7 +20,7 @@ python = "^3.9"
 llmstudio = { path = "libs/llmstudio/", develop = true }
 llmstudio-core = { path = "libs/core/", develop = true }
 llmstudio-tracker = { path = "libs/tracker/", develop = true }
-langchain-proxy = { path = "libs/proxy/", develop = true }
+llmstudio-proxy = { path = "libs/proxy/", develop = true }
 
 [tool.poetry.scripts]
 llmstudio = "llmstudio.cli:main"

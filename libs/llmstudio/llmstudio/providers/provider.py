@@ -1,4 +1,4 @@
-from typing import Any, Coroutine, Optional
+from typing import Any, Coroutine, Optional, Dict
 
 from llmstudio.providers import LLMProxyProvider, ProxyConfig, Tracker, TrackingConfig
 from llmstudio_core.providers import LLMCore
@@ -13,6 +13,7 @@ class LLM(Provider):
         api_key: Optional[str] = None,
         proxy_config: Optional[ProxyConfig] = None,
         tracking_config: Optional[TrackingConfig] = None,
+        session_id: Optional[str] = None,
         **kwargs
     ):
 
@@ -26,6 +27,12 @@ class LLM(Provider):
         self._tracker = None
         if tracking_config is not None:
             self._tracker = Tracker(tracking_config=tracking_config)
+
+        self._session_id = None
+        if (session_id is not None) and self._tracker:
+            self._session_id = session_id
+        elif (session_id is not None) and self._tracker is None:
+                raise ValueError(f"'session_id' requires the 'tracking_config' specified and 'llmstudio[tracker]' installation.")
 
     def _provider_config_name(self):
         return self._provider._provider_config_name()
@@ -45,8 +52,7 @@ class LLM(Provider):
 
         if isinstance(result, (ChatCompletionChunk, ChatCompletion)):
             if self._tracker:
-                result_dict = result.model_dump()
-                result_dict["session_id"] = kwargs.get("session_id")
+                result_dict = self._add_session_id(result, kwargs.get("session_id", self._session_id))
                 self._tracker.log(result_dict)
             return result
         else:
@@ -55,8 +61,7 @@ class LLM(Provider):
                 for item in result:
                     yield item
                     if self._tracker and item.metrics:
-                        result_dict = item.model_dump()
-                        result_dict["session_id"] = kwargs.get("session_id")
+                        result_dict = self._add_session_id(result, kwargs.get("session_id", self._session_id))
                         self._tracker.log(result_dict)
 
             return generator_wrapper()
@@ -75,8 +80,7 @@ class LLM(Provider):
         )
         if isinstance(result, (ChatCompletionChunk, ChatCompletion)):
             if self._tracker:
-                result_dict = result.model_dump()
-                result_dict["session_id"] = kwargs.get("session_id")
+                result_dict = self._add_session_id(result, kwargs.get("session_id", self._session_id))
                 self._tracker.log(result_dict)
                 return result
         else:
@@ -85,8 +89,17 @@ class LLM(Provider):
                 async for item in result:
                     yield item
                     if self._tracker and item.metrics:
-                        result_dict = item.model_dump()
-                        result_dict["session_id"] = kwargs.get("session_id")
+                        result_dict = self._add_session_id(item, kwargs.get("session_id", self._session_id))
                         self._tracker.log(result_dict)
 
             return async_generator_wrapper()
+        
+    @staticmethod
+    def _add_session_id(
+            result: ChatCompletionChunk | ChatCompletion,
+            session_id: str
+            ) -> Dict[str, Any]:
+        result_dict = result.model_dump()
+        result_dict["session_id"] = session_id
+        return result_dict
+
