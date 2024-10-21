@@ -4,12 +4,7 @@ import json
 import os
 import time
 import uuid
-from typing import (
-    Any,
-    AsyncGenerator,
-    Generator,
-    Union,
-)
+from typing import Any, AsyncGenerator, Generator, Union
 
 import openai
 from llmstudio_core.exceptions import ProviderError
