@@ -1,7 +1,7 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from llmstudio_core.providers.provider import ChatRequest, ProviderCore, ProviderError
+from llmstudio_core.providers.provider import ChatRequest, ProviderError
 
 request = ChatRequest(chat_input="Hello", model="test_model")
 

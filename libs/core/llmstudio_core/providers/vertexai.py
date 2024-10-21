@@ -15,7 +15,6 @@ from typing import (
 )
 
 import requests
-from fastapi import HTTPException
 from llmstudio_core.exceptions import ProviderError
 from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
 from openai.types.chat import ChatCompletionChunk

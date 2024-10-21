@@ -1,7 +1,7 @@
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
-from llmstudio_core.providers.provider import ChatRequest, ProviderCore, ProviderError
+from llmstudio_core.providers.provider import ProviderCore
 
 
 class MockProvider(ProviderCore):

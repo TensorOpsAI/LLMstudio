@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Any, Coroutine, Dict, List, Optional, Union
+from typing import Any, Coroutine, Dict, Optional, Union
 
 import requests
 from llmstudio.server import is_server_running

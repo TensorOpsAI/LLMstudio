@@ -1,8 +1,6 @@
-import asyncio
 import time
 import uuid
 from abc import ABC, abstractmethod
-from pathlib import Path
 from typing import (
     Any,
     AsyncGenerator,
@@ -16,7 +14,6 @@ from typing import (
 )
 
 import tiktoken
-from fastapi import HTTPException
 from llmstudio_core.exceptions import ProviderError
 from openai.types.chat import (
     ChatCompletion,
@@ -178,11 +175,11 @@ class ProviderCore(Provider):
                     return response_handler
                 else:
                     return await response_handler.__anext__()
-            except HTTPException as e:
-                if e.status_code == 429:
-                    continue  # Retry on rate limit error
-                else:
-                    raise e  # Raise other HTTP exceptions
+            # except HTTPException as e:
+            #     if e.status_code == 429:
+            #         continue  # Retry on rate limit error
+            #     else:
+            #         raise e  # Raise other HTTP exceptions
             except Exception as e:
                 raise ProviderError(str(e))
         raise ProviderError("Too many requests")
@@ -224,11 +221,11 @@ class ProviderCore(Provider):
                     return response_handler
                 else:
                     return response_handler.__next__()
-            except HTTPException as e:
-                if e.status_code == 429:
-                    continue  # Retry on rate limit error
-                else:
-                    raise e  # Raise other HTTP exceptions
+            # except HTTPExceptio as e:
+            #     if e.status_code == 429:
+            #         continue  # Retry on rate limit error
+            #     else:
+            #         raise e  # Raise other HTTP exceptions
             except Exception as e:
                 raise ProviderError(str(e))
         raise ProviderError("Too many requests")

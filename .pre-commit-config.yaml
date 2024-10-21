@@ -25,14 +25,14 @@ repos:
         args:
           - "--profile=black"
 
-  - repo: https://github.com/myint/autoflake
-    rev: v1.4
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v2.3.1
     hooks:
       - id: autoflake
         files: libs/
         args:
-          # - --remove-all-unused-imports
-          - --recursive
-          - --remove-unused-variables
-          - --in-place
+        - --remove-all-unused-imports
+        - --recursive
+        - --remove-unused-variables
+        - --in-place
         additional_dependencies: [flake8]
