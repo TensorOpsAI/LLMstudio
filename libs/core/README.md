@@ -1,22 +1,13 @@
-# LLMstudio by [TensorOps](http://tensorops.ai "TensorOps")
+# LLMstudio-core by [TensorOps](http://tensorops.ai "TensorOps")
 
 Prompt Engineering at your fingertips
 
 ![LLMstudio logo](https://imgur.com/Xqsj6V2.gif)
 
 ## 🌟 Features
-
-![LLMstudio UI](https://imgur.com/wrwiIUs.png)
-
-- **LLM Proxy Access**: Seamless access to all the latest LLMs by OpenAI, Anthropic, Google.
 - **Custom and Local LLM Support**: Use custom or local open-source LLMs through Ollama.
-- **Prompt Playground UI**: A user-friendly interface for engineering and fine-tuning your prompts.
 - **Python SDK**: Easily integrate LLMstudio into your existing workflows.
-- **Monitoring and Logging**: Keep track of your usage and performance for all requests.
 - **LangChain Integration**: LLMstudio integrates with your already existing LangChain projects.
-- **Batch Calling**: Send multiple requests at once for improved efficiency.
-- **Smart Routing and Fallback**: Ensure 24/7 availability by routing your requests to trusted LLMs.
-- **Type Casting (soon)**: Convert data types as needed for your specific use case.
 
 ## 🚀 Quickstart
 
@@ -27,30 +18,26 @@ Don't forget to check out [https://docs.llmstudio.ai](docs) page.
 Install the latest version of **LLMstudio** using `pip`. We suggest that you create and activate a new environment using `conda`
 
 ```bash
-pip install llmstudio
-```
-
-Install `bun` if you want to use the UI
-
-```bash
-curl -fsSL https://bun.sh/install | bash
+pip install llmstudio-core
 ```
 
 Create a `.env` file at the same path you'll run **LLMstudio**
 
 ```bash
 OPENAI_API_KEY="sk-api_key"
-ANTHROPIC_API_KEY="sk-api_key"
+GOOGLE_API_KEY="sk-api_key"
 ```
 
-Now you should be able to run **LLMstudio** using the following command.
+Now you should be able to run **LLMstudio** Providers using the following code:
 
-```bash
-llmstudio server --ui
 ```
-
-When the `--ui` flag is set, you'll be able to access the UI at [http://localhost:3000](http://localhost:3000)
-
+# You can set OPENAI_API_KEY environment variable, add it to .env, or pass directly as api_key
+import os
+from llmstudio_core.providers import LLMCore as LLM
+llm = LLM("vertexai", api_key=os.environ["GOOGLE_API_KEY"])
+response = llm.chat("How are you", model="gemini-1.5-pro-latest")
+print(response.chat_output, response.metrics)
+```
 ## 📖 Documentation
 
 - [Visit our docs to learn how the SDK works](https://docs.LLMstudio.ai) (coming soon)
