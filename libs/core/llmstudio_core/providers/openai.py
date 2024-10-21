@@ -13,6 +13,7 @@ class OpenAIProvider(ProviderCore):
     def __init__(self, config, **kwargs):
         super().__init__(config, **kwargs)
         self.API_KEY = self.API_KEY if self.API_KEY else os.getenv("OPENAI_API_KEY")
+        self._client = OpenAI(api_key=self.API_KEY)
 
     @staticmethod
     def _provider_config_name():
@@ -27,9 +28,8 @@ class OpenAIProvider(ProviderCore):
         """Generate an OpenAI client"""
 
         try:
-            client = OpenAI(api_key=self.API_KEY)
             return await asyncio.to_thread(
-                client.chat.completions.create,
+                self._client.chat.completions.create,
                 model=request.model,
                 messages=(
                     [{"role": "user", "content": request.chat_input}]
@@ -46,8 +46,7 @@ class OpenAIProvider(ProviderCore):
         """Generate an OpenAI client"""
 
         try:
-            client = OpenAI(api_key=self.API_KEY)
-            return client.chat.completions.create(
+            return self._client.chat.completions.create(
                 model=request.model,
                 messages=(
                     [{"role": "user", "content": request.chat_input}]
