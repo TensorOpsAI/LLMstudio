@@ -33,6 +33,18 @@ class AzureProvider(ProviderCore):
         self.is_llama = False
         self.has_tools_functions = False
 
+        if self.BASE_URL:
+                self._client = OpenAI(
+                    api_key=self.API_KEY,
+                    base_url=self.BASE_URL,
+                )
+        else:
+                self._client = AzureOpenAI(
+                    api_key=self.API_KEY,
+                    azure_endpoint=self.API_ENDPOINT,
+                    api_version=self.API_VERSION,
+                )
+
     @staticmethod
     def _provider_config_name():
         return "azure"
@@ -49,18 +61,6 @@ class AzureProvider(ProviderCore):
         self.has_functions = request.parameters.get("functions") is not None
 
         try:
-            if self.BASE_URL:
-                client = OpenAI(
-                    api_key=self.API_KEY,
-                    base_url=self.BASE_URL,
-                )
-            else:
-                client = AzureOpenAI(
-                    api_key=self.API_KEY,
-                    azure_endpoint=self.API_ENDPOINT,
-                    api_version=self.API_VERSION,
-                )
-
             messages = self.prepare_messages(request)
 
             # Prepare the optional tool-related arguments
@@ -97,7 +97,7 @@ class AzureProvider(ProviderCore):
             }
             # Perform the asynchronous call
             return await asyncio.to_thread(
-                client.chat.completions.create, **combined_args
+                self._client.chat.completions.create, **combined_args
             )
 
         except openai._exceptions.APIConnectionError as e:
@@ -115,18 +115,6 @@ class AzureProvider(ProviderCore):
         self.has_functions = request.parameters.get("functions") is not None
 
         try:
-            if self.BASE_URL:
-                client = OpenAI(
-                    api_key=self.API_KEY,
-                    base_url=self.BASE_URL,
-                )
-            else:
-                client = AzureOpenAI(
-                    api_key=self.API_KEY,
-                    azure_endpoint=self.API_ENDPOINT,
-                    api_version=self.API_VERSION,
-                )
-
             messages = self.prepare_messages(request)
 
             # Prepare the optional tool-related arguments
@@ -161,7 +149,7 @@ class AzureProvider(ProviderCore):
                 **function_args,
                 **request.parameters,
             }
-            return client.chat.completions.create(**combined_args)
+            return self._client.chat.completions.create(**combined_args)
 
         except openai._exceptions.APIConnectionError as e:
             raise ProviderError(f"There was an error reaching the endpoint: {e}")
