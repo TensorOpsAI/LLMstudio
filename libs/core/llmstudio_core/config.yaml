@@ -1,0 +1,374 @@
+providers:
+  anthropic:
+    id: anthropic
+    name: Anthropic
+    chat: true
+    embed: true
+    keys:
+      - ANTHROPIC_API_KEY
+    models:
+      claude-3-opus-20240229:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.000015
+        output_token_cost: 0.000075
+      claude-3-sonnet-2024022:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.000003
+        output_token_cost: 0.000015
+      claude-3-haiku-20240307:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.00000025
+        output_token_cost: 0.00000125
+      claude-2.1:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.000008
+        output_token_cost: 0.000024
+      claude-2:
+        mode: chat
+        max_tokens: 100000
+        input_token_cost: 0.000008
+        output_token_cost: 0.000024
+      claude-instant-1.2:
+        mode: chat
+        max_tokens: 100000
+        input_token_cost: 0.00000163
+        output_token_cost: 0.00000551
+    parameters:
+      temperature:
+        name: "Temperature"
+        type: float
+        default: 1
+        min: 0
+        max: 1
+        step: 0.01
+      max_tokens:
+        name: "Maximum tokens"
+        type: float
+        default: 256
+        min: 1
+        max: 4096
+        step: 0.01
+      top_p:
+        name: "Top P"
+        type: float
+        default: 1
+        min: 0
+        max: 1
+        step: 0.01
+      top_k:
+        name: "Top K"
+        type: float
+        default: 5
+        min: 0
+        max: 500
+        step: 1
+  ollama:
+    id: ollama
+    name: Ollama
+    chat: true
+    embed: true
+    keys:
+    models:
+      llama2:
+        mode: chat
+        max_tokens: 0
+        input_token_cost: 0
+        output_token_cost: 0
+    parameters:
+      temperature:
+        name: "Temperature"
+        type: float
+        default: 1
+        min: 0
+        max: 1
+        step: 0.01
+      max_tokens:
+        name: "Maximum tokens"
+        type: float
+        default: 256
+        min: 1
+        max: 4096
+        step: 0.01
+      top_p:
+        name: "Top P"
+        type: float
+        default: 1
+        min: 0
+        max: 1
+        step: 0.01
+      top_k:
+        name: "Top K"
+        type: float
+        default: 5
+        min: 0
+        max: 500
+        step: 1
+  openai:
+    id: openai
+    name: OpenAI
+    chat: true
+    embed: true
+    keys:
+      - OPENAI_API_KEY
+    models:
+      gpt-4o-mini:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0.00000015
+        output_token_cost: 0.00000060
+      gpt-4o:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0.000005
+        output_token_cost: 0.000015
+      gpt-4-turbo:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0.00001
+        output_token_cost: 0.00003
+      gpt-4:
+        mode: chat
+        max_tokens: 8192
+        input_token_cost: 0.00003
+        output_token_cost: 0.00006
+      gpt-3.5-turbo:
+        mode: chat
+        max_tokens: 16385
+        input_token_cost: 0.0000005
+        output_token_cost: 0.0000015
+      gpt-3.5-turbo-instruct:
+        mode: chat
+        max_tokens: 4096
+        input_token_cost: 0.0000015
+        output_token_cost: 0.000002
+    parameters:
+      temperature:
+        name: "Temperature"
+        type: float
+        default: 1
+        min: 0
+        max: 2
+        step: 0.01
+      max_tokens:
+        name: "Maximum length"
+        type: int
+        default: 256
+        min: 1
+        max: 4096
+        step: 1
+      top_p:
+        name: "Top P"
+        type: float
+        default: 1
+        min: 0
+        max: 1
+        step: 0.01
+      frequency_penalty:
+        name: "Frequency Penalty"
+        type: float
+        default: 0
+        min: 0
+        max: 2
+        step: 0.01
+      presence_penalty:
+        name: "Presence Penalty"
+        type: float
+        default: 0
+        min: 0
+        max: 2
+        step: 0.01
+  azure:
+    id: azure
+    name: Azure
+    chat: true
+    embed: true
+    keys:
+      - AZURE_API_KEY
+      - AZURE_API_ENDPOINT
+      - AZURE_API_VERSION
+    models:
+      gpt-4o-mini:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0.00000015
+        output_token_cost: 0.0000006
+      gpt-4o:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0.000005
+        output_token_cost: 0.000015
+      gpt-4-turbo:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0.00001
+        output_token_cost: 0.00003
+      gpt-4:
+        mode: chat
+        max_tokens: 8192
+        input_token_cost: 0.00003
+        output_token_cost: 0.00006
+      gpt-35-turbo:
+        mode: chat
+        max_tokens: 4097
+        input_token_cost: 0.0000005
+        output_token_cost: 0.0000015
+      Meta-Llama-3.1-405B-Instruct:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0.00533
+        output_token_cost: 0.016
+      Meta-Llama-3.1-70B-Instruct:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0.00268
+        output_token_cost: 0.00354
+      Meta-Llama-3.1-8B-Instruct:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0.0003
+        output_token_cost: 0.00061
+      Meta-Llama-3-70B-Instruct:
+        mode: chat
+        max_tokens: 8192
+        input_token_cost: 0.00378
+        output_token_cost: 0.01134
+      Meta-Llama-3-8B-Instruct:
+        mode: chat
+        max_tokens: 8192
+        input_token_cost: 0.00037
+        output_token_cost: 0.0011
+      Meta-Llama-2-70B:
+        mode: chat
+        max_tokens: 4096
+        input_token_cost: 0.00154
+        output_token_cost: 0.00177
+      Meta-Llama-2-70B-Chat:
+        mode: chat
+        max_tokens: 4096
+        input_token_cost: 0.00154
+        output_token_cost: 0.00177
+      Meta-Llama-2-13B-Chat:
+        mode: chat
+        max_tokens: 4096
+        input_token_cost: 0.00081
+        output_token_cost: 0.00094
+      Meta-Llama-2-7B:
+        mode: chat
+        max_tokens: 4096
+        input_token_cost: 0.00052
+        output_token_cost: 0.00067
+    parameters:
+      temperature:
+        name: "Temperature"
+        type: float
+        default: 1
+        min: 0
+        max: 2
+        step: 0.01
+      max_tokens:
+        name: "Maximum length"
+        type: int
+        default: 256
+        min: 1
+        max: 4096
+        step: 1
+      top_p:
+        name: "Top P"
+        type: float
+        default: 1
+        min: 0
+        max: 1
+        step: 0.01
+      frequency_penalty:
+        name: "Frequency Penalty"
+        type: float
+        default: 0
+        min: 0
+        max: 2
+        step: 0.01
+      presence_penalty:
+        name: "Presence Penalty"
+        type: float
+        default: 0
+        min: 0
+        max: 2
+        step: 0.01
+  vertexai:
+    id: vertexai
+    name: VertexAI
+    chat: true
+    embed: true
+    keys:
+      - GOOGLE_API_KEY
+    models:
+      gemini-1.5-flash:
+        mode: chat
+        max_tokens: 1000000
+        input_token_cost:
+          - range: [0, 128000]
+            cost: 0.00000035
+          - range: [128001, null]
+            cost: 0.0000007
+        output_token_cost:
+          - range: [0, 128000]
+            cost: 0.00000105
+          - range: [128001, null]
+            cost: 0.0000021
+      gemini-1.5-pro-latest:
+        mode: chat
+        max_tokens: 1000000
+        input_token_cost:
+          - range: [0, 128000]
+            cost: 0.00000035
+          - range: [128001, null]
+            cost: 0.0000007
+        output_token_cost:
+          - range: [0, 128000]
+            cost: 0.0000105
+          - range: [128001, null]
+            cost: 0.000021
+      gemini-1.0-pro:
+        mode: chat
+        max_tokens: 1000000
+        input_token_cost: 0.0000005
+        output_token_cost: 0.0000015
+    parameters:
+      temperature:
+        name: "Temperature"
+        type: float
+        default: 1
+        min: 0
+        max: 2
+        step: 0.01
+      max_tokens:
+        name: "Maximum length"
+        type: int
+        default: 256
+        min: 1
+        max: 4096
+        step: 1
+      top_p:
+        name: "Top P"
+        type: float
+        default: 1
+        min: 0
+        max: 1
+        step: 0.01
+      frequency_penalty:
+        name: "Frequency Penalty"
+        type: float
+        default: 0
+        min: 0
+        max: 2
+        step: 0.01
+      presence_penalty:
+        name: "Presence Penalty"
+        type: float
+        default: 0
+        min: 0
+        max: 2
+        step: 0.01
