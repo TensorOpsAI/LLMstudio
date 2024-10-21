@@ -13,8 +13,10 @@ fastapi = "^0.109"
 uvicorn = "^0.27"
 tiktoken = "^0.7"
 python-dotenv = "^0"
+llmstudio-core = "^0"
+
+[tool.poetry.group.deve.dependencies]
 llmstudio-core = { path = "../core/", develop = true }
-llmstudio-tracker = { path = "../tracker/", develop = true }
 
 [build-system]
 requires = ["poetry-core"]

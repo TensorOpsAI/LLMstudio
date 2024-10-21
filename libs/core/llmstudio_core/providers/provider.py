@@ -1,7 +1,7 @@
-from abc import ABC, abstractmethod
 import asyncio
 import time
 import uuid
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import (
     Any,
@@ -15,20 +15,19 @@ from typing import (
     Union,
 )
 
-from fastapi import HTTPException
 import tiktoken
+from fastapi import HTTPException
 from llmstudio_core.exceptions import ProviderError
 from openai.types.chat import (
     ChatCompletion,
+    ChatCompletionChunk,
     ChatCompletionMessage,
     ChatCompletionMessageToolCall,
-    ChatCompletionChunk
 )
 from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion_message import FunctionCall
 from openai.types.chat.chat_completion_message_tool_call import Function
 from pydantic import BaseModel, ValidationError
-
 
 provider_registry = {}
 
@@ -50,56 +49,63 @@ class ChatRequest(BaseModel):
     def __init__(self, **data):
         super().__init__(**data)
         base_model_fields = self.model_fields.keys()
-        additional_params = {k: v for k, v in data.items() if k not in base_model_fields}
+        additional_params = {
+            k: v for k, v in data.items() if k not in base_model_fields
+        }
         self.parameters.update(additional_params)
+
 
 class Provider(ABC):
     END_TOKEN = "<END_TOKEN>"
 
-    def __init__(self, 
-                config: Any, 
-                api_key: Optional[str] = None, 
-                api_endpoint: Optional[str] = None,
-                api_version: Optional[str] = None, 
-                base_url: Optional[str] = None,
-                tokenizer: Optional[Any] = None):
+    def __init__(
+        self,
+        config: Any,
+        api_key: Optional[str] = None,
+        api_endpoint: Optional[str] = None,
+        api_version: Optional[str] = None,
+        base_url: Optional[str] = None,
+        tokenizer: Optional[Any] = None,
+    ):
         self.config = config
         self.API_KEY = api_key
         self.api_endpoint = api_endpoint
         self.api_version = api_version
         self.base_url = base_url
-        
+
         self.tokenizer = tokenizer if tokenizer else self._get_tokenizer()
         self.count = 0
-        
+
     @abstractmethod
     async def achat(
-        self, 
+        self,
         chat_input: Any,
         model: str,
         is_stream: Optional[bool] = False,
         retries: Optional[int] = 0,
         parameters: Optional[dict] = {},
-        **kwargs
+        **kwargs,
     ) -> Coroutine[Any, Any, Union[ChatCompletionChunk, ChatCompletion]]:
         raise NotImplementedError("Providers needs to have achat method implemented.")
-    
+
     @abstractmethod
     def chat(
-        self, 
+        self,
         chat_input: Any,
         model: str,
         is_stream: Optional[bool] = False,
         retries: Optional[int] = 0,
         parameters: Optional[dict] = {},
-        **kwargs
+        **kwargs,
     ) -> Union[ChatCompletionChunk, ChatCompletion]:
         raise NotImplementedError("Providers needs to have chat method implemented.")
-    
+
     @staticmethod
     @abstractmethod
     def _provider_config_name():
-        raise NotImplementedError("Providers need to implement the '_provider_config_name' property.")
+        raise NotImplementedError(
+            "Providers need to implement the '_provider_config_name' property."
+        )
 
 
 class ProviderCore(Provider):
@@ -116,49 +122,47 @@ class ProviderCore(Provider):
         """Generate the provider's client"""
         raise NotImplementedError("Providers need to implement the 'agenerate_client'.")
 
-    @abstractmethod    
-    def generate_client(
-        self, request: ChatRequest
-    ) -> Generator:
+    @abstractmethod
+    def generate_client(self, request: ChatRequest) -> Generator:
         """Generate the provider's client"""
         raise NotImplementedError("Providers need to implement the 'generate_client'.")
-    
+
     @abstractmethod
-    async def aparse_response(
-        self, response: AsyncGenerator, **kwargs
-    ) -> Any:
+    async def aparse_response(self, response: AsyncGenerator, **kwargs) -> Any:
         raise NotImplementedError("ProviderCore needs a aparse_response method.")
 
     @abstractmethod
-    def parse_response(
-        self, response: AsyncGenerator, **kwargs
-    ) -> Any:
+    def parse_response(self, response: AsyncGenerator, **kwargs) -> Any:
         raise NotImplementedError("ProviderCore needs a parse_response method.")
 
     def validate_model(self, request: ChatRequest):
         if request.model not in self.config.models:
-            raise ProviderError(f"Model {request.model} is not supported by {self.config.name}")
-    
+            raise ProviderError(
+                f"Model {request.model} is not supported by {self.config.name}"
+            )
+
     async def achat(
-        self, 
+        self,
         chat_input: Any,
         model: str,
         is_stream: Optional[bool] = False,
         retries: Optional[int] = 0,
         parameters: Optional[dict] = {},
-        **kwargs
+        **kwargs,
     ):
 
         """Makes a chat connection with the provider's API"""
         try:
-            request = self.validate_request(dict(
-            chat_input=chat_input,
-            model=model,
-            is_stream=is_stream,
-            retries=retries,
-            parameters=parameters,
-            **kwargs
-        ))
+            request = self.validate_request(
+                dict(
+                    chat_input=chat_input,
+                    model=model,
+                    is_stream=is_stream,
+                    retries=retries,
+                    parameters=parameters,
+                    **kwargs,
+                )
+            )
         except ValidationError as e:
             raise ProviderError(str(e))
 
@@ -182,27 +186,29 @@ class ProviderCore(Provider):
             except Exception as e:
                 raise ProviderError(str(e))
         raise ProviderError("Too many requests")
-    
+
     def chat(
-        self, 
+        self,
         chat_input: Any,
         model: str,
         is_stream: Optional[bool] = False,
         retries: Optional[int] = 0,
         parameters: Optional[dict] = {},
-        **kwargs
+        **kwargs,
     ):
 
         """Makes a chat connection with the provider's API"""
         try:
-            request = self.validate_request(dict(
-            chat_input=chat_input,
-            model=model,
-            is_stream=is_stream,
-            retries=retries,
-            parameters=parameters,
-            **kwargs
-        ))
+            request = self.validate_request(
+                dict(
+                    chat_input=chat_input,
+                    model=model,
+                    is_stream=is_stream,
+                    retries=retries,
+                    parameters=parameters,
+                    **kwargs,
+                )
+            )
         except ValidationError as e:
             raise ProviderError(str(e))
 
@@ -252,35 +258,35 @@ class ProviderCore(Provider):
                 if chunk.get("choices")[0].get("finish_reason") != "stop":
                     chat_output = chunk.get("choices")[0].get("delta").get("content")
                     chunk = {
-                            **chunk,
-                            "id": str(uuid.uuid4()),
-                            "chat_input": (
-                                request.chat_input
-                                if isinstance(request.chat_input, str)
-                                else request.chat_input[-1]["content"]
-                            ),
-                            "chat_output": None,
-                            "chat_output_stream": chat_output if chat_output else "",
-                            "context": (
-                                [{"role": "user", "content": request.chat_input}]
-                                if isinstance(request.chat_input, str)
-                                else request.chat_input
-                            ),
-                            "provider": self.config.id,
-                            "model": (
-                                request.model
-                                if model and model.startswith(request.model)
-                                else (model or request.model)
-                            ),
-                            "deployment": (
-                                model
-                                if model and model.startswith(request.model)
-                                else (request.model if model != request.model else None)
-                            ),
-                            "timestamp": time.time(),
-                            "parameters": request.parameters,
-                            "metrics": None,
-                        }
+                        **chunk,
+                        "id": str(uuid.uuid4()),
+                        "chat_input": (
+                            request.chat_input
+                            if isinstance(request.chat_input, str)
+                            else request.chat_input[-1]["content"]
+                        ),
+                        "chat_output": None,
+                        "chat_output_stream": chat_output if chat_output else "",
+                        "context": (
+                            [{"role": "user", "content": request.chat_input}]
+                            if isinstance(request.chat_input, str)
+                            else request.chat_input
+                        ),
+                        "provider": self.config.id,
+                        "model": (
+                            request.model
+                            if model and model.startswith(request.model)
+                            else (model or request.model)
+                        ),
+                        "deployment": (
+                            model
+                            if model and model.startswith(request.model)
+                            else (request.model if model != request.model else None)
+                        ),
+                        "timestamp": time.time(),
+                        "parameters": request.parameters,
+                        "metrics": None,
+                    }
                     yield ChatCompletionChunk(**chunk)
 
         chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
@@ -360,35 +366,35 @@ class ProviderCore(Provider):
                 if chunk.get("choices")[0].get("finish_reason") != "stop":
                     chat_output = chunk.get("choices")[0].get("delta").get("content")
                     chunk = {
-                            **chunk,
-                            "id": str(uuid.uuid4()),
-                            "chat_input": (
-                                request.chat_input
-                                if isinstance(request.chat_input, str)
-                                else request.chat_input[-1]["content"]
-                            ),
-                            "chat_output": None,
-                            "chat_output_stream": chat_output if chat_output else "",
-                            "context": (
-                                [{"role": "user", "content": request.chat_input}]
-                                if isinstance(request.chat_input, str)
-                                else request.chat_input
-                            ),
-                            "provider": self.config.id,
-                            "model": (
-                                request.model
-                                if model and model.startswith(request.model)
-                                else (model or request.model)
-                            ),
-                            "deployment": (
-                                model
-                                if model and model.startswith(request.model)
-                                else (request.model if model != request.model else None)
-                            ),
-                            "timestamp": time.time(),
-                            "parameters": request.parameters,
-                            "metrics": None,
-                        }
+                        **chunk,
+                        "id": str(uuid.uuid4()),
+                        "chat_input": (
+                            request.chat_input
+                            if isinstance(request.chat_input, str)
+                            else request.chat_input[-1]["content"]
+                        ),
+                        "chat_output": None,
+                        "chat_output_stream": chat_output if chat_output else "",
+                        "context": (
+                            [{"role": "user", "content": request.chat_input}]
+                            if isinstance(request.chat_input, str)
+                            else request.chat_input
+                        ),
+                        "provider": self.config.id,
+                        "model": (
+                            request.model
+                            if model and model.startswith(request.model)
+                            else (model or request.model)
+                        ),
+                        "deployment": (
+                            model
+                            if model and model.startswith(request.model)
+                            else (request.model if model != request.model else None)
+                        ),
+                        "timestamp": time.time(),
+                        "parameters": request.parameters,
+                        "metrics": None,
+                    }
                     yield ChatCompletionChunk(**chunk)
 
         chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
@@ -456,25 +462,37 @@ class ProviderCore(Provider):
                     continue
 
             tool_call_ids = [t[0].get("id") for t in tool_calls.values()]
-            tool_call_names = [t[0].get("function").get("name") for t in tool_calls.values()]
-            tool_call_types = [t[0].get("function").get("type", "function") for t in tool_calls.values()]
+            tool_call_names = [
+                t[0].get("function").get("name") for t in tool_calls.values()
+            ]
+            tool_call_types = [
+                t[0].get("function").get("type", "function")
+                for t in tool_calls.values()
+            ]
 
             tool_call_arguments_all = []
             for t in tool_calls.values():
-                tool_call_arguments_all.append("".join(
-                    chunk.get("function", {}).get("arguments", "")
-                    for chunk in t))
-                
+                tool_call_arguments_all.append(
+                    "".join(
+                        chunk.get("function", {}).get("arguments", "") for chunk in t
+                    )
+                )
+
             tool_calls_parsed = [
                 ChatCompletionMessageToolCall(
                     id=tool_call_id,
                     function=Function(
-                        arguments=tool_call_arguments,
-                        name=tool_call_name
-                        ),
-                        type=tool_call_type)
-                        for tool_call_arguments, tool_call_name, tool_call_type, tool_call_id in
-                          zip(tool_call_arguments_all, tool_call_names, tool_call_types, tool_call_ids)]
+                        arguments=tool_call_arguments, name=tool_call_name
+                    ),
+                    type=tool_call_type,
+                )
+                for tool_call_arguments, tool_call_name, tool_call_type, tool_call_id in zip(
+                    tool_call_arguments_all,
+                    tool_call_names,
+                    tool_call_types,
+                    tool_call_ids,
+                )
+            ]
 
             try:
                 return (
@@ -492,7 +510,7 @@ class ProviderCore(Provider):
                                     content=None,
                                     role="assistant",
                                     function_call=None,
-                                    tool_calls=tool_calls_parsed
+                                    tool_calls=tool_calls_parsed,
                                 ),
                             )
                         ],
@@ -511,7 +529,7 @@ class ProviderCore(Provider):
             ]
 
             function_call_name = function_calls[0].get("name")
-            
+
             function_call_arguments = ""
             for chunk in function_calls:
                 function_call_arguments += chunk.get("arguments")
@@ -611,7 +629,7 @@ class ProviderCore(Provider):
             "inter_token_latency_s": sum(token_times) / len(token_times),
             "tokens_per_second": token_count / total_time,
         }
-    
+
     def calculate_cost(
         self, token_count: int, token_cost: Union[float, List[Dict[str, Any]]]
     ) -> float:

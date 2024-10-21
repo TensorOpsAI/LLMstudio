@@ -1,4 +1,15 @@
-from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 from langchain.schema.messages import BaseMessage
 from langchain.schema.output import ChatGeneration, ChatResult
@@ -6,12 +17,11 @@ from langchain_community.adapters.openai import (
     convert_dict_to_message,
     convert_message_to_dict,
 )
-from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.base import LanguageModelInput
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
-
 from llmstudio.providers import LLM
 from openai import BaseModel
 
@@ -25,7 +35,6 @@ class ChatLLMstudio(BaseChatModel):
 
     def __init__(self, **data):
         super().__init__(**data)
-
 
     @property
     def _llm_type(self):
@@ -62,7 +71,7 @@ class ChatLLMstudio(BaseChatModel):
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
         return ChatResult(generations=generations, llm_output=llm_output)
-    
+
     def bind_tools(
         self,
         tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
@@ -124,10 +133,12 @@ class ChatLLMstudio(BaseChatModel):
 
     def _generate(self, messages: List[BaseMessage], **kwargs) -> ChatResult:
         messages_dicts = self._create_message_dicts(messages, [])
-        response = self.llm.chat(messages_dicts,
-                                 model=kwargs.get("model", self.model),
-                                 is_stream=kwargs.get("is_stream", self.is_stream),
-                                 retries=kwargs.get("retries", self.retries),
-                                 parameters=kwargs.get("parameters", self.parameters),
-                                 **kwargs)
+        response = self.llm.chat(
+            messages_dicts,
+            model=kwargs.get("model", self.model),
+            is_stream=kwargs.get("is_stream", self.is_stream),
+            retries=kwargs.get("retries", self.retries),
+            parameters=kwargs.get("parameters", self.parameters),
+            **kwargs,
+        )
         return self._create_chat_result(response)

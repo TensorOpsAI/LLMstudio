@@ -6,11 +6,10 @@ import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
-
-from llmstudio_proxy.config import ENGINE_HOST, ENGINE_PORT
 from llmstudio_core.providers import _load_providers_config
 from llmstudio_core.providers.provider import provider_registry
+from llmstudio_proxy.config import ENGINE_HOST, ENGINE_PORT
+from pydantic import BaseModel
 
 ENGINE_BASE_ENDPOINT = "/api/engine"
 ENGINE_HEALTH_ENDPOINT = "/health"
@@ -96,10 +95,14 @@ def create_proxy_app(
 
             result = await provider_instance.achat(**request_dict)
             if request_dict.get("is_stream", False):
+
                 async def result_generator():
                     async for chunk in result:
                         yield json.dumps(chunk.dict())
-                return StreamingResponse(result_generator(), media_type="application/json")
+
+                return StreamingResponse(
+                    result_generator(), media_type="application/json"
+                )
             return result
 
         return chat_handler

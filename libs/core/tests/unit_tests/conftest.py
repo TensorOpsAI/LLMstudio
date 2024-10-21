@@ -1,6 +1,8 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock
-from llmstudio_core.providers.provider import ProviderCore, ChatRequest, ProviderError
+
+import pytest
+from llmstudio_core.providers.provider import ChatRequest, ProviderCore, ProviderError
+
 
 class MockProvider(ProviderCore):
     async def aparse_response(self, response, **kwargs):
@@ -16,7 +18,7 @@ class MockProvider(ProviderCore):
     async def achat(self, chat_input, model, **kwargs):
         # Mock the response to match expected structure
         return MagicMock(choices=[MagicMock(finish_reason="stop")])
-    
+
     def output_to_string(self, output):
         # Handle string inputs
         if isinstance(output, str):
@@ -29,10 +31,13 @@ class MockProvider(ProviderCore):
     def _provider_config_name():
         return "mock_provider"
 
+
 @pytest.fixture
 def mock_provider():
     config = MagicMock()
-    config.models = {"test_model": MagicMock(input_token_cost=0.01, output_token_cost=0.02)}
+    config.models = {
+        "test_model": MagicMock(input_token_cost=0.01, output_token_cost=0.02)
+    }
     config.id = "mock_provider"
     tokenizer = MagicMock()
     tokenizer.encode = lambda x: x.split()  # Simple tokenizer mock

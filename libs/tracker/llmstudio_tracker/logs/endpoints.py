@@ -1,10 +1,9 @@
 from typing import List
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-
 from llmstudio_tracker.database import engine, get_db
 from llmstudio_tracker.logs import crud, models, schemas
+from sqlalchemy.orm import Session
 
 models.Base.metadata.create_all(bind=engine)
 

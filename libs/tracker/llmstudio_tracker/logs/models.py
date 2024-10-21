@@ -1,7 +1,6 @@
+from llmstudio_tracker.database import Base
 from sqlalchemy import JSON, Column, DateTime, Integer, String
 from sqlalchemy.sql import func
-
-from llmstudio_tracker.database import Base
 
 
 class LogDefault(Base):

@@ -1,13 +1,12 @@
 # from llmstudio_core.providers.anthropic import AnthropicProvider #TODO: adpat it
+from typing import Optional
+
 from llmstudio_core.providers.azure import AzureProvider
+
 # from llmstudio_core.providers.ollama import OllamaProvider #TODO: adapt it
 from llmstudio_core.providers.openai import OpenAIProvider
-from llmstudio_core.providers.vertexai import VertexAIProvider
-
-
-from typing import Optional
 from llmstudio_core.providers.provider import ProviderCore, provider_registry
-
+from llmstudio_core.providers.vertexai import VertexAIProvider
 from llmstudio_core.utils import _load_providers_config
 
 _engine_config = _load_providers_config()
@@ -31,4 +30,6 @@ def LLMCore(provider: str, api_key: Optional[str] = None, **kwargs) -> ProviderC
     provider_class = provider_registry.get(provider_config.id)
     if provider_class:
         return provider_class(config=provider_config, api_key=api_key, **kwargs)
-    raise NotImplementedError(f"Provider not found: {provider_config.id}. Available providers: {str(provider_registry.keys())}")
+    raise NotImplementedError(
+        f"Provider not found: {provider_config.id}. Available providers: {str(provider_registry.keys())}"
+    )

@@ -1,8 +1,8 @@
 import json
 from typing import Optional
-from pydantic import BaseModel
 
 import requests
+from pydantic import BaseModel
 
 
 class TrackingConfig(BaseModel):
@@ -14,8 +14,10 @@ class TrackingConfig(BaseModel):
     def __init__(self, **data):
         super().__init__(**data)
         if (self.host is None and self.port is None) and self.url is None:
-            raise ValueError("You must provide either both 'host' and 'port', or 'url', or 'database_uri'.")
-        
+            raise ValueError(
+                "You must provide either both 'host' and 'port', or 'url', or 'database_uri'."
+            )
+
 
 class Tracker:
     def __init__(self, tracking_config: TrackingConfig):

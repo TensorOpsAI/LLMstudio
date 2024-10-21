@@ -1,6 +1,5 @@
-from sqlalchemy.orm import Session
-
 from llmstudio_tracker.logs import models, schemas
+from sqlalchemy.orm import Session
 
 
 def get_project_by_name(db: Session, name: str):

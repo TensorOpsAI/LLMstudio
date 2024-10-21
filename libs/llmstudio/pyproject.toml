@@ -33,7 +33,6 @@ proxy = ["llmstudio-proxy"]
 tracker = ["llmstudio-tracker"]
 
 
-
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4"
 mypy = "^1.5"

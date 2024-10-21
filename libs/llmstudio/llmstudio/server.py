@@ -1,18 +1,9 @@
 from threading import Event, Thread
 
 import requests
-
-from llmstudio_proxy.config import (
-    ENGINE_HOST,
-    ENGINE_PORT,
-)
-
-from llmstudio_tracker.config import (
-    TRACKING_HOST,
-    TRACKING_PORT,
-)
-
+from llmstudio_proxy.config import ENGINE_HOST, ENGINE_PORT
 from llmstudio_proxy.server import run_proxy_app
+from llmstudio_tracker.config import TRACKING_HOST, TRACKING_PORT
 from llmstudio_tracker.server import run_tracker_app
 
 _servers_started = False

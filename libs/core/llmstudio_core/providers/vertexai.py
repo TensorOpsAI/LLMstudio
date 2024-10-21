@@ -14,9 +14,10 @@ from typing import (
     Union,
 )
 
-from llmstudio_core.exceptions import ProviderError
 import requests
 from fastapi import HTTPException
+from llmstudio_core.exceptions import ProviderError
+from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import (
     Choice,
@@ -25,8 +26,6 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDeltaToolCallFunction,
 )
 from pydantic import BaseModel, ValidationError
-
-from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
 
 
 class OpenAIToolParameter(BaseModel):
@@ -77,11 +76,11 @@ class VertexAIProvider(ProviderCore):
     def __init__(self, config, **kwargs):
         super().__init__(config, **kwargs)
         self.API_KEY = self.API_KEY if self.API_KEY else os.getenv("GOOGLE_API_KEY")
-    
+
     @staticmethod
     def _provider_config_name():
         return "vertexai"
-    
+
     def validate_request(self, request: ChatRequest):
         return ChatRequest(**request)
 
@@ -110,9 +109,7 @@ class VertexAIProvider(ProviderCore):
         except Exception as e:
             raise ProviderError(str(e))
 
-    def generate_client(
-        self, request: ChatRequest
-    ) -> Coroutine[Any, Any, Generator]:
+    def generate_client(self, request: ChatRequest) -> Coroutine[Any, Any, Generator]:
         """Initialize Vertex AI"""
 
         try:
@@ -133,10 +130,8 @@ class VertexAIProvider(ProviderCore):
         except Exception as e:
             raise ProviderError(str(e))
 
-    def parse_response(self, 
-                       response: AsyncGenerator[Any, None], 
-                       **kwargs) -> Any:
-        
+    def parse_response(self, response: AsyncGenerator[Any, None], **kwargs) -> Any:
+
         for chunk in response.iter_content(chunk_size=None):
 
             chunk = json.loads(chunk.decode("utf-8").lstrip("data: "))
@@ -269,7 +264,7 @@ class VertexAIProvider(ProviderCore):
                     model=kwargs.get("request").model,
                     object="chat.completion.chunk",
                 ).model_dump()
-        
+
     async def aparse_response(
         self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:

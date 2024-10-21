@@ -17,6 +17,7 @@ from typing import (
 
 import openai
 from llmstudio_core.exceptions import ProviderError
+from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
 from openai import AzureOpenAI, OpenAI
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import (
@@ -27,12 +28,12 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDeltaToolCallFunction,
 )
 
-from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
-
 
 @provider
 class AzureProvider(ProviderCore):
-    def __init__(self, config, api_key=None, api_endpoint=None, api_version=None, base_url=None):
+    def __init__(
+        self, config, api_key=None, api_endpoint=None, api_version=None, base_url=None
+    ):
         super().__init__(config)
         self.API_KEY = api_key or os.getenv("AZURE_API_KEY")
         self.API_ENDPOINT = api_endpoint
@@ -40,6 +41,7 @@ class AzureProvider(ProviderCore):
         self.BASE_URL = base_url
         self.is_llama = False
         self.has_tools_functions = False
+
     @staticmethod
     def _provider_config_name():
         return "azure"
@@ -47,9 +49,7 @@ class AzureProvider(ProviderCore):
     def validate_request(self, request: ChatRequest):
         return ChatRequest(**request)
 
-    async def agenerate_client(
-        self, request: ChatRequest
-    ) -> Any:
+    async def agenerate_client(self, request: ChatRequest) -> Any:
         """Generate an AzureOpenAI client"""
 
         self.is_llama = "llama" in request.model.lower()
@@ -85,7 +85,9 @@ class AzureProvider(ProviderCore):
             if not self.is_llama and self.has_functions and self.is_openai:
                 function_args = {
                     "functions": request.parameters.get("functions"),
-                    "function_call": "auto" if request.parameters.get("functions") else None,
+                    "function_call": "auto"
+                    if request.parameters.get("functions")
+                    else None,
                 }
 
             # Prepare the base arguments
@@ -113,10 +115,7 @@ class AzureProvider(ProviderCore):
         except openai._exceptions.APIStatusError as e:
             raise ProviderError(e.response.json())
 
-        
-    def generate_client(
-        self, request: ChatRequest
-    ) -> Any:
+    def generate_client(self, request: ChatRequest) -> Any:
         """Generate an AzureOpenAI client"""
 
         self.is_llama = "llama" in request.model.lower()
@@ -152,7 +151,9 @@ class AzureProvider(ProviderCore):
             if not self.is_llama and self.has_functions and self.is_openai:
                 function_args = {
                     "functions": request.parameters.get("functions"),
-                    "function_call": "auto" if request.parameters.get("functions") else None,
+                    "function_call": "auto"
+                    if request.parameters.get("functions")
+                    else None,
                 }
 
             # Prepare the base arguments
@@ -177,13 +178,15 @@ class AzureProvider(ProviderCore):
         except openai._exceptions.APIStatusError as e:
             raise ProviderError(e.response.json())
 
-
     def prepare_messages(self, request: ChatRequest):
         if self.is_llama and (self.has_tools or self.has_functions):
             user_message = self.convert_to_openai_format(request.chat_input)
             content = "<|begin_of_text|>"
             content = self.add_system_message(
-                user_message, content, request.parameters.get("tools"), request.parameters.get("functions")
+                user_message,
+                content,
+                request.parameters.get("tools"),
+                request.parameters.get("functions"),
             )
             content = self.add_conversation(user_message, content)
             return [{"role": "user", "content": content}]
@@ -207,9 +210,7 @@ class AzureProvider(ProviderCore):
                 if c.get("choices"):
                     yield c
 
-    def parse_response(
-        self, response: Generator, **kwargs
-    ) -> Any:
+    def parse_response(self, response: Generator, **kwargs) -> Any:
         if self.is_llama and (self.has_tools or self.has_functions):
             for chunk in self.handle_tool_response(response, **kwargs):
                 if chunk:
@@ -220,9 +221,7 @@ class AzureProvider(ProviderCore):
                 if c.get("choices"):
                     yield c
 
-    def handle_tool_response(
-        self, response: AsyncGenerator, **kwargs
-    ) -> Generator:
+    def handle_tool_response(self, response: AsyncGenerator, **kwargs) -> Generator:
         """
         Asynchronously handles tool responses by parsing the content for function calls or tool activations.
         It processes the response chunks to extract and execute embedded function or tool calls, then yields
