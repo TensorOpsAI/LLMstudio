@@ -23,6 +23,7 @@ from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from llmstudio.providers import LLM
+from llmstudio.utils import create_session_id
 from openai import BaseModel
 
 
@@ -32,17 +33,16 @@ class ChatLLMstudio(BaseChatModel):
     is_stream: bool = False
     retries: int = 0
     parameters: dict = {}
+    session_id: str = None
 
     def __init__(self, **data):
         super().__init__(**data)
+        if self.session_id is None:
+            self.session_id = create_session_id()
 
     @property
     def _llm_type(self):
         return "LLMstudio"
-
-    # @property
-    # def model_id(self) -> str:
-    #     return self.model_id
 
     def _create_message_dicts(
         self, messages: List[BaseMessage], stop: Optional[List[str]]
@@ -139,6 +139,6 @@ class ChatLLMstudio(BaseChatModel):
             is_stream=kwargs.get("is_stream", self.is_stream),
             retries=kwargs.get("retries", self.retries),
             parameters=kwargs.get("parameters", self.parameters),
-            **kwargs,
+            session_id=self.session_id**kwargs,
         )
         return self._create_chat_result(response)

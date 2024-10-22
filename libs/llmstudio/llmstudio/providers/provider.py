@@ -20,8 +20,8 @@ class LLM(Provider):
         **kwargs,
     ):
         """
-        Initializes an LLM provider instance to route your calls to the configured provider client.         
-        
+        Initializes an LLM provider instance to route your calls to the configured provider client.
+
         This constructor sets up the LLM provider with optional proxy and tracking configurations.
         If a proxy configuration is provided, it initializes an LLMProxyProvider; otherwise, it uses
         LLMCore. It also sets up a tracker if a tracking configuration is provided. The session_id
