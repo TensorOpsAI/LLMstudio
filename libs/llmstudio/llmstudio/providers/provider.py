@@ -10,19 +10,57 @@ class LLM(Provider):
     def __init__(
         self,
         provider: str,
-        api_key: Optional[str] = None,
         proxy_config: Optional[ProxyConfig] = None,
         tracking_config: Optional[TrackingConfig] = None,
         session_id: Optional[str] = None,
+        api_key: Optional[str] = None,
+        api_endpoint: Optional[str] = None,
+        api_version: Optional[str] = None,
+        base_url: Optional[str] = None,
         **kwargs,
     ):
+        """
+        Initializes an LLM provider instance to route your calls to the configured provider client.         
+        
+        This constructor sets up the LLM provider with optional proxy and tracking configurations.
+        If a proxy configuration is provided, it initializes an LLMProxyProvider; otherwise, it uses
+        LLMCore. It also sets up a tracker if a tracking configuration is provided. The session_id
+        is used to uniquely identify interactions within a session, and it requires a tracking
+        configuration to be specified.
 
+        Parameters:
+        - provider (str): The name of the LLM provider (e.g., "openai", "vertexai").
+        - proxy_config (Optional[ProxyConfig]): Configuration for proxy settings, applicable if proxy server is running.
+        - tracking_config (Optional[TrackingConfig]): Configuration for tracking interactions with the LLM. Applicable if Tracking server is running.
+        - session_id (Optional[str]): A unique identifier for the session, used for tracking purposes.
+
+        # If running without a Proxy Server:
+        # All providers:
+        - api_key (Optional[str]): The API key for authenticating requests to the LLM provider.
+
+        # Azure
+        - api_endpoint (Optional[str]): The specific API endpoint to use for requests.
+        - api_version (Optional[str]): The version of the API to use.
+        - base_url (Optional[str]): The base URL for the API requests.
+
+        - **kwargs: Additional keyword arguments for provider customization.
+
+        Raises:
+        - ValueError: If a session_id is provided without a tracking_config.
+        """
         if proxy_config is not None:
             self._provider = LLMProxyProvider(
                 provider=provider, proxy_config=proxy_config
             )
         else:
-            self._provider = LLMCore(provider=provider, api_key=api_key, **kwargs)
+            self._provider = LLMCore(
+                provider=provider,
+                api_key=api_key,
+                api_endpoint=api_endpoint,
+                api_version=api_version,
+                base_url=base_url,
+                **kwargs,
+            )
 
         self._tracker = None
         if tracking_config is not None:
