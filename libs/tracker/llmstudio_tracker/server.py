@@ -1,4 +1,6 @@
 from threading import Event
+import requests
+from threading import Event, Thread
 
 import uvicorn
 from fastapi import APIRouter, FastAPI
@@ -60,3 +62,34 @@ def run_tracker_app(started_event: Event):
         )
     except Exception as e:
         print(f"Error running LLMstudio Tracking: {e}")
+
+
+def is_server_running(host, port, path="/health"):
+    try:
+        response = requests.get(f"http://{host}:{port}{path}")
+        if response.status_code == 200 and response.json().get("status") == "healthy":
+            return True
+    except requests.ConnectionError:
+        pass
+    return False
+
+def start_server_component(host, port, run_func, server_name):
+    if not is_server_running(host, port):
+        started_event = Event()
+        thread = Thread(target=run_func, daemon=True, args=(started_event,))
+        thread.start()
+        started_event.wait()  # wait for startup, this assumes the event is set somewhere
+        return thread
+    else:
+        print(f"{server_name} server already running on {host}:{port}")
+        return None
+
+def setup_tracking_server():
+    global _tracker_server_started
+    tracker_thread = None
+    if not _tracker_server_started:
+        tracker_thread = start_server_component(
+            TRACKING_HOST, TRACKING_PORT, run_tracker_app, "Tracker"
+        )
+        _tracker_server_started = True
+    return tracker_thread

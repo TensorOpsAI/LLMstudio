@@ -1,6 +1,8 @@
 import json
 from threading import Event
 from typing import Any, Dict, List, Optional, Union
+import requests
+from threading import Event, Thread
 
 import uvicorn
 from fastapi import FastAPI, Request
@@ -159,3 +161,33 @@ def run_proxy_app(started_event: Event):
         )
     except Exception as e:
         print(f"Error running LLMstudio Proxy: {e}")
+
+def is_server_running(host, port, path="/health"):
+    try:
+        response = requests.get(f"http://{host}:{port}{path}")
+        if response.status_code == 200 and response.json().get("status") == "healthy":
+            return True
+    except requests.ConnectionError:
+        pass
+    return False
+
+def start_server_component(host, port, run_func, server_name):
+    if not is_server_running(host, port):
+        started_event = Event()
+        thread = Thread(target=run_func, daemon=True, args=(started_event,))
+        thread.start()
+        started_event.wait()  # wait for startup, this assumes the event is set somewhere
+        return thread
+    else:
+        print(f"{server_name} server already running on {host}:{port}")
+        return None
+
+def setup_engine_server():
+    global _proxy_server_started
+    proxy_thread = None
+    if not _proxy_server_started:
+        proxy_thread = start_server_component(
+            ENGINE_HOST, ENGINE_PORT, run_proxy_app, "Proxy"
+        )
+        _proxy_server_started = True
+    return proxy_thread
