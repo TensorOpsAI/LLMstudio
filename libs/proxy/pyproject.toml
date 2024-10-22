@@ -13,6 +13,7 @@ fastapi = "^0.109"
 uvicorn = "^0.27"
 tiktoken = "^0.7"
 python-dotenv = "^0"
+toml = "^0.10"
 llmstudio-core = "^0"
 
 [tool.poetry.group.dev.dependencies]

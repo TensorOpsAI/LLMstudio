@@ -2,6 +2,7 @@ from threading import Event
 import requests
 from threading import Event, Thread
 
+from llmstudio_tracker.utils import get_current_version
 import uvicorn
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,9 +11,9 @@ from llmstudio_tracker.logs.endpoints import LogsRoutes
 from llmstudio_tracker.session.endpoints import SessionsRoutes
 
 TRACKING_HEALTH_ENDPOINT = "/health"
-TRACKING_TITLE = "LLMstudio Tracking API"
+TRACKING_TITLE = "LLMstudio Tracker API"
 TRACKING_DESCRIPTION = "The tracking API for LLM interactions"
-TRACKING_VERSION = "0.0.1"
+TRACKING_VERSION = get_current_version()
 TRACKING_BASE_ENDPOINT = "/api/tracking"
 
 

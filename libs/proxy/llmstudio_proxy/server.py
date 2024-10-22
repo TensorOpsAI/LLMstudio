@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 import requests
 from threading import Event, Thread
 
+from llmstudio_proxy.utils import get_current_version
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,11 +14,11 @@ from llmstudio_core.providers.provider import provider_registry
 from llmstudio_proxy.config import ENGINE_HOST, ENGINE_PORT
 from pydantic import BaseModel
 
-ENGINE_BASE_ENDPOINT = "/api/engine"
 ENGINE_HEALTH_ENDPOINT = "/health"
 ENGINE_TITLE = "LLMstudio Proxy API"
 ENGINE_DESCRIPTION = "The core API for LLM interactions"
-ENGINE_VERSION = "0.1.0"
+ENGINE_VERSION = get_current_version()
+ENGINE_BASE_ENDPOINT = "/api/engine"
 
 
 class CostRange(BaseModel):

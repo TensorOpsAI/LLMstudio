@@ -9,7 +9,7 @@ readme = "README.md"
 python = "^3.9"
 pydantic = "^2.5"
 sqlalchemy = "^2"
-
+toml = "^0.10"
 
 [build-system]
 requires = ["poetry-core"]
