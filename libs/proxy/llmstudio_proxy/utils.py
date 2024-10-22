@@ -1,5 +1,7 @@
 from pathlib import Path
+
 import toml
+
 
 def get_current_version():
     version = "unknown"
@@ -12,6 +14,10 @@ def get_current_version():
         if "project" in data and "version" in data["project"]:
             version = data["project"]["version"]
         # check tool.poetry.version
-        elif "tool" in data and "poetry" in data["tool"] and "version" in data["tool"]["poetry"]:
+        elif (
+            "tool" in data
+            and "poetry" in data["tool"]
+            and "version" in data["tool"]["poetry"]
+        ):
             version = data["tool"]["poetry"]["version"]
     return version

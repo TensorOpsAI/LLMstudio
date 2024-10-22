@@ -1,14 +1,13 @@
-from threading import Event
-import requests
 from threading import Event, Thread
 
-from llmstudio_tracker.utils import get_current_version
+import requests
 import uvicorn
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from llmstudio_tracker.config import TRACKING_HOST, TRACKING_PORT
 from llmstudio_tracker.logs.endpoints import LogsRoutes
 from llmstudio_tracker.session.endpoints import SessionsRoutes
+from llmstudio_tracker.utils import get_current_version
 
 TRACKING_HEALTH_ENDPOINT = "/health"
 TRACKING_TITLE = "LLMstudio Tracker API"
@@ -74,6 +73,7 @@ def is_server_running(host, port, path="/health"):
         pass
     return False
 
+
 def start_server_component(host, port, run_func, server_name):
     if not is_server_running(host, port):
         started_event = Event()
@@ -84,6 +84,7 @@ def start_server_component(host, port, run_func, server_name):
     else:
         print(f"{server_name} server already running on {host}:{port}")
         return None
+
 
 def setup_tracking_server():
     global _tracker_server_started

@@ -33,7 +33,7 @@ class Tracker:
             timeout=100,
         )
         return req
-    
+
     def get_logs(self):
         req = self._session.get(
             f"http://{self.tracking_host}:{self.tracking_port}/api/tracking/logs",
@@ -41,7 +41,7 @@ class Tracker:
             timeout=100,
         )
         return req
-    
+
     def get_session_logs(self, session_id: str):
         req = self._session.get(
             f"http://{self.tracking_host}:{self.tracking_port}/api/tracking/logs/{session_id}",

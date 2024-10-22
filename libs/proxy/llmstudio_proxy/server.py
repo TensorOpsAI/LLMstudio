@@ -1,10 +1,8 @@
 import json
-from threading import Event
-from typing import Any, Dict, List, Optional, Union
-import requests
 from threading import Event, Thread
+from typing import Any, Dict, List, Optional, Union
 
-from llmstudio_proxy.utils import get_current_version
+import requests
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,6 +10,7 @@ from fastapi.responses import StreamingResponse
 from llmstudio_core.providers import _load_providers_config
 from llmstudio_core.providers.provider import provider_registry
 from llmstudio_proxy.config import ENGINE_HOST, ENGINE_PORT
+from llmstudio_proxy.utils import get_current_version
 from pydantic import BaseModel
 
 ENGINE_HEALTH_ENDPOINT = "/health"
@@ -163,6 +162,7 @@ def run_proxy_app(started_event: Event):
     except Exception as e:
         print(f"Error running LLMstudio Proxy: {e}")
 
+
 def is_server_running(host, port, path="/health"):
     try:
         response = requests.get(f"http://{host}:{port}{path}")
@@ -171,6 +171,7 @@ def is_server_running(host, port, path="/health"):
     except requests.ConnectionError:
         pass
     return False
+
 
 def start_server_component(host, port, run_func, server_name):
     if not is_server_running(host, port):
@@ -182,6 +183,7 @@ def start_server_component(host, port, run_func, server_name):
     else:
         print(f"{server_name} server already running on {host}:{port}")
         return None
+
 
 def setup_engine_server():
     global _proxy_server_started

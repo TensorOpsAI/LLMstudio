@@ -34,16 +34,16 @@ class AzureProvider(ProviderCore):
         self.has_tools_functions = False
 
         if self.BASE_URL:
-                self._client = OpenAI(
-                    api_key=self.API_KEY,
-                    base_url=self.BASE_URL,
-                )
+            self._client = OpenAI(
+                api_key=self.API_KEY,
+                base_url=self.BASE_URL,
+            )
         else:
-                self._client = AzureOpenAI(
-                    api_key=self.API_KEY,
-                    azure_endpoint=self.API_ENDPOINT,
-                    api_version=self.API_VERSION,
-                )
+            self._client = AzureOpenAI(
+                api_key=self.API_KEY,
+                azure_endpoint=self.API_ENDPOINT,
+                api_version=self.API_VERSION,
+            )
 
     @staticmethod
     def _provider_config_name():
