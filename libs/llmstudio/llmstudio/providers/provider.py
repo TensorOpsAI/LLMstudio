@@ -70,8 +70,6 @@ class LLM(Provider):
         if (session_id is not None) and tracking_config:
             self._session_id = session_id
         elif (session_id is not None) and tracking_config is None:
-            print(tracking_config)
-            print((session_id is not None) and tracking_config is None)
             raise ValueError(
                 f"'session_id' requires the 'tracking_config' specified and 'llmstudio[tracker]' installation."
             )

@@ -19,6 +19,7 @@ ENGINE_DESCRIPTION = "The core API for LLM interactions"
 ENGINE_VERSION = get_current_version()
 ENGINE_BASE_ENDPOINT = "/api/engine"
 
+_proxy_server_started = False
 
 class CostRange(BaseModel):
     range: List[Optional[int]]

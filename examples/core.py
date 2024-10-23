@@ -127,14 +127,14 @@ for _ in range(1):
                             api_endpoint=os.environ["AZURE_API_ENDPOINT"])
     pprint(latencies)
 
-provider = "azure"
-model = "Meta-Llama-3.1-70B-Instruct"
-for _ in range(1):
-    latencies = run_provider(provider=provider, model=model, 
-                            api_key=os.environ["AZURE_API_KEY_llama"], 
-                            base_url=os.environ["AZURE_BASE_URL"]
-                            )
-    pprint(latencies)
+# provider = "azure"
+# model = "gpt-4o"
+# for _ in range(1):
+#     latencies = run_provider(provider=provider, model=model, 
+#                             api_key=os.environ["AZURE_API_KEY_llama"], 
+#                             base_url=os.environ["AZURE_BASE_URL"]
+#                             )
+#     pprint(latencies)
 
 
 provider = "vertexai"
