@@ -321,3 +321,74 @@ def assistant_vertex(question: str) -> str:
 
 
 print("\n\nresult:\n", assistant_vertex("Turn this into a party!"),"\n")
+
+
+print("###### proxy")
+from llmstudio_tracker.tracker import TrackingConfig
+from llmstudio.server import start_servers
+start_servers()
+
+from llmstudio.providers import LLM
+from llmstudio_proxy.provider import ProxyConfig
+
+# from llmstudio_core.providers import LLMCore as LLM
+# from llmstudio.providers import LLM
+
+llm = LLM(provider="openai", 
+          proxy_config=ProxyConfig(host="0.0.0.0", port="8001"),
+          tracking_config=TrackingConfig(host="0.0.0.0", port="8002"),
+          session_id="proxy-chat-model")
+chat_llm = ChatLLMstudio(llm=llm, model = "gpt-4o-mini", parameters={"temperature":0})
+
+
+from langchain.tools import tool
+
+@tool
+def power_disco_ball(power: bool) -> bool:
+    """Powers the spinning disco ball."""
+    print(f"Disco ball is {'spinning!' if power else 'stopped.'}")
+    return True
+
+@tool
+def start_music(energetic: bool, loud: bool, bpm: int) -> str:
+    """Play some music matching the specified parameters."""
+    print(f"Starting music! {energetic=} {loud=}, {bpm=}")
+    return "Never gonna give you up."
+
+@tool
+def dim_lights(brightness: float) -> bool:
+    """Dim the lights."""
+    print(f"Lights are now set to {brightness:.0%}")
+    return True
+
+from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain_core.prompts import ChatPromptTemplate
+
+
+def assistant_proxy(question: str) -> str:
+    tools = [power_disco_ball, start_music, dim_lights]
+    print(tools)
+
+    # Rebuild agent with new tools
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are a helpful assistant"),
+            ("human", "{input}"),
+            ("placeholder", "{agent_scratchpad}"),
+        ]
+    )
+    agent = create_tool_calling_agent(chat_llm, tools, prompt)
+    agent_executor = AgentExecutor(agent=agent, tools=tools)
+
+    response = agent_executor.invoke({"input": question})
+
+    return response
+
+
+print("\n\nresult:\n", assistant_proxy("Turn this into a party!"),"\n")
+
+llm = LLM(provider="openai", 
+          proxy_config=ProxyConfig(host="0.0.0.0", port="8001"),
+          tracking_config=TrackingConfig(host="0.0.0.0", port="8002"))
+chat_llm = ChatLLMstudio(llm=llm, model = "gpt-4o-mini", parameters={"temperature":0})
+print("\n\nresult:\n", assistant_proxy("Turn this into a party!"),"\n")

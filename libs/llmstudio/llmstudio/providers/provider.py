@@ -1,6 +1,7 @@
 from typing import Any, Coroutine, Dict, Optional
 
 from llmstudio.providers import LLMProxyProvider, ProxyConfig, Tracker, TrackingConfig
+from llmstudio.utils import create_session_id
 from llmstudio_core.providers import LLMCore
 from llmstudio_core.providers.provider import Provider
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
@@ -62,14 +63,13 @@ class LLM(Provider):
                 **kwargs,
             )
 
+        self._session_id = None
         self._tracker = None
         if tracking_config is not None:
             self._tracker = Tracker(tracking_config=tracking_config)
+            self._session_id = create_session_id() if session_id is None else session_id
 
-        self._session_id = None
-        if (session_id is not None) and tracking_config:
-            self._session_id = session_id
-        elif (session_id is not None) and tracking_config is None:
+        if (session_id is not None) and tracking_config is None:
             raise ValueError(
                 f"'session_id' requires the 'tracking_config' specified and 'llmstudio[tracker]' installation."
             )
@@ -128,7 +128,7 @@ class LLM(Provider):
                     result, kwargs.get("session_id", self._session_id)
                 )
                 self._tracker.log(result_dict)
-                return result
+            return result
         else:
 
             async def async_generator_wrapper():
