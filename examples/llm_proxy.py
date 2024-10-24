@@ -42,7 +42,7 @@ async def async_stream():
           tracking_config=TrackingConfig(host="0.0.0.0", port="8002"),
           session_id="async stream")
     
-    response_async_stream = await llm.achat("Write a paragfraph about space", model="gpt-4o", is_stream=True, session_id="async stream")
+    response_async_stream = await llm.achat("Write a paragfraph about space", model="gpt-4o", is_stream=True)
     async for p in response_async_stream:
         
         # pprint(p.choices[0].delta.content==p.chat_output)

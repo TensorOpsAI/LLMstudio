@@ -93,7 +93,7 @@ class LLM(Provider):
         if isinstance(result, (ChatCompletionChunk, ChatCompletion)):
             if self._tracker:
                 result_dict = self._add_session_id(
-                    result, kwargs.get("session_id", self._session_id)
+                    result, self._session_id
                 )
                 self._tracker.log(result_dict)
             return result
@@ -104,7 +104,7 @@ class LLM(Provider):
                     yield item
                     if self._tracker and item.metrics:
                         result_dict = self._add_session_id(
-                            item, kwargs.get("session_id", self._session_id)
+                            item, self._session_id
                         )
                         self._tracker.log(result_dict)
 
@@ -125,7 +125,7 @@ class LLM(Provider):
         if isinstance(result, (ChatCompletionChunk, ChatCompletion)):
             if self._tracker:
                 result_dict = self._add_session_id(
-                    result, kwargs.get("session_id", self._session_id)
+                    result, self._session_id
                 )
                 self._tracker.log(result_dict)
             return result
@@ -136,7 +136,7 @@ class LLM(Provider):
                     yield item
                     if self._tracker and item.metrics:
                         result_dict = self._add_session_id(
-                            item, kwargs.get("session_id", self._session_id)
+                            item, self._session_id
                         )
                         self._tracker.log(result_dict)
 
