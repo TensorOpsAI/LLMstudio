@@ -44,29 +44,22 @@
       "pages": ["quickstart", "support"]
     },
     {
-      "group": "How to",
+      "group": "LLM",
       "pages": [
-        "how-to/build-a-tool-agent",
-        "how-to/deploy-on-gcp/deploy-on-google-cloud-platform"
+        "llm/anthropic",
+        "llm/azure",
+        "llm/ollama",
+        "llm/openai",
+        "llm/vertexai",
+        "llm/chat"
+
       ]
     },
     {
-      "group": "SDK",
+      "group": "How to",
       "pages": [
-        {
-          "group": "LLM",
-          "pages":[{
-            "group": "Providers",
-            "pages":[
-              "sdk/llm/providers/openai",
-              "sdk/llm/providers/vertexai",
-              "sdk/llm/providers/anthropic",
-              "sdk/llm/providers/ollama",
-              "sdk/llm/providers/azure"
-            ]
-          }, 
-          "sdk/llm/chat"]
-        }
+        "how-to/deploy-on-gke/deploy-on-google-kubernetes-engine",
+        "how-to/build-a-tool-agent"
       ]
     },
     {

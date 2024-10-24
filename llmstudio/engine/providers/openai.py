@@ -41,6 +41,7 @@ class OpenAIProvider(Provider):
         """Generate an OpenAI client"""
 
         try:
+            # Create client
             client = OpenAI(api_key=request.api_key or self.API_KEY)
             return await asyncio.to_thread(
                 client.chat.completions.create,
