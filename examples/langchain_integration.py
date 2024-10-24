@@ -324,9 +324,9 @@ print("\n\nresult:\n", assistant_vertex("Turn this into a party!"),"\n")
 
 
 print("###### proxy")
-from llmstudio_tracker.tracker import TrackingConfig
 from llmstudio.server import start_servers
 start_servers()
+from llmstudio_tracker.tracker import TrackingConfig
 
 from llmstudio.providers import LLM
 from llmstudio_proxy.provider import ProxyConfig
