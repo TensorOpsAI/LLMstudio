@@ -3,7 +3,7 @@ import signal
 import threading
 
 import click
-from llmstudio.server import start_server
+from llmstudio.server import start_servers
 
 
 def handle_shutdown(signum, frame):
@@ -17,11 +17,12 @@ def main():
 
 
 @main.command()
-@click.option(help="Start the  server.")
-def server():
+@click.option("--proxy", is_flag=True, help="Start the Proxy server.")
+@click.option("--tracker", is_flag=True, help="Start the Tracker server.")
+def server(proxy, tracker):
     signal.signal(signal.SIGINT, handle_shutdown)
 
-    start_server()
+    start_servers(proxy=proxy, tracker=tracker)
 
     print("Servers are running. Press CTRL+C to stop.")
 
@@ -35,4 +36,3 @@ def server():
 if __name__ == "__main__":
     # main()
     server()
-    print(4)

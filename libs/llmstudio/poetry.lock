@@ -1419,9 +1419,12 @@ files = []
 develop = true
 
 [package.dependencies]
+fastapi = "^0.109"
 pydantic = "^2.5"
+requests = "^2.31"
 sqlalchemy = "^2"
 toml = "^0.10"
+uvicorn = "^0.27"
 
 [package.source]
 type = "directory"
