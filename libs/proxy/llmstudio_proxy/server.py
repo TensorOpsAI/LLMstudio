@@ -21,6 +21,7 @@ ENGINE_BASE_ENDPOINT = "/api/engine"
 
 _proxy_server_started = False
 
+
 class CostRange(BaseModel):
     range: List[Optional[int]]
     cost: float
