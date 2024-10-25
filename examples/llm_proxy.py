@@ -63,3 +63,13 @@ async def async_chat():
     print(response_async)
     
 asyncio.run(async_chat())
+
+
+async def async_chat():
+    llm = LLM(provider="openai", 
+          proxy_config=ProxyConfig(host="0.0.0.0", port="8001"),
+          tracking_config=TrackingConfig(host="0.0.0.0", port="8002"))
+    response_async = await llm.achat("Write a paragfraph about space", model="gpt-4o", is_stream=False)
+    print(response_async)
+    
+asyncio.run(async_chat())

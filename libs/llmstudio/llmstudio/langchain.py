@@ -33,7 +33,6 @@ class ChatLLMstudio(BaseChatModel):
     retries: int = 0
     parameters: dict = {}
 
-
     @property
     def _llm_type(self):
         return "LLMstudio"
