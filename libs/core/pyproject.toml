@@ -13,6 +13,7 @@ requests = "^2.31"
 openai = "^1.26"
 tiktoken = "^0.7"
 pyyaml = "^6"
+aws-requests-auth = "^0.4.3"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4"

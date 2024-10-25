@@ -17,6 +17,11 @@ providers:
         max_tokens: 200000
         input_token_cost: 0.000003
         output_token_cost: 0.000015
+      claude-3-sonnet:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.000003
+        output_token_cost: 0.000015
       claude-3-haiku-20240307:
         mode: chat
         max_tokens: 200000
@@ -33,6 +38,50 @@ providers:
         input_token_cost: 0.000008
         output_token_cost: 0.000024
       claude-instant-1.2:
+        mode: chat
+        max_tokens: 100000
+        input_token_cost: 0.00000163
+        output_token_cost: 0.00000551
+    parameters:
+      temperature:
+        name: "Temperature"
+        type: float
+        default: 1
+        min: 0
+        max: 1
+        step: 0.01
+      max_tokens:
+        name: "Maximum tokens"
+        type: float
+        default: 256
+        min: 1
+        max: 4096
+        step: 0.01
+      top_p:
+        name: "Top P"
+        type: float
+        default: 1
+        min: 0
+        max: 1
+        step: 0.01
+      top_k:
+        name: "Top K"
+        type: float
+        default: 5
+        min: 0
+        max: 500
+        step: 1
+  bedrock:
+    id: bedrock
+    name: Bedrock
+    chat: true
+    embed: true
+    keys:
+      - BEDROCK_SECRET_KEY
+      - BEDROCK_ACCESS_KEY
+      - BEDROCK_REGION
+    models:
+      anthropic.claude-3-5-sonnet-20240620-v1:0:
         mode: chat
         max_tokens: 100000
         input_token_cost: 0.00000163
