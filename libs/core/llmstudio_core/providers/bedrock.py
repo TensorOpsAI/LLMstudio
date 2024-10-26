@@ -13,7 +13,12 @@ from fastapi import HTTPException
 from llmstudio_core.exceptions import ProviderError
 from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
 from openai.types.chat import ChatCompletionChunk
-from openai.types.chat.chat_completion_chunk import Choice, ChoiceDelta
+from openai.types.chat.chat_completion_chunk import (
+    Choice,
+    ChoiceDelta,
+    ChoiceDeltaToolCall,
+    ChoiceDeltaToolCallFunction,
+)
 
 
 @provider
@@ -93,97 +98,143 @@ class BedrockProvider(ProviderCore):
             yield item
 
     def parse_response(self, response: AsyncGenerator[Any, None], **kwargs) -> Any:
+        current_function_name = None
+        current_function_arguments = ""
+        tool_index = None
+
         for chunk in response.iter_content(chunk_size=None):
             if chunk:
                 parsed_chunks = self._parse_event_stream(chunk)
                 for parsed_chunk in parsed_chunks:
                     if parsed_chunk["headers"][":event-type"] == "chunk":
-                        if (
-                            parsed_chunk["payload"]["bytes_decoded"]["type"]
-                            == "message_start"
-                        ):
+                        payload = parsed_chunk["payload"]["bytes_decoded"]
+                        payload_type = payload.get("type")
+
+                        if payload_type == "message_start":
                             first_chunk = ChatCompletionChunk(
-                                id=parsed_chunk["payload"]["bytes_decoded"]["message"][
-                                    "id"
-                                ],
-                                choices=[
-                                    Choice(
-                                        delta=ChoiceDelta(
-                                            content="",
-                                            function_call=None,
-                                            role="assistant",
-                                            tool_calls=None,
-                                            refusal=None,
-                                        ),
-                                        finish_reason=None,
-                                        index=0,
-                                        logprobs=None,
-                                    )
-                                ],
-                                created=int(time.time()),
-                                model=kwargs.get("request").model,
-                                object="chat.completion.chunk",
-                                system_fingerprint=None,
-                                usage=None,
-                            )
-
-                            yield first_chunk.model_dump()
-
-                        elif (
-                            parsed_chunk["payload"]["bytes_decoded"]["type"]
-                            == "content_block_delta"
-                        ):
-                            chunk = ChatCompletionChunk(
-                                id=str(uuid.uuid4()),
-                                choices=[
-                                    Choice(
-                                        delta=ChoiceDelta(
-                                            content=parsed_chunk["payload"][
-                                                "bytes_decoded"
-                                            ]["delta"]["text"],
-                                            function_call=None,
-                                            role=None,
-                                            tool_calls=None,
-                                        ),
-                                        finish_reason=None,
-                                        index=0,
-                                        logprobs=None,
-                                    )
-                                ],
-                                created=int(time.time()),
-                                model=kwargs.get("request").model,
-                                object="chat.completion.chunk",
-                                system_fingerprint=None,
-                                usage=None,
-                            )
-                            yield chunk.model_dump()
-
-                        elif (
-                            parsed_chunk["payload"]["bytes_decoded"]["type"]
-                            == "message_stop"
-                        ):
-                            chunk = ChatCompletionChunk(
-                                id=str(uuid.uuid4()),
+                                id=payload["message"]["id"],
                                 choices=[
                                     Choice(
                                         delta=ChoiceDelta(
                                             content=None,
                                             function_call=None,
-                                            role=None,
+                                            role="assistant",
                                             tool_calls=None,
                                         ),
-                                        finish_reason="stop",
                                         index=0,
-                                        logprobs=None,
                                     )
                                 ],
                                 created=int(time.time()),
                                 model=kwargs.get("request").model,
                                 object="chat.completion.chunk",
-                                system_fingerprint=None,
                                 usage=None,
                             )
-                            yield chunk.model_dump()
+                            yield first_chunk.model_dump()
+
+                        elif payload_type == "content_block_start":
+                            if payload["content_block"]["type"] == "tool_use":
+                                current_function_name = payload["content_block"]["name"]
+                                current_function_arguments = ""
+                                tool_index = payload["index"]
+
+                        elif payload_type == "content_block_delta":
+                            delta_type = payload["delta"]["type"]
+                            if delta_type == "text_delta":
+                                # Regular content, yield it
+                                text = payload["delta"]["text"]
+                                chunk = ChatCompletionChunk(
+                                    id=str(uuid.uuid4()),
+                                    choices=[
+                                        Choice(
+                                            delta=ChoiceDelta(content=text),
+                                            finish_reason=None,
+                                            index=0,
+                                        )
+                                    ],
+                                    created=int(time.time()),
+                                    model=kwargs.get("request").model,
+                                    object="chat.completion.chunk",
+                                )
+                                yield chunk.model_dump()
+                            elif delta_type == "input_json_delta":
+                                # Part of function arguments
+                                partial_json = payload["delta"]["partial_json"]
+                                current_function_arguments += partial_json
+
+                        elif payload_type == "message_delta":
+                            stop_reason = payload["delta"].get("stop_reason")
+
+                            if stop_reason == "tool_use":
+                                name_chunk = ChatCompletionChunk(
+                                    id=str(uuid.uuid4()),
+                                    choices=[
+                                        Choice(
+                                            delta=ChoiceDelta(
+                                                role="assistant",
+                                                tool_calls=[
+                                                    ChoiceDeltaToolCall(
+                                                        index=tool_index,
+                                                        id="call_"
+                                                        + str(uuid.uuid4())[:29],
+                                                        function=ChoiceDeltaToolCallFunction(
+                                                            name=current_function_name,
+                                                            arguments="",
+                                                            type="function",
+                                                        ),
+                                                    )
+                                                ],
+                                            ),
+                                            finish_reason=None,
+                                            index=tool_index,
+                                        )
+                                    ],
+                                    created=int(time.time()),
+                                    model=kwargs.get("request").model,
+                                    object="chat.completion.chunk",
+                                )
+                                yield name_chunk.model_dump()
+
+                                args_chunk = ChatCompletionChunk(
+                                    id=str(uuid.uuid4()),
+                                    choices=[
+                                        Choice(
+                                            delta=ChoiceDelta(
+                                                tool_calls=[
+                                                    ChoiceDeltaToolCall(
+                                                        index=tool_index,
+                                                        function=ChoiceDeltaToolCallFunction(
+                                                            arguments=current_function_arguments,
+                                                        ),
+                                                    )
+                                                ],
+                                            ),
+                                            finish_reason=None,
+                                            index=tool_index,
+                                        )
+                                    ],
+                                    created=int(time.time()),
+                                    model=kwargs.get("request").model,
+                                    object="chat.completion.chunk",
+                                )
+                                yield args_chunk.model_dump()
+
+                            final_chunk = ChatCompletionChunk(
+                                id=str(uuid.uuid4()),
+                                choices=[
+                                    Choice(
+                                        delta=ChoiceDelta(),
+                                        finish_reason="tool_calls"
+                                        if stop_reason == "tool_use"
+                                        else "stop",
+                                        index=0,
+                                    )
+                                ],
+                                created=int(time.time()),
+                                model=kwargs.get("request").model,
+                                object="chat.completion.chunk",
+                            )
+                            print()
+                            yield final_chunk.model_dump()
 
     @staticmethod
     def _generate_input_text(
