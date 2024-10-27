@@ -6,6 +6,17 @@ import yaml
 from pydantic import BaseModel, ValidationError
 
 
+class OpenAIToolParameters(BaseModel):
+    properties: Dict
+    required: List[str]
+
+
+class OpenAITool(BaseModel):
+    name: str
+    description: str
+    parameters: OpenAIToolParameters
+
+
 class CostRange(BaseModel):
     range: List[Optional[int]]
     cost: float

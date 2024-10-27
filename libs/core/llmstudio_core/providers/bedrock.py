@@ -5,13 +5,23 @@ import os
 import struct
 import time
 import uuid
-from typing import Any, AsyncGenerator, Coroutine, Dict, Generator, List, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    Coroutine,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Union,
+)
 
 import requests
 from aws_requests_auth.aws_auth import AWSRequestsAuth
 from fastapi import HTTPException
 from llmstudio_core.exceptions import ProviderError
 from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
+from llmstudio_core.utils import OpenAITool
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import (
     Choice,
@@ -19,6 +29,7 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDeltaToolCall,
     ChoiceDeltaToolCallFunction,
 )
+from pydantic import ValidationError
 
 
 @provider
@@ -71,11 +82,22 @@ class BedrockProvider(ProviderCore):
                 aws_region=self.region,
                 aws_service=service,
             )
-
             request_body = {
                 "messages": self._generate_input_text(request.chat_input),
             }
-            request_body.update(request.parameters)
+            filtered_parameters = {
+                k: v for k, v in request.parameters.items() if k != "functions"
+            }
+            request_body.update(filtered_parameters)
+            tools = (
+                request.parameters.get("tools")
+                if request.parameters.get("tools")
+                else request.parameters.get("functions")
+            )
+            request_body["tools"] = self._process_tools(tools)
+            request_body.pop("stop", None)
+            request_body.pop("session_id", None)
+
             headers = {"Content-Type": "application/json"}
 
             return requests.post(
@@ -268,6 +290,42 @@ class BedrockProvider(ProviderCore):
                 if role in ["user", "assistant"]:
                     messages.append({"role": role, "content": content})
             return messages
+
+    @staticmethod
+    def _process_tools(tools: Optional[Union[List[Dict], Dict]]) -> Optional[Dict]:
+        if tools is None:
+            return []
+
+        try:
+            # Try to parse as OpenAI format
+            parsed_tools = (
+                [OpenAITool(**tool) for tool in tools]
+                if isinstance(tools, list)
+                else [OpenAITool(**tools)]
+            )
+
+            # Convert to Bedrock format
+            tool_configurations = []
+            for tool in parsed_tools:
+                tool_type = next(iter(tool.parameters.properties.values()))["type"]
+                if tool_type == "string":
+                    tool_type = "object"
+                    next(iter(tool.parameters.properties.values()))["type"] = tool_type
+
+                tool_config = {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "input_schema": {
+                        "type": tool_type,
+                        "properties": tool.parameters.properties,
+                        "required": tool.parameters.required,
+                    },
+                }
+                tool_configurations.append(tool_config)
+            return tool_configurations
+
+        except ValidationError:
+            return tools
 
     @staticmethod
     def _parse_event_stream(data):
