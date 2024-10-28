@@ -1,0 +1,80 @@
+This guide outlines how to build a tool calling agent using Langchain + LLMstudio. 
+
+## 1. Set up your tools
+Start by defining the tools your agent is going to have access to.
+```python
+from langchain.tools import tool
+
+@tool
+def buy_ticket(destination: str):
+    """Use this to buy a ticket"""
+    return "Bought ticket number 270924"
+
+@tool
+def get_departure(ticket_number: str):
+    """Use this to fetch the departure time of a train"""
+    return "8:25 AM"
+```
+
+## 2. Setup your .env
+Create a `.env` file on the root of your project with the the credentials for the providers you want to use.
+
+<Tabs>
+    <Tab title="OpenAI">
+        ```
+        OPENAI_API_KEY="YOUR_API_KEY"
+        ```
+    </Tab>
+    <Tab title="VertexAI">
+        ```
+        GOOGLE_API_KEY="YOUR_API_KEY"
+        ```
+    </Tab>
+    <Tab title="Azure">
+        ```
+        AZURE_BASE_URL="YOUR_MODEL_ENDPOINT"
+        AZURE_API_KEY="YOUR_API_KEY"
+        ```
+    </Tab>
+  </Tabs>
+
+## 3. Set up your model using LLMstudio
+Use LLMstudio to choose the provider and model you want to use.
+<Tabs>
+    <Tab title="OpenAI">
+        ```python
+        model = ChatLLMstudio(model_id='openai/gpt-4o')
+        ```
+    </Tab>
+    <Tab title="VertexAI">
+        ```python
+        model = ChatLLMstudio(model_id='vertexai/gemini-1.5-flash')
+        ```
+    </Tab>
+    <Tab title="Azure">
+        ```python
+        model = ChatLLMstudio(model_id='azure/Meta-Llama-3.1-70B-Instruct')
+        ```
+    </Tab>
+  </Tabs>
+
+## 4. Build the agent
+Set up your agent and agent executor using Langchain.
+
+```python
+from langchain import hub
+from langchain.agents import AgentExecutor, create_openai_tools_agent
+
+prompt = hub.pull("hwchase17/openai-tools-agent")
+agent = create_openai_tools_agent(model, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools)
+
+input = "Can you buy me a ticket to madrid?"
+
+# Using with chat history
+agent_executor.invoke(
+    {
+        "input": input,
+    }
+)
+```
