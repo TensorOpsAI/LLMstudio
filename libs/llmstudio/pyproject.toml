@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "llmstudio"
-version = "1.0.0a7"
+version = "0.0.1b1"
 description = "Prompt Perfection at Your Fingertips"
 authors = ["Cláudio Lemos <claudio@tensorops.ai>"]
 license = "MIT"
@@ -19,9 +19,9 @@ pydantic = "^2.5"
 python-dotenv = "^0"
 langchain = "^0"
 langchain-experimental = "^0"
-llmstudio-core = "0.0.1a3"
-llmstudio-tracker = { version = "0.0.1a2", optional = true }
-llmstudio-proxy = { version = "0.0.1a2", optional = true }
+llmstudio-core = "0.0.1b1"
+llmstudio-tracker = { version = "0.0.1b1", optional = true }
+llmstudio-proxy = { version = "0.0.1b1", optional = true }
 
 [tool.poetry.extras]
 proxy = ["llmstudio-proxy"]
