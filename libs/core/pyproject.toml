@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "llmstudio-core"
+version = "0.0.1b1"
+description = "LLMStudio core capabilities for routing llm calls for any vendor. No proxy server required. For that use llmstudio[proxy]"
+authors = ["Cláudio Lemos <claudio.lemos@tensorops.ai>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pydantic = "^2.5"
+requests = "^2.31"
+openai = "^1.26"
+tiktoken = "^0.7"
+pyyaml = "^6"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4"
+pytest-asyncio = "^0"
+mypy = "^1.5"
+ruff = "^0.0.284"
+black = "^23.7"
+pre-commit = "^3.7"
+flake8= "^7"
+ipykernel = "^6"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

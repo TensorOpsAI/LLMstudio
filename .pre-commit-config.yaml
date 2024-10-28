@@ -3,43 +3,37 @@ repos:
     rev: v4.4.0
     hooks:
       - id: trailing-whitespace
-        files: llmstudio/
-        exclude: ^llmstudio/ui/
+        files: libs/
       - id: end-of-file-fixer
-        files: llmstudio/
-        exclude: ^llmstudio/ui/
+        files: libs/
       - id: check-yaml
-        files: llmstudio/
-        exclude: ^llmstudio/ui/
+        files: libs/
       - id: check-added-large-files
-        files: llmstudio/
-        exclude: ^llmstudio/ui/
+        files: libs/
 
   - repo: https://github.com/psf/black
     rev: 22.12.0
     hooks:
       - id: black
-        files: llmstudio/
-        exclude: ^llmstudio/ui/
+        files: libs/
 
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
       - id: isort
-        files: llmstudio/
-        exclude: ^llmstudio/ui/
+        files: libs/
         args:
           - "--profile=black"
 
-  - repo: https://github.com/myint/autoflake
-    rev: v1.4
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v2.3.1
     hooks:
       - id: autoflake
-        files: llmstudio/
-        exclude: ^llmstudio/ui/
+        files: libs/
+        exclude: 'libs/core/llmstudio_core/providers/__init__.py|libs/llmstudio/llmstudio/providers/__init__.py'
         args:
-          # - --remove-all-unused-imports
-          - --recursive
-          - --remove-unused-variables
-          - --in-place
+        - --remove-all-unused-imports
+        - --recursive
+        - --remove-unused-variables
+        - --in-place
         additional_dependencies: [flake8]

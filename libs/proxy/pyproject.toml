@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "llmstudio-proxy"
+version = "0.0.1b1"
+description = ""
+authors = ["Diogo Goncalves <diogo.goncalves@tensorops.ai>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pydantic = "^2.5"
+requests = "^2.31"
+fastapi = "^0.109"
+uvicorn = "^0.27"
+tiktoken = "^0.7"
+python-dotenv = "^0"
+toml = "^0.10"
+llmstudio-core = "0.0.1b1"
+
+[tool.poetry.group.dev.dependencies]
+llmstudio-core = { path = "../core/", develop = true }
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

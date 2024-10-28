@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "llmstudio-monorepo"
-version = "0.0.1"
+name = "llmstudio"
+version = "0.0.1b1"
 description = "Prompt Perfection at Your Fingertips"
 authors = ["Cláudio Lemos <claudio@tensorops.ai>"]
 license = "MIT"
@@ -15,12 +15,30 @@ keywords = ["ml", "ai", "llm", "llmops", "openai", "langchain", "chatgpt", "llms
 
 [tool.poetry.dependencies]
 python = "^3.9"
+pydantic = "^2.5"
+python-dotenv = "^0"
+langchain = "^0"
+langchain-experimental = "^0"
+llmstudio-core = "0.0.1b1"
+llmstudio-tracker = { version = "0.0.1b1", optional = true }
+llmstudio-proxy = { version = "0.0.1b1", optional = true }
+
+[tool.poetry.extras]
+proxy = ["llmstudio-proxy"]
+tracker = ["llmstudio-tracker"]
 
 [tool.poetry.group.dev.dependencies]
-llmstudio = { path = "libs/llmstudio/", develop = true }
-llmstudio-core = { path = "libs/core/", develop = true }
-llmstudio-tracker = { path = "libs/tracker/", develop = true }
-llmstudio-proxy = { path = "libs/proxy/", develop = true }
+pytest = "^7.4"
+pytest-asyncio = "^0"
+mypy = "^1.5"
+ruff = "^0.0.284"
+black = "^23.7"
+pre-commit = "^3.7"
+flake8= "^7"
+ipykernel = "^6"
+llmstudio-core = { path = "../core/", develop = true }
+llmstudio-tracker = { path = "../tracker/", develop = true }
+llmstudio-proxy = { path = "../proxy/", develop = true }
 
 [tool.poetry.scripts]
 llmstudio = "llmstudio.cli:main"

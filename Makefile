@@ -1,2 +1,2 @@
-start-db:
-	docker compose up --build
+format:
+	pre-commit run --all-files
