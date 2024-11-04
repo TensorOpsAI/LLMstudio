@@ -21,7 +21,7 @@ def assign_port(default_port=None):
 
 
 defaults = {
-    "LLMSTUDIO_ENGINE_HOST": "localhost",
+    "LLMSTUDIO_ENGINE_HOST": "0.0.0.0",
     "LLMSTUDIO_ENGINE_PORT": str(assign_port(50001)),
 }
 

@@ -26,14 +26,14 @@ Don't forget to check out [https://docs.llmstudio.ai](docs) page.
 
 Install the latest version of **LLMstudio** using `pip`. We suggest that you create and activate a new environment using `conda`
 
+For full version:
 ```bash
-pip install llmstudio
+pip install 'llmstudio[proxy,tracker]'
 ```
 
-Install `bun` if you want to use the UI
-
+For lightweight (core) version:
 ```bash
-curl -fsSL https://bun.sh/install | bash
+pip install llmstudio
 ```
 
 Create a `.env` file at the same path you'll run **LLMstudio**
@@ -41,15 +41,18 @@ Create a `.env` file at the same path you'll run **LLMstudio**
 ```bash
 OPENAI_API_KEY="sk-api_key"
 ANTHROPIC_API_KEY="sk-api_key"
+VERTEXAI_KEY="sk-api-key"
 ```
 
 Now you should be able to run **LLMstudio** using the following command.
 
 ```bash
-llmstudio server --ui
+llmstudio server --proxy --tacker
 ```
 
-When the `--ui` flag is set, you'll be able to access the UI at [http://localhost:3000](http://localhost:3000)
+When the `--proxy` flag is set, you'll be able to access the [Swagger at http://0.0.0.0:50001/docs (default port)](http://0.0.0.0:50001/docs)
+
+When the `--tracker` flag is set, you'll be able to access the [Swagger at http://0.0.0.0:50002/docs (default port)](http://0.0.0.0:50002/docs)
 
 ## 📖 Documentation
 

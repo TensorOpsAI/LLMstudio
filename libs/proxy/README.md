@@ -43,13 +43,13 @@ OPENAI_API_KEY="sk-api_key"
 ANTHROPIC_API_KEY="sk-api_key"
 ```
 
-Now you should be able to run **LLMstudio** using the following command.
+Now you should be able to run **LLMstudio Proxy** using the following command.
 
 ```bash
-llmstudio server --ui
+llmstudio server --proxy
 ```
 
-When the `--ui` flag is set, you'll be able to access the UI at [http://localhost:3000](http://localhost:3000)
+When the `--proxy` flag is set, you'll be able to access the [Swagger at http://0.0.0.0:50001/docs (default port)](http://0.0.0.0:50001/docs)
 
 ## 📖 Documentation
 

@@ -72,17 +72,24 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       # Build and tag Docker images with both :latest and :[NEW_VERSION]
-      - name: Build and tag Docker images
+      - name: Proxy Build and tag Docker images
+        working-directory: ./deploy
         run: |
-          docker build \
-            --build-arg LLMSTUDIO_VERSION=${{ env.VERSION }} \
-            -t tensoropsai/llmstudio:latest \
-            -t tensoropsai/llmstudio:${{ env.VERSION }} \
-            .
+            make version=${{ env.VERSION }} build-proxy
+
+      # Build and tag Docker images with both :latest and :[NEW_VERSION]
+      - name: Tracker Build and tag Docker images
+        working-directory: ./deploy
+        run: |
+            make version=${{ env.VERSION }} build-tracker
 
       # Push both Docker images to Docker Hub
-      - name: Push Docker images to Docker Hub
+      - name: Push Proxy Docker images to Docker Hub
         run: |
-          docker push tensoropsai/llmstudio:${{ env.VERSION }}
-          docker push tensoropsai/llmstudio:latest
-          
+          docker push tensoropsai/llmstudio-proxy:${{ env.VERSION }}
+          docker push tensoropsai/llmstudio-proxy:latest
+      # Push both Docker images to Docker Hub
+      - name: Push Tracker Docker images to Docker Hub
+        run: |
+          docker push tensoropsai/llmstudio-tracker:${{ env.VERSION }}
+          docker push tensoropsai/llmstudio-tracker:latest
