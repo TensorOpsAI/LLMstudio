@@ -33,7 +33,7 @@ class AzureProvider(ProviderCore):
         self.is_llama = False
         self.has_tools_functions = False
 
-        if self.BASE_URL:
+        if self.BASE_URL and (self.API_ENDPOINT is None):
             self._client = OpenAI(
                 api_key=self.API_KEY,
                 base_url=self.BASE_URL,

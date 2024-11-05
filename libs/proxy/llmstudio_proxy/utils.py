@@ -7,7 +7,6 @@ def get_current_version():
     version = "unknown"
     # adopt path to your pyproject.toml
     pyproject_toml_file = Path(__file__).parent.parent / "pyproject.toml"
-    print(pyproject_toml_file)
     if pyproject_toml_file.exists() and pyproject_toml_file.is_file():
         data = toml.load(pyproject_toml_file)
         # check project.version

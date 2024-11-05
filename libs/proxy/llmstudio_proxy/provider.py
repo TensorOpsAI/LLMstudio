@@ -3,8 +3,8 @@ import json
 from typing import Any, Coroutine, Dict, Optional, Union
 
 import requests
-from llmstudio.server import is_server_running
 from llmstudio_core.providers.provider import Provider
+from llmstudio_proxy.server import is_server_running
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from pydantic import BaseModel
 

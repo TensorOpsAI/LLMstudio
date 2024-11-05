@@ -15,6 +15,8 @@ TRACKING_DESCRIPTION = "The tracking API for LLM interactions"
 TRACKING_VERSION = get_current_version()
 TRACKING_BASE_ENDPOINT = "/api/tracking"
 
+_tracker_server_started = False
+
 
 ## Tracking
 def create_tracking_app(started_event: Event) -> FastAPI:

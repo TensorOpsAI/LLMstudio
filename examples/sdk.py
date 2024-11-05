@@ -1,5 +1,5 @@
 
-from llmstudio_core.providers import LLMCore
+from llmstudio.providers import LLM
 
 
 from pprint import pprint
@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def run_provider(provider, model, api_key, **kwargs):
-    llm = LLMCore(provider=provider, api_key=api_key, **kwargs)
+    llm = LLM(provider=provider, api_key=api_key, **kwargs)
 
     latencies = {}
     chat_request = {
