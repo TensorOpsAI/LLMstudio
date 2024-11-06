@@ -7,14 +7,20 @@ from pydantic import BaseModel, ValidationError
 
 
 class OpenAIToolParameters(BaseModel):
+    type: str
     properties: Dict
     required: List[str]
 
 
-class OpenAITool(BaseModel):
+class OpenAIToolFunction(BaseModel):
     name: str
     description: str
     parameters: OpenAIToolParameters
+
+
+class OpenAITool(BaseModel):
+    type: str
+    function: OpenAIToolFunction
 
 
 class CostRange(BaseModel):
