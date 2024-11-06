@@ -112,7 +112,6 @@ class BedrockProvider(ProviderCore):
         tool_id = None
 
         for chunk in response["stream"]:
-            print(chunk)
             if chunk.get("messageStart"):
                 first_chunk = ChatCompletionChunk(
                     id=str(uuid.uuid4()),
