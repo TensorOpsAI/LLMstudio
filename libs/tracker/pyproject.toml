@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "llmstudio-tracker"
-version = "1.0.0"
+version = "1.0.1"
 description = ""
 authors = ["Diogo Goncalves <diogo.goncalves@tensorops.ai>"]
 readme = "README.md"
