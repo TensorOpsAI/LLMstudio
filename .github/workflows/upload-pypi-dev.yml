@@ -27,13 +27,15 @@ jobs:
           poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
 
       - name: Build and publish to PyPI as development release
-        run: |
+          working-directory: ./libs/llmstudio
+          run: |
           poetry version prerelease
           poetry build
           poetry publish
 
       - name: Commit and push updated pyproject.toml
-        run: |
+          working-directory: ./libs/llmstudio
+          run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add pyproject.toml
@@ -42,7 +44,8 @@ jobs:
 
       # Wait for PyPI to update
       - name: Wait for PyPI to update
-        run: |
+          working-directory: ./libs/llmstudio
+          run: |
           VERSION=$(poetry version --short)
           echo "Checking for llmstudio==$VERSION on PyPI..."
           for i in {1..10}; do
