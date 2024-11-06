@@ -29,38 +29,38 @@ jobs:
       - name: Build and publish to PyPI as development release
         working-directory: ./libs/llmstudio
         run: |
-        poetry version prerelease
-        poetry build
-        poetry publish
+          poetry version prerelease
+          poetry build
+          poetry publish
 
       - name: Commit and push updated pyproject.toml
         working-directory: ./libs/llmstudio
         run: |
-        git config user.name "GitHub Actions"
-        git config user.email "actions@github.com"
-        git add pyproject.toml
-        git commit -m "[fix] bump prerelease version in pyproject.toml"
-        git push
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add pyproject.toml
+          git commit -m "[fix] bump prerelease version in pyproject.toml"
+          git push
 
       # Wait for PyPI to update
       - name: Wait for PyPI to update
-      working-directory: ./libs/llmstudio
-      run: |
-      VERSION=$(poetry version --short)
-      echo "Checking for llmstudio==$VERSION on PyPI..."
-      for i in {1..10}; do
-        if python -m pip install llmstudio==${VERSION} --dry-run >/dev/null 2>&1; then
-          echo "Package llmstudio==${VERSION} is available on PyPI."
-          break
-        else
-          echo "Package llmstudio==${VERSION} not available yet. Waiting 15 seconds..."
-          sleep 15
-        fi
-        if [ $i -eq 10 ]; then
-          echo "Package did not become available in time."
-          exit 1
-        fi
-      done
+        working-directory: ./libs/llmstudio
+        run: |
+          VERSION=$(poetry version --short)
+          echo "Checking for llmstudio==$VERSION on PyPI..."
+          for i in {1..10}; do
+            if python -m pip install llmstudio==${VERSION} --dry-run >/dev/null 2>&1; then
+              echo "Package llmstudio==${VERSION} is available on PyPI."
+              break
+            else
+              echo "Package llmstudio==${VERSION} not available yet. Waiting 15 seconds..."
+              sleep 15
+            fi
+            if [ $i -eq 10 ]; then
+              echo "Package did not become available in time."
+              exit 1
+            fi
+          done
 
       # Docker build and push section
       - name: Set up Docker Buildx
@@ -73,6 +73,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Extract version for tagging Docker image
+        working-directory: ./libs/llmstudio
         id: get_version
         run: |
           echo "VERSION=$(poetry version --short)" >> $GITHUB_ENV
@@ -81,13 +82,13 @@ jobs:
       - name: Proxy Build and tag Docker images
         working-directory: ./deploy
         run: |
-            make version=${{ env.VERSION }} build-proxy
+          make version=${{ env.VERSION }} build-proxy
 
       # Build and tag Docker images with both :latest and :[NEW_VERSION]
       - name: Tracker Build and tag Docker images
         working-directory: ./deploy
         run: |
-            make version=${{ env.VERSION }} build-tracker
+          make version=${{ env.VERSION }} build-tracker
 
       # Push both Docker images to Docker Hub
       - name: Push Proxy Docker images to Docker Hub
