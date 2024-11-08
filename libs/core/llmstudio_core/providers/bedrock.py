@@ -3,8 +3,6 @@ from typing import Any, AsyncGenerator, Coroutine, Generator
 from llmstudio_core.providers.bedrock_providers.antropic import BedrockAntropicProvider
 from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
 
-SUPORTED_PROVIDERS = ["antropic"]
-
 
 @provider
 class BedrockProvider(ProviderCore):
