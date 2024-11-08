@@ -1,45 +1,23 @@
-import asyncio
-import json
-import os
-import time
-import uuid
-from typing import (
-    Any,
-    AsyncGenerator,
-    Coroutine,
-    Dict,
-    Generator,
-    List,
-    Optional,
-    Union,
-)
+from typing import Any, AsyncGenerator, Coroutine, Generator
 
-import boto3
-from fastapi import HTTPException
-from llmstudio_core.exceptions import ProviderError
+from llmstudio_core.providers.bedrock_providers.antropic import BedrockAntropicProvider
 from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
-from llmstudio_core.utils import OpenAITool, OpenAIToolFunction
-from openai.types.chat import ChatCompletionChunk
-from openai.types.chat.chat_completion_chunk import (
-    Choice,
-    ChoiceDelta,
-    ChoiceDeltaToolCall,
-    ChoiceDeltaToolCallFunction,
-)
-from pydantic import ValidationError
+
+SUPORTED_PROVIDERS = ["antropic"]
 
 
 @provider
 class BedrockProvider(ProviderCore):
     def __init__(self, config, **kwargs):
         super().__init__(config, **kwargs)
-        self.access_key = (
-            self.access_key if self.access_key else os.getenv("BEDROCK_ACCESS_KEY")
-        )
-        self.secret_key = (
-            self.secret_key if self.secret_key else os.getenv("BEDROCK_SECRET_KEY")
-        )
-        self.region = self.region if self.region else os.getenv("BEDROCK_REGION")
+        self.kwargs = kwargs
+        self.selected_model = None
+
+    def _get_provider(self, model):
+        if "anthropic." in model:
+            return BedrockAntropicProvider(config=self.config, **self.kwargs)
+
+        raise ValueError(f" provider is not yet supported.")
 
     @staticmethod
     def _provider_config_name():
@@ -49,325 +27,18 @@ class BedrockProvider(ProviderCore):
         return ChatRequest(**request)
 
     async def agenerate_client(self, request: ChatRequest) -> Coroutine[Any, Any, Any]:
-        """Generate an AWS Bedrock client"""
-        return await asyncio.to_thread(self.generate_client, request)
+        self.selected_model = self._get_provider(request.model)
+        return self.selected_model.agenerate_client()
 
     def generate_client(self, request: ChatRequest) -> Coroutine[Any, Any, Generator]:
-        """Generate an AWS Bedrock client"""
-        try:
-
-            service = "bedrock-runtime"
-
-            if (
-                self.access_key is None
-                or self.secret_key is None
-                or self.region is None
-            ):
-                raise HTTPException(
-                    status_code=400,
-                    detail="AWS credentials were not given or not set in environment variables.",
-                )
-
-            client = boto3.client(
-                service,
-                region_name=self.region,
-                aws_access_key_id=self.access_key,
-                aws_secret_access_key=self.secret_key,
-            )
-
-            messages, system_prompt = self._process_messages(request.chat_input)
-            tools = self._process_tools(request.parameters)
-
-            system_prompt = (
-                request.parameters.get("system")
-                if request.parameters.get("system")
-                else system_prompt
-            )
-
-            client_params = {
-                "modelId": request.model,
-                "messages": messages,
-                "inferenceConfig": self._process_parameters(request.parameters),
-                "system": system_prompt,
-            }
-            if tools:
-                client_params["toolConfig"] = tools
-
-            return client.converse_stream(**client_params)
-        except Exception as e:
-            raise ProviderError(str(e))
+        self.selected_model = self._get_provider(request.model)
+        client = self.selected_model.generate_client(request=request)
+        return client
 
     async def aparse_response(
         self, response: Any, **kwargs
     ) -> AsyncGenerator[str, None]:
-        iterator = await asyncio.to_thread(
-            self.parse_response, response=response, **kwargs
-        )
-        for item in iterator:
-            yield item
+        return self.selected_model.aparse_response(response=response, **kwargs)
 
     def parse_response(self, response: AsyncGenerator[Any, None], **kwargs) -> Any:
-        tool_name = None
-        tool_arguments = ""
-        tool_id = None
-
-        for chunk in response["stream"]:
-            if chunk.get("messageStart"):
-                first_chunk = ChatCompletionChunk(
-                    id=str(uuid.uuid4()),
-                    choices=[
-                        Choice(
-                            delta=ChoiceDelta(
-                                content=None,
-                                function_call=None,
-                                role="assistant",
-                                tool_calls=None,
-                            ),
-                            index=0,
-                        )
-                    ],
-                    created=int(time.time()),
-                    model=kwargs.get("request").model,
-                    object="chat.completion.chunk",
-                    usage=None,
-                )
-                yield first_chunk.model_dump()
-
-            elif chunk.get("contentBlockStart"):
-                if chunk["contentBlockStart"]["start"].get("toolUse"):
-                    tool_name = chunk["contentBlockStart"]["start"]["toolUse"]["name"]
-                    tool_arguments = ""
-                    tool_id = chunk["contentBlockStart"]["start"]["toolUse"][
-                        "toolUseId"
-                    ]
-
-            elif chunk.get("contentBlockDelta"):
-                delta = chunk["contentBlockDelta"]["delta"]
-                if delta.get("text"):
-                    # Regular content, yield it
-                    text = delta["text"]
-                    chunk = ChatCompletionChunk(
-                        id=str(uuid.uuid4()),
-                        choices=[
-                            Choice(
-                                delta=ChoiceDelta(content=text),
-                                finish_reason=None,
-                                index=0,
-                            )
-                        ],
-                        created=int(time.time()),
-                        model=kwargs.get("request").model,
-                        object="chat.completion.chunk",
-                    )
-                    yield chunk.model_dump()
-
-                elif delta.get("toolUse"):
-                    partial_json = delta["toolUse"]["input"]
-                    tool_arguments += partial_json
-
-            elif chunk.get("contentBlockStop") and tool_id:
-                name_chunk = ChatCompletionChunk(
-                    id=str(uuid.uuid4()),
-                    choices=[
-                        Choice(
-                            delta=ChoiceDelta(
-                                role="assistant",
-                                tool_calls=[
-                                    ChoiceDeltaToolCall(
-                                        index=chunk["contentBlockStop"][
-                                            "contentBlockIndex"
-                                        ],
-                                        id=tool_id,
-                                        function=ChoiceDeltaToolCallFunction(
-                                            name=tool_name,
-                                            arguments="",
-                                            type="function",
-                                        ),
-                                    )
-                                ],
-                            ),
-                            finish_reason=None,
-                            index=chunk["contentBlockStop"]["contentBlockIndex"],
-                        )
-                    ],
-                    created=int(time.time()),
-                    model=kwargs.get("request").model,
-                    object="chat.completion.chunk",
-                )
-                yield name_chunk.model_dump()
-
-                args_chunk = ChatCompletionChunk(
-                    id=tool_id,
-                    choices=[
-                        Choice(
-                            delta=ChoiceDelta(
-                                tool_calls=[
-                                    ChoiceDeltaToolCall(
-                                        index=chunk["contentBlockStop"][
-                                            "contentBlockIndex"
-                                        ],
-                                        function=ChoiceDeltaToolCallFunction(
-                                            arguments=tool_arguments,
-                                        ),
-                                    )
-                                ],
-                            ),
-                            finish_reason=None,
-                            index=chunk["contentBlockStop"]["contentBlockIndex"],
-                        )
-                    ],
-                    created=int(time.time()),
-                    model=kwargs.get("request").model,
-                    object="chat.completion.chunk",
-                )
-                yield args_chunk.model_dump()
-
-            elif chunk.get("messageStop"):
-                stop_reason = chunk["messageStop"].get("stopReason")
-                final_chunk = ChatCompletionChunk(
-                    id=str(uuid.uuid4()),
-                    choices=[
-                        Choice(
-                            delta=ChoiceDelta(),
-                            finish_reason="tool_calls"
-                            if stop_reason == "tool_use"
-                            else "stop",
-                            index=0,
-                        )
-                    ],
-                    created=int(time.time()),
-                    model=kwargs.get("request").model,
-                    object="chat.completion.chunk",
-                )
-                yield final_chunk.model_dump()
-
-    @staticmethod
-    def _process_messages(
-        chat_input: Union[str, List[Dict[str, str]]]
-    ) -> List[Dict[str, Union[List[Dict[str, str]], str]]]:
-        """
-        Generate input text for the Bedrock API based on the provided chat input.
-
-        Args:
-            chat_input (Union[str, List[Dict[str, str]]]): The input text or a list of message dictionaries.
-
-        Returns:
-            List[Dict[str, Union[List[Dict[str, str]], str]]]: A list of formatted messages for the Bedrock API.
-
-        Raises:
-            HTTPException: If the input is invalid.
-        """
-        if isinstance(chat_input, str):
-            return [
-                {
-                    "role": "user",
-                    "content": [{"text": chat_input}],
-                }
-            ]
-
-        elif isinstance(chat_input, list):
-            messages = []
-            tool_result = None
-            system_prompt = []
-            for message in chat_input:
-                if message.get("role") in ["assistant", "user"]:
-                    if message.get("tool_calls"):
-                        tool_use = {"role": "assistant", "content": []}
-                        for tool in message.get("tool_calls"):
-                            tool_use["content"].append(
-                                {
-                                    "toolUse": {
-                                        "toolUseId": tool["id"],
-                                        "name": tool["function"]["name"],
-                                        "input": json.loads(
-                                            tool["function"]["arguments"]
-                                        ),
-                                    }
-                                }
-                            )
-                        messages.append(tool_use)
-                    else:
-                        messages.append(
-                            {
-                                "role": message.get("role"),
-                                "content": [{"text": message.get("content")}],
-                            }
-                        )
-                if message.get("role") in ["tool"]:
-                    if not tool_result:
-                        tool_result = {"role": "user", "content": []}
-                    tool_result["content"].append(
-                        {
-                            "toolResult": {
-                                "toolUseId": message["tool_call_id"],
-                                "content": [{"json": {"text": message["content"]}}],
-                            }
-                        }
-                    )
-                if message.get("role") in ["system"]:
-                    system_prompt = [{"text": message.get("content")}]
-
-            if tool_result:
-                messages.append(tool_result)
-
-            return messages, system_prompt
-
-    @staticmethod
-    def _process_tools(parameters: dict) -> Optional[Dict]:
-        if parameters.get("tools") is None and parameters.get("functions") is None:
-            return None
-
-        try:
-            if parameters.get("tools"):
-                parsed_tools = (
-                    [OpenAITool(**tool) for tool in parameters.get("tools")]
-                    if isinstance(parameters.get("tools"), list)
-                    else [OpenAITool(**parameters.get("tools"))]
-                )
-            if parameters.get("functions"):
-                parsed_tools = (
-                    [OpenAIToolFunction(**tool) for tool in parameters.get("functions")]
-                    if isinstance(parameters.get("functions"), list)
-                    else [OpenAIToolFunction(**parameters.get("functions"))]
-                )
-            tool_configurations = []
-            for tool in parsed_tools:
-                tool_config = {
-                    "toolSpec": {
-                        "name": tool.function.name
-                        if parameters.get("tools")
-                        else tool.name,
-                        "description": tool.function.description
-                        if parameters.get("tools")
-                        else tool.description,
-                        "inputSchema": {
-                            "json": {
-                                "type": tool.function.parameters.type
-                                if parameters.get("tools")
-                                else tool.parameters.type,
-                                "properties": tool.function.parameters.properties
-                                if parameters.get("tools")
-                                else tool.parameters.properties,
-                                "required": tool.function.parameters.required
-                                if parameters.get("tools")
-                                else tool.parameters.required,
-                            }
-                        },
-                    }
-                }
-                tool_configurations.append(tool_config)
-            return {"tools": tool_configurations}
-
-        except ValidationError:
-            return (
-                parameters.get("tools")
-                if parameters.get("tools")
-                else parameters.get("functions")
-            )
-
-    @staticmethod
-    def _process_parameters(parameters: dict) -> dict:
-        remove_keys = ["system", "stop", "tools"]
-        for key in remove_keys:
-            parameters.pop(key, None)
-        return parameters
+        return self.selected_model.parse_response(response=response, **kwargs)
