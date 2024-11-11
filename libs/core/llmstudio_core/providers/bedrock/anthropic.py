@@ -15,7 +15,6 @@ from typing import (
 )
 
 import boto3
-from fastapi import HTTPException
 from llmstudio_core.exceptions import ProviderError
 from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
 
@@ -30,18 +29,23 @@ from openai.types.chat.chat_completion_chunk import (
 )
 from pydantic import ValidationError
 
+SERVICE = "bedrock-runtime"
+
 
 @provider
-class BedrockAntropicProvider(ProviderCore):
+class BedrockAnthropicProvider(ProviderCore):
     def __init__(self, config, **kwargs):
         super().__init__(config, **kwargs)
-        self.access_key = (
-            self.access_key if self.access_key else os.getenv("BEDROCK_ACCESS_KEY")
+        self._client = boto3.client(
+            SERVICE,
+            region_name=self.region if self.region else os.getenv("BEDROCK_REGION"),
+            aws_access_key_id=self.access_key
+            if self.access_key
+            else os.getenv("BEDROCK_ACCESS_KEY"),
+            aws_secret_access_key=self.secret_key
+            if self.secret_key
+            else os.getenv("BEDROCK_SECRET_KEY"),
         )
-        self.secret_key = (
-            self.secret_key if self.secret_key else os.getenv("BEDROCK_SECRET_KEY")
-        )
-        self.region = self.region if self.region else os.getenv("BEDROCK_REGION")
 
     @staticmethod
     def _provider_config_name():
@@ -57,26 +61,6 @@ class BedrockAntropicProvider(ProviderCore):
     def generate_client(self, request: ChatRequest) -> Coroutine[Any, Any, Generator]:
         """Generate an AWS Bedrock client"""
         try:
-
-            service = "bedrock-runtime"
-
-            if (
-                self.access_key is None
-                or self.secret_key is None
-                or self.region is None
-            ):
-                raise HTTPException(
-                    status_code=400,
-                    detail="AWS credentials were not given or not set in environment variables.",
-                )
-
-            client = boto3.client(
-                service,
-                region_name=self.region,
-                aws_access_key_id=self.access_key,
-                aws_secret_access_key=self.secret_key,
-            )
-
             messages, system_prompt = self._process_messages(request.chat_input)
             tools = self._process_tools(request.parameters)
 
@@ -95,7 +79,7 @@ class BedrockAntropicProvider(ProviderCore):
             if tools:
                 client_params["toolConfig"] = tools
 
-            return client.converse_stream(**client_params)
+            return self._client.converse_stream(**client_params)
         except Exception as e:
             raise ProviderError(str(e))
 
@@ -249,18 +233,7 @@ class BedrockAntropicProvider(ProviderCore):
     def _process_messages(
         chat_input: Union[str, List[Dict[str, str]]]
     ) -> List[Dict[str, Union[List[Dict[str, str]], str]]]:
-        """
-        Generate input text for the Bedrock API based on the provided chat input.
 
-        Args:
-            chat_input (Union[str, List[Dict[str, str]]]): The input text or a list of message dictionaries.
-
-        Returns:
-            List[Dict[str, Union[List[Dict[str, str]], str]]]: A list of formatted messages for the Bedrock API.
-
-        Raises:
-            HTTPException: If the input is invalid.
-        """
         if isinstance(chat_input, str):
             return [
                 {

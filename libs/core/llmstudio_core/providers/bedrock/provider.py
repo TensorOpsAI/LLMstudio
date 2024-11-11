@@ -1,6 +1,6 @@
 from typing import Any, AsyncGenerator, Coroutine, Generator
 
-from llmstudio_core.providers.bedrock_providers.antropic import BedrockAntropicProvider
+from llmstudio_core.providers.bedrock.anthropic import BedrockAnthropicProvider
 from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
 
 
@@ -13,7 +13,7 @@ class BedrockProvider(ProviderCore):
 
     def _get_provider(self, model):
         if "anthropic." in model:
-            return BedrockAntropicProvider(config=self.config, **self.kwargs)
+            return BedrockAnthropicProvider(config=self.config, **self.kwargs)
 
         raise ValueError(f" provider is not yet supported.")
 
