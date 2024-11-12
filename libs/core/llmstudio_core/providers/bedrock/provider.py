@@ -26,7 +26,7 @@ class BedrockProvider(ProviderCore):
 
     async def agenerate_client(self, request: ChatRequest) -> Coroutine[Any, Any, Any]:
         self.selected_model = self._get_provider(request.model)
-        return self.selected_model.agenerate_client()
+        return await self.selected_model.agenerate_client(request)
 
     def generate_client(self, request: ChatRequest) -> Coroutine[Any, Any, Generator]:
         self.selected_model = self._get_provider(request.model)
@@ -35,8 +35,11 @@ class BedrockProvider(ProviderCore):
 
     async def aparse_response(
         self, response: Any, **kwargs
-    ) -> AsyncGenerator[str, None]:
-        return self.selected_model.aparse_response(response=response, **kwargs)
+    ) -> AsyncGenerator[Any, None]:
+        async for chunk in self.selected_model.aparse_response(
+            response=response, **kwargs
+        ):
+            yield chunk
 
     def parse_response(self, response: AsyncGenerator[Any, None], **kwargs) -> Any:
         return self.selected_model.parse_response(response=response, **kwargs)

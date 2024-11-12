@@ -85,12 +85,10 @@ class BedrockAnthropicProvider(ProviderCore):
 
     async def aparse_response(
         self, response: Any, **kwargs
-    ) -> AsyncGenerator[str, None]:
-        iterator = await asyncio.to_thread(
-            self.parse_response, response=response, **kwargs
-        )
-        for item in iterator:
-            yield item
+    ) -> AsyncGenerator[Any, None]:
+        result = await asyncio.to_thread(self.parse_response, response, **kwargs)
+        for chunk in result:
+            yield chunk
 
     def parse_response(self, response: AsyncGenerator[Any, None], **kwargs) -> Any:
         tool_name = None
@@ -346,7 +344,7 @@ class BedrockAnthropicProvider(ProviderCore):
 
     @staticmethod
     def _process_parameters(parameters: dict) -> dict:
-        remove_keys = ["system", "stop", "tools"]
+        remove_keys = ["system", "stop", "tools", "functions"]
         for key in remove_keys:
             parameters.pop(key, None)
         return parameters

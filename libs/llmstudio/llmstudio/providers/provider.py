@@ -63,11 +63,12 @@ class LLM(Provider):
                 api_endpoint=api_endpoint,
                 api_version=api_version,
                 base_url=base_url,
+                region=region,
+                secret_key=secret_key,
+                access_key=access_key,
                 **kwargs,
             )
-        self.access_key = access_key
-        self.secret_key = secret_key
-        self.region = region
+
         self._session_id = None
         self._tracker = None
         if tracking_config is not None:
