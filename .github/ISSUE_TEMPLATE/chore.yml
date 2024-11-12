@@ -1,0 +1,42 @@
+name: "🧹 Chore"
+description: Submit a request for a maintenance or improvement task in LLMstudio. Including but not limited to tests, refactoring, and CI/CD.
+title: "CHORE: "
+labels: ["03 Chore"]
+body:
+  - type: textarea
+    id: chore-description
+    validations:
+      required: true
+    attributes:
+      label: Chore Description
+      description: |
+        A clear and concise description of the chore. Examples include adding tests, refactoring, or updating CI/CD.
+
+  - type: textarea
+    id: purpose
+    validations:
+      required: true
+    attributes:
+      label: Purpose
+      description: |
+        Outline the reason for this chore. What specific improvement does it bring to the project? 
+        Examples: resolve technical debt, increase code quality, aid future development, or simplify processes.
+
+  - type: textarea
+    id: impact
+    validations:
+      required: true
+    attributes:
+      label: Impact and Scope
+      description: |
+        Describe the extent and scope of this chore. Will it affect multiple modules, dependencies, or documentation? 
+        Is it critical for maintainability or ease of use? Note any potential side effects, dependencies, or areas of the codebase it touches.
+
+  - type: textarea
+    id: contribution
+    validations:
+      required: true
+    attributes:
+      label: Your Contribution
+      description: |
+        Can you assist with this chore by submitting a PR or providing insights? Make sure to read [CONTRIBUTING.MD](https://github.com/tensorops/llmstudio/blob/master/CONTRIBUTING.md).
