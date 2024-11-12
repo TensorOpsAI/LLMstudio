@@ -623,8 +623,8 @@ class ProviderCore(Provider):
             "cost_usd": input_cost + output_cost,
             "latency_s": total_time,
             "time_to_first_token_s": first_token_time - start_time,
-            "inter_token_latency_s": sum(token_times) / len(token_times),
-            "tokens_per_second": token_count / total_time,
+            "inter_token_latency_s": sum(token_times) / len(token_times) if token_times else 0,
+            "tokens_per_second": token_count / total_time if token_times else 1 / total_time,
         }
 
     def calculate_cost(
