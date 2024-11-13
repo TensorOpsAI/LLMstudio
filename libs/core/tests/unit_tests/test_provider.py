@@ -149,3 +149,145 @@ def test_handle_response_stop_single_token(mock_provider):
 
     assert isinstance(result, ChatCompletion)
     assert result.choices[0].message.content == "Hello, "
+    
+def test_join_chunks_finish_reason_stop(mock_provider):
+    current_time = int(time.time())
+    chunks = [
+        {
+            "id": "test_id",
+            "model": "test_model",
+            "created": current_time,
+            "choices": [
+                {
+                    "delta": {"content": "Hello, "},
+                    "finish_reason": None,
+                    "index": 0,
+                }
+            ],
+        },
+        {
+            "id": "test_id",
+            "model": "test_model",
+            "created": current_time,
+            "choices": [
+                {
+                    "delta": {"content": "world!"},
+                    "finish_reason": "stop",
+                    "index": 0,
+                }
+            ],
+        },
+    ]
+    response, output_string = mock_provider.join_chunks(chunks)
+
+    assert output_string == "Hello, world!"
+    assert response.choices[0].message.content == "Hello, world!"
+
+def test_join_chunks_finish_reason_function_call(mock_provider):
+    current_time = int(time.time())
+    chunks = [
+        {
+            "id": "test_id",
+            "model": "test_model",
+            "created": current_time,
+            "choices": [
+                {
+                    "delta": {"function_call": {"name": "my_function", "arguments": "arg1"}},
+                    "finish_reason": None,
+                    "index": 0,
+                }
+            ],
+        },
+        {
+            "id": "test_id",
+            "model": "test_model",
+            "created": current_time,
+            "choices": [
+                {
+                    "delta": {"function_call": {"arguments": "arg2"}},
+                    "finish_reason": "function_call",
+                    "index": 0,
+                }
+            ],
+        },
+        {
+            "id": "test_id",
+            "model": "test_model",
+            "created": current_time,
+            "choices": [
+                {
+                    "delta": {"function_call": {"arguments": "}"}},
+                    "finish_reason": "function_call",
+                    "index": 0,
+                }
+            ],
+        },
+    ]
+    response, output_string = mock_provider.join_chunks(chunks)
+
+    assert output_string == "arg1arg2"
+    assert response.choices[0].message.function_call.arguments == "arg1arg2"
+    assert response.choices[0].message.function_call.name == "my_function"
+    
+    
+def test_join_chunks_tool_calls(mock_provider):
+    current_time = int(time.time())
+    
+    chunks = [
+        {
+            "id": "test_id_1",
+            "model": "test_model",
+            "created": current_time,
+            "choices": [
+                {
+                    "delta": {
+                        "tool_calls": [
+                            {
+                                "id": "tool_1",
+                                "index": 0,
+                                "function": {"name": "search_tool", "arguments": "{\"query\": \"weather"},
+                                "type": "function"
+                            }
+                        ]
+                    },
+                    "finish_reason": None,
+                    "index": 0
+                }
+            ]
+        },
+        {
+            "id": "test_id_2",
+            "model": "test_model",
+            "created": current_time,
+            "choices": [
+                {
+                    "delta": {
+                        "tool_calls": [
+                            {
+                                "id": "tool_1",
+                                "index": 0,
+                                "function": {"name": "search_tool", "arguments": " details\"}"}
+                            }
+                        ]
+                    },
+                    "finish_reason": "tool_calls",
+                    "index": 0
+                }
+            ]
+        }
+    ]
+
+    response, output_string = mock_provider.join_chunks(chunks)
+    
+    assert output_string == "['search_tool', '{\"query\": \"weather details\"}']"
+
+    
+
+    assert response.object == "chat.completion"
+    assert response.choices[0].finish_reason == "tool_calls"
+    tool_call = response.choices[0].message.tool_calls[0]
+
+    assert tool_call.id == "tool_1"
+    assert tool_call.function.name == "search_tool"
+    assert tool_call.function.arguments == "{\"query\": \"weather details\"}"
+    assert tool_call.type == "function"

@@ -289,7 +289,7 @@ class ProviderCore(Provider):
         chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
         model = next(chunk["model"] for chunk in chunks if chunk.get("model"))
 
-        response, output_string = self.join_chunks(chunks, request)
+        response, output_string = self.join_chunks(chunks)
 
         metrics = self.calculate_metrics(
             request.chat_input,
@@ -341,7 +341,29 @@ class ProviderCore(Provider):
     def handle_response(
         self, request: ChatRequest, response: Generator, start_time: float
     ) -> Generator:
-        """Handles the response from an API"""
+        """
+        Processes API response chunks to build a structured, complete response, yielding 
+        each chunk if streaming is enabled.
+        
+        If streaming, each chunk is yielded as soon as it’s processed. Otherwise, all chunks 
+        are combined and yielded as a single response at the end.
+
+        Parameters
+        ----------
+        request : ChatRequest
+            The original request details, including model, input, and streaming preference.
+        response : Generator
+            A generator yielding partial response chunks from the API.
+        start_time : float
+            The start time for measuring response timing.
+
+        Yields
+        ------
+        Union[ChatCompletionChunk, ChatCompletion]
+            If streaming (`is_stream=True`), yields each `ChatCompletionChunk` as it’s processed.
+            Otherwise, yields a single `ChatCompletion` with the full response data.
+
+        """
         first_token_time = None
         previous_token_time = None
         token_times = []
@@ -397,7 +419,7 @@ class ProviderCore(Provider):
         chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
         model = next(chunk["model"] for chunk in chunks if chunk.get("model"))
 
-        response, output_string = self.join_chunks(chunks, request)
+        response, output_string = self.join_chunks(chunks)
 
         metrics = self.calculate_metrics(
             request.chat_input,
@@ -446,7 +468,29 @@ class ProviderCore(Provider):
         else:
             yield ChatCompletion(**response)
 
-    def join_chunks(self, chunks, request):
+    def join_chunks(self, chunks):
+        """
+        Combine multiple response chunks from the model into a single, structured response. 
+        Handles tool calls, function calls, and standard text completion based on the 
+        purpose indicated by the final chunk.
+
+        Parameters
+        ----------
+        chunks : List[Dict]
+            A list of partial responses (chunks) from the model.
+
+        Returns
+        -------
+        Tuple[ChatCompletion, str]
+            - `ChatCompletion`: The structured response based on the type of completion 
+            (tool calls, function call, or text).
+            - `str`: The concatenated content or arguments, depending on the completion type.
+
+        Raises
+        ------
+        Exception
+            If there is an issue constructing the response, an exception is raised.
+        """
 
         finish_reason = chunks[-1].get("choices")[0].get("finish_reason")
         if finish_reason == "tool_calls":
