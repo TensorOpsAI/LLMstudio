@@ -741,6 +741,23 @@ class ProviderCore(Provider):
         return 0
 
     def input_to_string(self, input):
+        """
+        Converts an input, which can be a string or a structured list of messages, into a single concatenated string.
+
+        Parameters
+        ----------
+        input : Any
+            The input data to be converted. This can be:
+            - A simple string, which is returned as-is.
+            - A list of message dictionaries, where each dictionary may contain `content`, `role`, 
+            and nested items like `text` or `image_url`.
+
+        Returns
+        -------
+        str
+            A concatenated string representing the text content of all messages, 
+            including text and URLs from image content if present.
+        """
         if isinstance(input, str):
             return input
         else:
@@ -762,6 +779,23 @@ class ProviderCore(Provider):
             return "".join(result)
 
     def output_to_string(self, output):
+        """
+        Extracts and returns the content or arguments from the output based on 
+        the `finish_reason` of the first choice in `output`.
+
+        Parameters
+        ----------
+        output : Any
+            The model output object, expected to have a `choices` attribute that should contain a `finish_reason` indicating the type of output 
+            ("stop", "tool_calls", or "function_call") and corresponding content or arguments.
+
+        Returns
+        -------
+        str
+            - If `finish_reason` is "stop": Returns the message content.
+            - If `finish_reason` is "tool_calls": Returns the arguments for the first tool call.
+            - If `finish_reason` is "function_call": Returns the arguments for the function call.
+        """
         if output.choices[0].finish_reason == "stop":
             return output.choices[0].message.content
         elif output.choices[0].finish_reason == "tool_calls":

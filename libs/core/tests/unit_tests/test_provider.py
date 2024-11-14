@@ -366,3 +366,50 @@ def test_calculate_cost_variable_cost_no_matching_range_inferior(mock_provider):
     token_count = 5
     expected_cost = 0
     assert mock_provider.calculate_cost(token_count, variable_cost) == expected_cost
+    
+def test_input_to_string_with_string(mock_provider):
+    input_data = "Hello, world!"
+    assert mock_provider.input_to_string(input_data) == "Hello, world!"
+
+
+def test_input_to_string_with_list_of_text_messages(mock_provider):
+    input_data = [
+        {"content": "Hello"},
+        {"content": " world!"},
+    ]
+    assert mock_provider.input_to_string(input_data) == "Hello world!"
+
+
+def test_input_to_string_with_list_of_text_and_url(mock_provider):
+    input_data = [
+        {"role": "user", "content": [{"type": "text", "text": "Hello "}]},
+        {"role": "user", "content": [{"type": "image_url", "image_url": {"url": "http://example.com/image.jpg"}}]},
+        {"role": "user", "content": [{"type": "text", "text": " world!"}]},
+    ]
+    expected_output = "Hello http://example.com/image.jpg world!"
+    assert mock_provider.input_to_string(input_data) == expected_output
+
+
+def test_input_to_string_with_mixed_roles_and_missing_content(mock_provider):
+    input_data = [
+        {"role": "assistant", "content": "Admin text;"},
+        {"role": "user", "content": [{"type": "text", "text": "User text"}]},
+        {"role": "user", "content": [{"type": "image_url", "image_url": {"url": "http://example.com/another.jpg"}}]},
+    ]
+    expected_output = "Admin text;User texthttp://example.com/another.jpg"
+    assert mock_provider.input_to_string(input_data) == expected_output
+
+
+def test_input_to_string_with_missing_content_key(mock_provider):
+    input_data = [
+        {"role": "user"},
+        {"role": "user", "content": [{"type": "text", "text": "Hello again"}]},
+    ]
+    expected_output = "Hello again"    
+    assert mock_provider.input_to_string(input_data) == expected_output
+
+
+def test_input_to_string_with_empty_list(mock_provider):
+    input_data = []
+    assert mock_provider.input_to_string(input_data) == ""
+
