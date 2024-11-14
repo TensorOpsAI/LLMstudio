@@ -11,14 +11,6 @@ class MockProvider(ProviderCore):
     def parse_response(self, response, **kwargs):
         return response
 
-    def chat(self, chat_input, model, **kwargs):
-        # Mock the response to match expected structure
-        return MagicMock(choices=[MagicMock(finish_reason="stop")])
-
-    async def achat(self, chat_input, model, **kwargs):
-        # Mock the response to match expected structure
-        return MagicMock(choices=[MagicMock(finish_reason="stop")])
-
     def output_to_string(self, output):
         # Handle string inputs
         if isinstance(output, str):

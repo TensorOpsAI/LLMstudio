@@ -147,8 +147,38 @@ class ProviderCore(Provider):
         parameters: Optional[dict] = {},
         **kwargs,
     ):
+        """
+        Asynchronously establishes a chat connection with the provider’s API, handling retries, 
+        request validation, and streaming response options.
 
-        """Makes a chat connection with the provider's API"""
+        Parameters
+        ----------
+        chat_input : Any
+            The input data for the chat request, such as a string or dictionary, to be sent to the API.
+        model : str
+            The identifier of the model to be used for the chat request.
+        is_stream : Optional[bool], default=False
+            Flag to indicate if the response should be streamed. If True, returns an async generator 
+            for streaming content; otherwise, returns the complete response.
+        retries : Optional[int], default=0
+            Number of retry attempts on error. Retries will be attempted for specific HTTP errors like rate limits.
+        parameters : Optional[dict], default={}
+            Additional configuration parameters for the request, such as temperature or max tokens.
+        **kwargs
+            Additional keyword arguments to customize the request.
+
+        Returns
+        -------
+        Union[AsyncGenerator, Any]
+            - If `is_stream` is True, returns an async generator yielding response chunks.
+            - If `is_stream` is False, returns the first complete response chunk.
+
+        Raises
+        ------
+        ProviderError
+            - Raised if the request validation fails or if all retry attempts are exhausted.
+            - Also raised for unexpected exceptions during request handling.
+        """
         try:
             request = self.validate_request(
                 dict(
@@ -193,8 +223,38 @@ class ProviderCore(Provider):
         parameters: Optional[dict] = {},
         **kwargs,
     ):
+        """
+        Establishes a chat connection with the provider’s API, handling retries, request validation, 
+        and streaming response options.
 
-        """Makes a chat connection with the provider's API"""
+        Parameters
+        ----------
+        chat_input : Any
+            The input data for the chat request, often a string or dictionary, to be sent to the API.
+        model : str
+            The model identifier for selecting the model used in the chat request.
+        is_stream : Optional[bool], default=False
+            Flag to indicate if the response should be streamed. If True, the function returns a generator 
+            for streaming content. Otherwise, it returns the complete response.
+        retries : Optional[int], default=0
+            Number of retry attempts on error. Retries will be attempted on specific HTTP errors like rate limits.
+        parameters : Optional[dict], default={}
+            Additional configuration parameters for the request, such as temperature or max tokens.
+        **kwargs
+            Additional keyword arguments that can be passed to customize the request.
+
+        Returns
+        -------
+        Union[Generator, Any]
+            - If `is_stream` is True, returns a generator that yields chunks of the response.
+            - If `is_stream` is False, returns the first complete response chunk.
+
+        Raises
+        ------
+        ProviderError
+            - Raised if the request validation fails or if the request fails after the specified number of retries.
+            - Also raised on other unexpected exceptions during request handling.
+        """
         try:
             request = self.validate_request(
                 dict(
@@ -233,7 +293,28 @@ class ProviderCore(Provider):
     async def ahandle_response(
         self, request: ChatRequest, response: AsyncGenerator, start_time: float
     ) -> AsyncGenerator[str, None]:
-        """Handles the response from an API"""
+        """
+        Asynchronously handles the response from an API, processing response chunks for either 
+        streaming or non-streaming responses.
+        
+        Buffers response chunks for non-streaming responses to output one single message. For streaming responses sends incremental chunks.
+
+        Parameters
+        ----------
+        request : ChatRequest
+            The chat request object, which includes input data, model name, and streaming options.
+        response : AsyncGenerator
+            The async generator yielding response chunks from the API.
+        start_time : float
+            The timestamp when the response handling started, used for latency calculations.
+
+        Yields
+        ------
+        Union[ChatCompletionChunk, ChatCompletion]
+            - If `request.is_stream` is True, yields `ChatCompletionChunk` objects with incremental 
+            response chunks for streaming.
+            - If `request.is_stream` is False, yields a final `ChatCompletion` object after processing all chunks.
+        """
         first_token_time = None
         previous_token_time = None
         token_times = []

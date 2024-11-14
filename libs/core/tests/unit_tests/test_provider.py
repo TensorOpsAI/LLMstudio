@@ -1,30 +1,44 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from llmstudio_core.providers.provider import ChatRequest, ProviderError, ChatCompletion, time
+from llmstudio_core.providers.provider import ChatRequest, ProviderError, ChatCompletion, time, ChatCompletionChunk
 
-request = ChatRequest(chat_input="Hello", model="test_model")
+request = ChatRequest(chat_input="Hello World", model="test_model")
+
+    
+def test_chat_response_non_stream(mock_provider):
+    mock_provider.validate_request = MagicMock()
+    mock_provider.validate_model = MagicMock()
+    mock_provider.generate_client = MagicMock(return_value="mock_response")
+    mock_provider.handle_response = MagicMock(return_value="final_response")
+
+    response = mock_provider.chat(chat_input="Hello", model="test_model")
+
+    assert response == "final_response"
+    mock_provider.validate_request.assert_called_once()
+    mock_provider.validate_model.assert_called_once()
+    
+def test_chat_streaming_response(mock_provider):
+    mock_provider.validate_request = MagicMock()
+    mock_provider.validate_model = MagicMock()
+    mock_provider.generate_client = MagicMock(return_value="mock_response_stream")
+    mock_provider.handle_response = MagicMock(return_value=iter(["streamed_response_1", "streamed_response_2"]))
+
+    response_stream = mock_provider.chat(chat_input="Hello", model="test_model", is_stream=True)
+    assert next(response_stream) == "streamed_response_1"
+    assert next(response_stream) == "streamed_response_2"
+    mock_provider.validate_request.assert_called_once()
+    mock_provider.validate_model.assert_called_once()
+
+    
+#@pytest.mark.asyncio
+#async def test_achat_response_non_stream(mock_provider):
+#    pass
 
 
-def test_chat(mock_provider):
-    mock_provider.generate_client = MagicMock(return_value=MagicMock())
-    mock_provider.handle_response = MagicMock(return_value=iter(["response"]))
-
-    print(request.model_dump())
-    response = mock_provider.chat(request.chat_input, request.model)
-
-    assert response is not None
-
-
-@pytest.mark.asyncio
-async def test_achat(mock_provider):
-    mock_provider.agenerate_client = AsyncMock(return_value=AsyncMock())
-    mock_provider.ahandle_response = AsyncMock(return_value=AsyncMock())
-
-    print(request.model_dump())
-    response = await mock_provider.achat(request.chat_input, request.model)
-
-    assert response is not None
+#@pytest.mark.asyncio
+#async def test_achat_streaming_response(mock_provider):
+#    pass
 
 
 def test_validate_model(mock_provider):
@@ -82,7 +96,32 @@ def test_calculate_metrics_single_token(mock_provider):
     assert metrics["time_to_first_token_s"] == 0.5 - 0.0
     assert metrics["inter_token_latency_s"] == 0
     assert metrics["tokens_per_second"] == 1 / 1.0
-    
+
+@pytest.mark.asyncio
+async def test_ahandle_response_non_streaming(mock_provider):
+    request = MagicMock(is_stream=False, chat_input="Hello", model="test_model", parameters={})
+    response_chunk = {
+        "choices": [{"delta": {"content": "Non-streamed response"}, "finish_reason": "stop"}],
+        "model": "test_model",
+    }
+    start_time = time.time()
+
+    async def mock_aparse_response(*args, **kwargs):
+        yield response_chunk
+
+    mock_provider.aparse_response = mock_aparse_response
+    mock_provider.join_chunks = MagicMock(return_value=(ChatCompletion(id="id", choices=[], created=0, model="test_model", object="chat.completion"), "Non-streamed response"))
+    mock_provider.calculate_metrics = MagicMock(return_value={"input_tokens": 1})
+
+    response = []
+    async for chunk in mock_provider.ahandle_response(request, mock_aparse_response(), start_time):
+        response.append(chunk)
+
+    assert isinstance(response[0], ChatCompletion)
+    assert response[0].choices == []
+    assert response[0].chat_output == "Non-streamed response"
+
+
 def test_handle_response_stop(mock_provider):
 
     current_time = int(time.time())
