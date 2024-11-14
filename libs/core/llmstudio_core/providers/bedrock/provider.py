@@ -36,9 +36,8 @@ class BedrockProvider(ProviderCore):
     async def aparse_response(
         self, response: Any, **kwargs
     ) -> AsyncGenerator[Any, None]:
-        async for chunk in self.selected_model.aparse_response(
-            response=response, **kwargs
-        ):
+        result = await self.selected_model.aparse_response(response=response, **kwargs)
+        for chunk in result:
             yield chunk
 
     def parse_response(self, response: AsyncGenerator[Any, None], **kwargs) -> Any:

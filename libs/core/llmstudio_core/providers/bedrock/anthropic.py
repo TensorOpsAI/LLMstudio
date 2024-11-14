@@ -1,4 +1,3 @@
-import asyncio
 import json
 import os
 import time
@@ -56,7 +55,7 @@ class BedrockAnthropicProvider(ProviderCore):
 
     async def agenerate_client(self, request: ChatRequest) -> Coroutine[Any, Any, Any]:
         """Generate an AWS Bedrock client"""
-        return await asyncio.to_thread(self.generate_client, request)
+        return self.generate_client(request=request)
 
     def generate_client(self, request: ChatRequest) -> Coroutine[Any, Any, Generator]:
         """Generate an AWS Bedrock client"""
@@ -86,9 +85,7 @@ class BedrockAnthropicProvider(ProviderCore):
     async def aparse_response(
         self, response: Any, **kwargs
     ) -> AsyncGenerator[Any, None]:
-        result = await asyncio.to_thread(self.parse_response, response, **kwargs)
-        for chunk in result:
-            yield chunk
+        return self.parse_response(response=response, **kwargs)
 
     def parse_response(self, response: AsyncGenerator[Any, None], **kwargs) -> Any:
         tool_name = None
