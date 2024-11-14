@@ -30,17 +30,6 @@ def test_chat_streaming_response(mock_provider):
     mock_provider.validate_request.assert_called_once()
     mock_provider.validate_model.assert_called_once()
 
-    
-#@pytest.mark.asyncio
-#async def test_achat_response_non_stream(mock_provider):
-#    pass
-
-
-#@pytest.mark.asyncio
-#async def test_achat_streaming_response(mock_provider):
-#    pass
-
-
 def test_validate_model(mock_provider):
     request = ChatRequest(chat_input="Hello", model="test_model")
     mock_provider.validate_model(request)  # Should not raise
