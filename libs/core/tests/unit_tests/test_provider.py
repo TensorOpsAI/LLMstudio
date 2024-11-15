@@ -39,8 +39,6 @@ def test_validate_model(mock_provider):
         mock_provider.validate_model(request_invalid)
 
 def test_calculate_metrics(mock_provider):
-    
-    mock_provider.tokenizer.encode = lambda x: x.split() # Assuming tokenizer splits "Hello" and "World" into one token each
 
     metrics = mock_provider.calculate_metrics(
         input="Hello",
@@ -63,8 +61,6 @@ def test_calculate_metrics(mock_provider):
     assert metrics["tokens_per_second"] == 2 / 1.0  # token_count / total_time
     
 def test_calculate_metrics_single_token(mock_provider):
-    
-    mock_provider.tokenizer.encode = lambda x: x.split()
 
     metrics = mock_provider.calculate_metrics(
         input="Hello",
@@ -150,9 +146,6 @@ def test_handle_response_stop(mock_provider):
     assert result.choices[0].message.content == "Hello, world!"
     
 def test_handle_response_stop_single_token(mock_provider):
-    """
-    testing single token answer. token_times var will be 0
-    """
 
     current_time = int(time.time())
 
