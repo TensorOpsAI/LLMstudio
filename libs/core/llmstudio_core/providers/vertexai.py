@@ -16,7 +16,7 @@ from typing import (
 import requests
 from llmstudio_core.exceptions import ProviderError
 from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
-from llmstudio_core.utils import OpenAITool
+from llmstudio_core.utils import OpenAIToolFunction
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import (
     Choice,
@@ -57,7 +57,7 @@ class VertexAIProvider(ProviderCore):
                 "x-goog-api-key": self.API_KEY,
             }
 
-            tool_payload = self._process_tools(request.parameters.get("tools"))
+            tool_payload = self._process_tools(request.parameters)
             payload = self._create_request_payload(request.chat_input, tool_payload)
 
             return requests.post(url, headers=headers, json=payload, stream=True)
@@ -205,7 +205,7 @@ class VertexAIProvider(ProviderCore):
     async def aparse_response(
         self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:
-        result = self.parse_response(response, kwargs)
+        result = self.parse_response(response=response, **kwargs)
         for chunk in result:
             yield chunk
 
@@ -266,8 +266,8 @@ class VertexAIProvider(ProviderCore):
         Initializes the basic structure of a VertexAI payload.
 
         Args:
-            user_payload (Optional[str]): The user's payload to include in the request.
-            tool_payload (Optional[Any]): The tool payload for the request.
+            user_payload (Optional[str]): The user's payload to include in the
+            tool_payload (Optional[Any]): The tool payload for the
 
         Returns:
             Dict: The initialized VertexAI payload structure.
@@ -282,18 +282,29 @@ class VertexAIProvider(ProviderCore):
         }
 
     @staticmethod
-    def _process_tools(tools: Optional[Union[List[Dict], Dict]]) -> dict:
-        if tools is None:
+    def _process_tools(parameters: dict) -> dict:
+
+        if parameters.get("tools") is None and parameters.get("functions") is None:
             return None
         try:
-            parsed_tools = (
-                [OpenAITool(**tool) for tool in tools]
-                if isinstance(tools, list)
-                else [OpenAITool(**tools)]
-            )
+            if parameters.get("tools"):
+                parsed_tools = [
+                    OpenAIToolFunction(**tool["function"])
+                    for tool in parameters["tools"]
+                ]
+
+            if parameters.get("functions"):
+                parsed_tools = [
+                    OpenAIToolFunction(**tool) for tool in parameters["functions"]
+                ]
+
             function_declarations = []
             for tool in parsed_tools:
-                function_declarations.append(tool.function.model_dump())
+                function_declarations.append(tool.model_dump())
             return {"function_declarations": function_declarations}
         except ValidationError:
-            return tools
+            return (
+                parameters.get("tools")
+                if parameters.get("tools")
+                else parameters.get("functions")
+            )
