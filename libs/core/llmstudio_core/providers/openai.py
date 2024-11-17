@@ -1,4 +1,3 @@
-import asyncio
 import os
 from typing import Any, AsyncGenerator, Coroutine, Generator
 
@@ -26,21 +25,7 @@ class OpenAIProvider(ProviderCore):
         self, request: ChatRequest
     ) -> Coroutine[Any, Any, Generator]:
         """Generate an OpenAI client"""
-
-        try:
-            return await asyncio.to_thread(
-                self._client.chat.completions.create,
-                model=request.model,
-                messages=(
-                    [{"role": "user", "content": request.chat_input}]
-                    if isinstance(request.chat_input, str)
-                    else request.chat_input
-                ),
-                stream=True,
-                **request.parameters,
-            )
-        except openai._exceptions.APIError as e:
-            raise ProviderError(str(e))
+        return self.generate_client(request=request)
 
     def generate_client(self, request: ChatRequest) -> Generator:
         """Generate an OpenAI client"""
@@ -62,8 +47,9 @@ class OpenAIProvider(ProviderCore):
     async def aparse_response(
         self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:
-        for chunk in response:
-            yield chunk.model_dump()
+        result = self.parse_response(response=response, **kwargs)
+        for chunk in result:
+            yield chunk
 
     def parse_response(self, response: Generator, **kwargs) -> Generator:
         for chunk in response:
