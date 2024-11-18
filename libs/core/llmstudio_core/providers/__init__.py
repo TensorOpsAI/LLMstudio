@@ -2,7 +2,7 @@
 from typing import Optional
 
 from llmstudio_core.providers.azure import AzureProvider
-from llmstudio_core.providers.bedrock import BedrockProvider
+from llmstudio_core.providers.bedrock.provider import BedrockProvider
 
 # from llmstudio_core.providers.ollama import OllamaProvider #TODO: adapt it
 from llmstudio_core.providers.openai import OpenAIProvider

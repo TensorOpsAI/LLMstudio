@@ -1,4 +1,3 @@
-import asyncio
 import json
 import os
 import time
@@ -15,12 +14,11 @@ from typing import (
 )
 
 import boto3
-from fastapi import HTTPException
 from llmstudio_core.exceptions import ProviderError
 from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
 
 # from llmstudio_core.providers.bedrock import BedrockProvider
-from llmstudio_core.utils import OpenAITool, OpenAIToolFunction
+from llmstudio_core.utils import OpenAIToolFunction
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import (
     Choice,
@@ -30,18 +28,23 @@ from openai.types.chat.chat_completion_chunk import (
 )
 from pydantic import ValidationError
 
+SERVICE = "bedrock-runtime"
+
 
 @provider
-class BedrockAntropicProvider(ProviderCore):
+class BedrockAnthropicProvider(ProviderCore):
     def __init__(self, config, **kwargs):
         super().__init__(config, **kwargs)
-        self.access_key = (
-            self.access_key if self.access_key else os.getenv("BEDROCK_ACCESS_KEY")
+        self._client = boto3.client(
+            SERVICE,
+            region_name=self.region if self.region else os.getenv("BEDROCK_REGION"),
+            aws_access_key_id=self.access_key
+            if self.access_key
+            else os.getenv("BEDROCK_ACCESS_KEY"),
+            aws_secret_access_key=self.secret_key
+            if self.secret_key
+            else os.getenv("BEDROCK_SECRET_KEY"),
         )
-        self.secret_key = (
-            self.secret_key if self.secret_key else os.getenv("BEDROCK_SECRET_KEY")
-        )
-        self.region = self.region if self.region else os.getenv("BEDROCK_REGION")
 
     @staticmethod
     def _provider_config_name():
@@ -52,31 +55,11 @@ class BedrockAntropicProvider(ProviderCore):
 
     async def agenerate_client(self, request: ChatRequest) -> Coroutine[Any, Any, Any]:
         """Generate an AWS Bedrock client"""
-        return await asyncio.to_thread(self.generate_client, request)
+        return self.generate_client(request=request)
 
     def generate_client(self, request: ChatRequest) -> Coroutine[Any, Any, Generator]:
         """Generate an AWS Bedrock client"""
         try:
-
-            service = "bedrock-runtime"
-
-            if (
-                self.access_key is None
-                or self.secret_key is None
-                or self.region is None
-            ):
-                raise HTTPException(
-                    status_code=400,
-                    detail="AWS credentials were not given or not set in environment variables.",
-                )
-
-            client = boto3.client(
-                service,
-                region_name=self.region,
-                aws_access_key_id=self.access_key,
-                aws_secret_access_key=self.secret_key,
-            )
-
             messages, system_prompt = self._process_messages(request.chat_input)
             tools = self._process_tools(request.parameters)
 
@@ -95,18 +78,14 @@ class BedrockAntropicProvider(ProviderCore):
             if tools:
                 client_params["toolConfig"] = tools
 
-            return client.converse_stream(**client_params)
+            return self._client.converse_stream(**client_params)
         except Exception as e:
             raise ProviderError(str(e))
 
     async def aparse_response(
         self, response: Any, **kwargs
-    ) -> AsyncGenerator[str, None]:
-        iterator = await asyncio.to_thread(
-            self.parse_response, response=response, **kwargs
-        )
-        for item in iterator:
-            yield item
+    ) -> AsyncGenerator[Any, None]:
+        return self.parse_response(response=response, **kwargs)
 
     def parse_response(self, response: AsyncGenerator[Any, None], **kwargs) -> Any:
         tool_name = None
@@ -249,18 +228,7 @@ class BedrockAntropicProvider(ProviderCore):
     def _process_messages(
         chat_input: Union[str, List[Dict[str, str]]]
     ) -> List[Dict[str, Union[List[Dict[str, str]], str]]]:
-        """
-        Generate input text for the Bedrock API based on the provided chat input.
 
-        Args:
-            chat_input (Union[str, List[Dict[str, str]]]): The input text or a list of message dictionaries.
-
-        Returns:
-            List[Dict[str, Union[List[Dict[str, str]], str]]]: A list of formatted messages for the Bedrock API.
-
-        Raises:
-            HTTPException: If the input is invalid.
-        """
         if isinstance(chat_input, str):
             return [
                 {
@@ -302,16 +270,16 @@ class BedrockAntropicProvider(ProviderCore):
                     if not next_tool_result_message:
                         tool_result = {"role": "user", "content": []}
                         next_tool_result_message = True
+                        messages.append(tool_result)
 
-                    tool_result["content"].append(
-                        {
-                            "toolResult": {
-                                "toolUseId": message["tool_call_id"],
-                                "content": [{"json": {"text": message["content"]}}],
-                            }
+                    tool_result = {
+                        "toolResult": {
+                            "toolUseId": message["tool_call_id"],
+                            "content": [{"json": {"text": message["content"]}}],
                         }
-                    )
-                    messages.append(tool_result)
+                    }
+
+                    messages[-1]["content"].append(tool_result)
 
                 if message.get("role") in ["system"]:
                     system_prompt = [{"text": message.get("content")}]
@@ -325,38 +293,27 @@ class BedrockAntropicProvider(ProviderCore):
 
         try:
             if parameters.get("tools"):
-                parsed_tools = (
-                    [OpenAITool(**tool) for tool in parameters.get("tools")]
-                    if isinstance(parameters.get("tools"), list)
-                    else [OpenAITool(**parameters.get("tools"))]
-                )
+                parsed_tools = [
+                    OpenAIToolFunction(**tool["function"])
+                    for tool in parameters["tools"]
+                ]
+
             if parameters.get("functions"):
-                parsed_tools = (
-                    [OpenAIToolFunction(**tool) for tool in parameters.get("functions")]
-                    if isinstance(parameters.get("functions"), list)
-                    else [OpenAIToolFunction(**parameters.get("functions"))]
-                )
+                parsed_tools = [
+                    OpenAIToolFunction(**tool) for tool in parameters["functions"]
+                ]
+
             tool_configurations = []
             for tool in parsed_tools:
                 tool_config = {
                     "toolSpec": {
-                        "name": tool.function.name
-                        if parameters.get("tools")
-                        else tool.name,
-                        "description": tool.function.description
-                        if parameters.get("tools")
-                        else tool.description,
+                        "name": tool.name,
+                        "description": tool.description,
                         "inputSchema": {
                             "json": {
-                                "type": tool.function.parameters.type
-                                if parameters.get("tools")
-                                else tool.parameters.type,
-                                "properties": tool.function.parameters.properties
-                                if parameters.get("tools")
-                                else tool.parameters.properties,
-                                "required": tool.function.parameters.required
-                                if parameters.get("tools")
-                                else tool.parameters.required,
+                                "type": tool.parameters.type,
+                                "properties": tool.parameters.properties,
+                                "required": tool.parameters.required,
                             }
                         },
                     }
@@ -373,7 +330,7 @@ class BedrockAntropicProvider(ProviderCore):
 
     @staticmethod
     def _process_parameters(parameters: dict) -> dict:
-        remove_keys = ["system", "stop", "tools"]
+        remove_keys = ["system", "stop", "tools", "functions"]
         for key in remove_keys:
             parameters.pop(key, None)
         return parameters
