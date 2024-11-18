@@ -161,7 +161,7 @@ class AzureProvider(ProviderCore):
         if self.is_llama and (self.has_tools or self.has_functions):
             user_message = self.convert_to_openai_format(request.chat_input)
             content = "<|begin_of_text|>"
-            content = self.add_system_message(
+            content = self.build_llama_system_message(
                 user_message,
                 content,
                 request.parameters.get("tools"),
@@ -190,6 +190,20 @@ class AzureProvider(ProviderCore):
                     yield c
 
     def parse_response(self, response: Generator, **kwargs) -> Any:
+        """
+        Processes a generator response and yields processed chunks.
+
+        If `is_llama` is True and tools or functions are enabled, it processes the response 
+        using `handle_tool_response`. Otherwise, it processes each chunk and yields only those 
+        containing "choices".
+
+        Args:
+            response (Generator): The response generator to process.
+            **kwargs: Additional arguments for tool handling.
+
+        Yields:
+            Any: Processed response chunks.
+        """
         if self.is_llama and (self.has_tools or self.has_functions):
             for chunk in self.handle_tool_response(response, **kwargs):
                 if chunk:
@@ -439,9 +453,25 @@ class AzureProvider(ProviderCore):
             return [{"role": "user", "content": message}]
         return message
 
-    def add_system_message(
+    def build_llama_system_message(
         self, openai_message: list, llama_message: str, tools: list, functions: list
     ) -> str:
+        """
+        Builds a complete system message for Llama based on OpenAI's message, tools, and functions.
+
+        If a system message is present in the OpenAI message, it is included in the result. 
+        Otherwise, a default system message is used. Additional tool and function instructions
+        are appended if provided.
+
+        Args:
+            openai_message (list): List of OpenAI messages.
+            llama_message (str): The message to prepend to the system message.
+            tools (list): List of tools to include in the system message.
+            functions (list): List of functions to include in the system message.
+
+        Returns:
+            str: The formatted system message combined with Llama message.
+        """
         system_message = ""
         system_message_found = False
         for message in openai_message:
@@ -458,15 +488,29 @@ class AzureProvider(ProviderCore):
       """
 
         if tools:
-            system_message = system_message + self.add_tool_instructions(tools)
+            system_message = system_message + self.build_tool_instructions(tools)
 
         if functions:
-            system_message = system_message + self.add_function_instructions(functions)
+            system_message = system_message + self.build_function_instructions(functions)
 
         end_tag = "\n<|eot_id|>"
         return llama_message + system_message + end_tag
 
-    def add_tool_instructions(self, tools: list) -> str:
+    def build_tool_instructions(self, tools: list) -> str:
+        """
+        Builds a detailed instructional prompt for tools available to the assistant.
+
+        This function generates a message describing the available tools, focusing on tools 
+        of type "function." It explains to the LLM how to use each tool and provides an example of the 
+        correct response format for function calls.
+
+        Args:
+            tools (list): A list of tool dictionaries, where each dictionary contains tool 
+            details such as type, function name, description, and parameters.
+
+        Returns:
+            str: A formatted string detailing the tool instructions and usage examples.
+        """
         tool_prompt = """
     You have access to the following tools:
     """
@@ -500,7 +544,21 @@ NOTE: There is no prefix before the symbol '§' and nothing comes after the call
 
         return tool_prompt
 
-    def add_function_instructions(self, functions: list) -> str:
+    def build_function_instructions(self, functions: list) -> str:
+        """
+        Builds a detailed instructional prompt for available functions.
+
+        This method creates a message describing the functions accessible to the assistant. 
+        It includes the function name, description, and required parameters, along with 
+        specific guidelines for calling functions.
+
+        Args:
+            functions (list): A list of function dictionaries, each containing details such as 
+            name, description, and parameters.
+
+        Returns:
+            str: A formatted string with instructions on using the provided functions.
+        """
         function_prompt = """
 You have access to the following functions:
 """
