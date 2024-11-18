@@ -167,7 +167,7 @@ class AzureProvider(ProviderCore):
                 request.parameters.get("tools"),
                 request.parameters.get("functions"),
             )
-            content = self.add_conversation(user_message, content)
+            content = self.build_llama_conversation(user_message, content)
             return [{"role": "user", "content": content}]
         else:
             return (
@@ -588,35 +588,60 @@ Reminder:
 """
         return function_prompt
 
-    def add_conversation(self, openai_message: list, llama_message: str) -> str:
+    def build_llama_conversation(self, openai_message: list, llama_message: str) -> str:
+        """
+        Appends the OpenAI message to the Llama message while formatting OpenAI messages.
+
+        This function iterates through a list of OpenAI messages and formats them for inclusion 
+        in a Llama message. It handles user messages that might include nested content (lists of 
+        messages) by safely evaluating the content. System messages are skipped.
+
+        Args:
+            openai_message (list): A list of dictionaries representing the OpenAI messages. Each 
+                                dictionary should have "role" and "content" keys.
+            llama_message (str): The initial Llama message to which the conversation is appended.
+
+        Returns:
+            str: The Llama message with the conversation appended.
+        """
         conversation_parts = []
         for message in openai_message:
             if message["role"] == "system":
                 continue
             elif message["role"] == "user" and isinstance(message["content"], str):
                 try:
-                    # Attempt to safely evaluate the string to a Python object
                     content_as_list = ast.literal_eval(message["content"])
                     if isinstance(content_as_list, list):
-                        # If the content is a list, process each nested message
                         for nested_message in content_as_list:
                             conversation_parts.append(
                                 self.format_message(nested_message)
                             )
                     else:
-                        # If the content is not a list, append it directly
                         conversation_parts.append(self.format_message(message))
                 except (ValueError, SyntaxError):
-                    # If evaluation fails or content is not a list/dict string, append the message directly
                     conversation_parts.append(self.format_message(message))
             else:
-                # For all other messages, use the existing formatting logic
                 conversation_parts.append(self.format_message(message))
 
         return llama_message + "".join(conversation_parts)
 
     def format_message(self, message: dict) -> str:
-        """Format a single message for the conversation."""
+        """
+        Formats a single message dictionary into a structured string for a conversation.
+
+        The formatting depends on the content of the message, such as tool calls, 
+        function calls, or simple user/assistant messages. Each type of message 
+        is formatted with specific headers and tags.
+
+        Args:
+            message (dict): A dictionary containing message details. Expected keys 
+                            include "role", "content", and optionally "tool_calls", 
+                            "tool_call_id", or "function_call".
+
+        Returns:
+            str: A formatted string representing the message. Returns an empty 
+            string if the message cannot be formatted.
+        """
         if "tool_calls" in message:
             for tool_call in message["tool_calls"]:
                 function_name = tool_call["function"]["name"]
