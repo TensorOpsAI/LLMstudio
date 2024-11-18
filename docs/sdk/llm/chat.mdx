@@ -1,0 +1,86 @@
+Make chat calls using your LLM.
+
+## Parameters
+The llm.chat method can have the following parameters.
+| Parameter      | Type   | Description                                                                 |
+|-------------------|--------|-----------------------------------------------------------------------------|
+| `input `       | str    | The input message to send to the chat model.                                   |
+| `is_stream`    | bool  | The temperature parameter for the model.                                       |
+| `**kwargs`          | dict  | Additional parameters to pass to the chat model.                           |
+
+<Check>Refer to your provider-specific documentation for additional kwargs you can use.</Check>
+
+## Returns
+| Output            | Type   | Description                                                                 |
+|-------------------|--------|-----------------------------------------------------------------------------|
+| `ChatCompletion`  | object | A chat completion object in the OpenAI format + metrics computed by LLMstudio.|
+
+
+## Usage
+Here's how to use `.chat()` to make calls to your LLM.
+
+<Steps>
+    <Step>
+        Start by importing LLM.
+        ```python
+        from llmstudio import LLM
+        ```
+    </Step>
+    <Step >
+        Set up an LLM from your desired provider.
+        ```python
+        llm = LLM('openai/gpt-4o')
+        ```
+    </Step>
+    <Step>
+        Create your message. Your message can be a simple `string` or a message in the `OpenAI format`.
+
+       <Tabs>
+            <Tab title="String format">
+                ```python
+                message = "Hello, how are you today?"
+                ```
+            </Tab>
+            <Tab title="OpenAI format">
+                ```python
+                message = [
+                {"role": "system", "content": "You are a helpfull assistant."},
+                {"role": "user", "content": "Hello, how are you today?"}
+                ]
+                ```
+            </Tab>
+        </Tabs> 
+
+    </Step>
+    <Step>
+
+        <Tabs>
+            <Tab title="Non-stream response">
+                Get your response.
+                ```python
+                response = llm.chat(message)
+                ```
+
+                Vizualize your response.
+                 ```python
+                print(response)
+                ```
+            </Tab>
+            <Tab title="Stream response">
+                Get your response.
+                ```python
+                response = llm.chat(message, is_stream = True)
+                ```
+
+                Vizualize your response.
+                 ```python
+                for chunk in response:
+                    print(chunk)
+                ```
+            </Tab>
+        </Tabs> 
+    
+        <Check>You are done chating with your **LLMstudio LLM**!</Check>
+    </Step>
+</Steps>
+  
