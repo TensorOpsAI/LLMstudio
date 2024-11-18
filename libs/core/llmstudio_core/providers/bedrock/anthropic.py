@@ -18,7 +18,7 @@ from llmstudio_core.exceptions import ProviderError
 from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
 
 # from llmstudio_core.providers.bedrock import BedrockProvider
-from llmstudio_core.utils import OpenAITool, OpenAIToolFunction
+from llmstudio_core.utils import OpenAIToolFunction
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import (
     Choice,
@@ -293,38 +293,27 @@ class BedrockAnthropicProvider(ProviderCore):
 
         try:
             if parameters.get("tools"):
-                parsed_tools = (
-                    [OpenAITool(**tool) for tool in parameters.get("tools")]
-                    if isinstance(parameters.get("tools"), list)
-                    else [OpenAITool(**parameters.get("tools"))]
-                )
+                parsed_tools = [
+                    OpenAIToolFunction(**tool["function"])
+                    for tool in parameters["tools"]
+                ]
+
             if parameters.get("functions"):
-                parsed_tools = (
-                    [OpenAIToolFunction(**tool) for tool in parameters.get("functions")]
-                    if isinstance(parameters.get("functions"), list)
-                    else [OpenAIToolFunction(**parameters.get("functions"))]
-                )
+                parsed_tools = [
+                    OpenAIToolFunction(**tool) for tool in parameters["functions"]
+                ]
+
             tool_configurations = []
             for tool in parsed_tools:
                 tool_config = {
                     "toolSpec": {
-                        "name": tool.function.name
-                        if parameters.get("tools")
-                        else tool.name,
-                        "description": tool.function.description
-                        if parameters.get("tools")
-                        else tool.description,
+                        "name": tool.name,
+                        "description": tool.description,
                         "inputSchema": {
                             "json": {
-                                "type": tool.function.parameters.type
-                                if parameters.get("tools")
-                                else tool.parameters.type,
-                                "properties": tool.function.parameters.properties
-                                if parameters.get("tools")
-                                else tool.parameters.properties,
-                                "required": tool.function.parameters.required
-                                if parameters.get("tools")
-                                else tool.parameters.required,
+                                "type": tool.parameters.type,
+                                "properties": tool.parameters.properties,
+                                "required": tool.parameters.required,
                             }
                         },
                     }
