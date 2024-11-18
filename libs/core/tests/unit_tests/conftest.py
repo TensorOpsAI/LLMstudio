@@ -63,12 +63,6 @@ class MockAzureProvider(AzureProvider):
             yield {}
         return async_gen()
 
-    def generate_client(self, request):
-        # For testing, return a generator
-        def gen():
-            yield {}
-        return gen()
-
     @staticmethod
     def _provider_config_name():
         return "mock_azure_provider"

@@ -107,7 +107,25 @@ class AzureProvider(ProviderCore):
             raise ProviderError(e.response.json())
 
     def generate_client(self, request: ChatRequest) -> Any:
-        """Generate an AzureOpenAI client"""
+        """
+        Generates an AzureOpenAI client for processing a chat request.
+
+        This method prepares and configures the arguments required to create a client
+        request to AzureOpenAI's chat completions API. It determines model-specific
+        configurations (e.g., whether tools or functions are enabled) and combines
+        these with the base arguments for the API call.
+
+        Args:
+            request (ChatRequest): The chat request object containing the model, 
+                                parameters, and other necessary details.
+
+        Returns:
+            Any: The result of the chat completions API call.
+
+        Raises:
+            ProviderError: If there is an issue with the API connection or an error
+                        returned from the API.
+        """
 
         self.is_llama = "llama" in request.model.lower()
         self.is_openai = "gpt" in request.model.lower()
@@ -117,7 +135,6 @@ class AzureProvider(ProviderCore):
         try:
             messages = self.prepare_messages(request)
 
-            # Prepare the optional tool-related arguments
             tool_args = {}
             if not self.is_llama and self.has_tools and self.is_openai:
                 tool_args = {
@@ -125,7 +142,6 @@ class AzureProvider(ProviderCore):
                     "tool_choice": "auto" if request.parameters.get("tools") else None,
                 }
 
-            # Prepare the optional function-related arguments
             function_args = {}
             if not self.is_llama and self.has_functions and self.is_openai:
                 function_args = {
@@ -135,14 +151,12 @@ class AzureProvider(ProviderCore):
                     else None,
                 }
 
-            # Prepare the base arguments
             base_args = {
                 "model": request.model,
                 "messages": messages,
                 "stream": True,
             }
 
-            # Combine all arguments
             combined_args = {
                 **base_args,
                 **tool_args,

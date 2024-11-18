@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import MagicMock
+from llmstudio_core.providers.azure import ProviderError, openai
 
 class TestParseResponse:
     def test_tool_response_handling(self, mock_azure_provider):
@@ -399,3 +400,78 @@ class TestFormatMessage:
         result = mock_azure_provider.format_message(message)
         expected = ""
         assert result == expected
+        
+class TestGenerateClient:
+    
+    def test_generate_client_with_tools_and_functions(self, mock_azure_provider):
+        mock_azure_provider.prepare_messages = MagicMock(return_value="prepared_messages")
+        mock_azure_provider._client.chat.completions.create = MagicMock(return_value="mock_response")
+
+        request = MagicMock()
+        request.model = "gpt-4"
+        request.parameters = {
+            "tools": ["tool1", "tool2"],
+            "functions": ["function1", "function2"],
+            "other_param": "value",
+        }
+
+        result = mock_azure_provider.generate_client(request)
+
+        expected_args = {
+            "model": "gpt-4",
+            "messages": "prepared_messages",
+            "stream": True,
+            "tools": ["tool1", "tool2"],
+            "tool_choice": "auto",
+            "functions": ["function1", "function2"],
+            "function_call": "auto",
+            "other_param": "value",
+        }
+
+        assert result == "mock_response"
+        mock_azure_provider.prepare_messages.assert_called_once_with(request)
+        mock_azure_provider._client.chat.completions.create.assert_called_once_with(**expected_args)
+        
+    def test_generate_client_without_tools_or_functions(self, mock_azure_provider):
+        mock_azure_provider.prepare_messages = MagicMock(return_value="prepared_messages")
+        mock_azure_provider._client.chat.completions.create = MagicMock(return_value="mock_response")
+
+        request = MagicMock()
+        request.model = "gpt-4"
+        request.parameters = {"other_param": "value"}
+
+        result = mock_azure_provider.generate_client(request)
+
+        expected_args = {
+            "model": "gpt-4",
+            "messages": "prepared_messages",
+            "stream": True,
+            "other_param": "value",
+        }
+
+        assert result == "mock_response"
+        mock_azure_provider.prepare_messages.assert_called_once_with(request)
+        mock_azure_provider._client.chat.completions.create.assert_called_once_with(**expected_args)
+
+    def test_generate_client_with_llama_model(self, mock_azure_provider):
+        mock_azure_provider.prepare_messages = MagicMock(return_value="prepared_messages")
+        mock_azure_provider._client.chat.completions.create = MagicMock(return_value="mock_response")
+
+        request = MagicMock()
+        request.model = "llama-2"
+        request.parameters = {"tools": ["tool1"], "functions": ["function1"], "other_param": "value"}
+
+        result = mock_azure_provider.generate_client(request)
+
+        expected_args = {
+            "model": "llama-2",
+            "messages": "prepared_messages",
+            "stream": True,
+            "tools": ["tool1"],
+            "functions": ["function1"],
+            "other_param": "value",
+        }
+
+        assert result == "mock_response"
+        mock_azure_provider.prepare_messages.assert_called_once_with(request)
+        mock_azure_provider._client.chat.completions.create.assert_called_once_with(**expected_args)
