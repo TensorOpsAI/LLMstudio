@@ -270,16 +270,16 @@ class BedrockAnthropicProvider(ProviderCore):
                     if not next_tool_result_message:
                         tool_result = {"role": "user", "content": []}
                         next_tool_result_message = True
+                        messages.append(tool_result)
 
-                    tool_result["content"].append(
-                        {
-                            "toolResult": {
-                                "toolUseId": message["tool_call_id"],
-                                "content": [{"json": {"text": message["content"]}}],
-                            }
+                    tool_result = {
+                        "toolResult": {
+                            "toolUseId": message["tool_call_id"],
+                            "content": [{"json": {"text": message["content"]}}],
                         }
-                    )
-                    messages.append(tool_result)
+                    }
+
+                    messages[-1]["content"].append(tool_result)
 
                 if message.get("role") in ["system"]:
                     system_prompt = [{"text": message.get("content")}]
