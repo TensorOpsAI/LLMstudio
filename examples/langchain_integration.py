@@ -257,14 +257,14 @@ def assistant_new(question: str,chat_llm)->str:
 
     return response
 
-# from llmstudio.providers import LLM
-# llm = LLM(provider="azure", 
-#           api_key=os.environ["AZURE_API_KEY"], 
-#           api_version=os.environ["AZURE_API_VERSION"],
-#           api_endpoint=os.environ["AZURE_API_ENDPOINT"])
-# chat_llm = ChatLLMstudio(llm=llm, model = "gpt-4o-mini", parameters={"temperature":0})
+from llmstudio.providers import LLM
+llm = LLM(provider="azure", 
+          api_key=os.environ["AZURE_API_KEY"], 
+          api_version=os.environ["AZURE_API_VERSION"],
+          api_endpoint=os.environ["AZURE_API_ENDPOINT"])
+chat_llm = ChatLLMstudio(llm=llm, model = "gpt-4o-mini", parameters={"temperature":0})
 
-# print("\n\nresult:\n", assistant_new("Turn this into a party!",chat_llm),"\n")
+print("\n\nresult:\n", assistant_new("Turn this into a party!",chat_llm),"\n")
 
 
 print("###### vertex")
