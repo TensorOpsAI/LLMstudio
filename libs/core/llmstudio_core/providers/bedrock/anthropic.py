@@ -1,4 +1,3 @@
-import asyncio
 import json
 import os
 import time
@@ -17,9 +16,7 @@ from typing import (
 import boto3
 from llmstudio_core.exceptions import ProviderError
 from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
-
-# from llmstudio_core.providers.bedrock import BedrockProvider
-from llmstudio_core.utils import OpenAITool, OpenAIToolFunction
+from llmstudio_core.utils import OpenAIToolFunction
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import (
     Choice,
@@ -56,7 +53,7 @@ class BedrockAnthropicProvider(ProviderCore):
 
     async def agenerate_client(self, request: ChatRequest) -> Coroutine[Any, Any, Any]:
         """Generate an AWS Bedrock client"""
-        return await asyncio.to_thread(self.generate_client, request)
+        return self.generate_client(request=request)
 
     def generate_client(self, request: ChatRequest) -> Coroutine[Any, Any, Generator]:
         """Generate an AWS Bedrock client"""
@@ -85,12 +82,8 @@ class BedrockAnthropicProvider(ProviderCore):
 
     async def aparse_response(
         self, response: Any, **kwargs
-    ) -> AsyncGenerator[str, None]:
-        iterator = await asyncio.to_thread(
-            self.parse_response, response=response, **kwargs
-        )
-        for item in iterator:
-            yield item
+    ) -> AsyncGenerator[Any, None]:
+        return self.parse_response(response=response, **kwargs)
 
     def parse_response(self, response: AsyncGenerator[Any, None], **kwargs) -> Any:
         tool_name = None
@@ -275,16 +268,16 @@ class BedrockAnthropicProvider(ProviderCore):
                     if not next_tool_result_message:
                         tool_result = {"role": "user", "content": []}
                         next_tool_result_message = True
+                        messages.append(tool_result)
 
-                    tool_result["content"].append(
-                        {
-                            "toolResult": {
-                                "toolUseId": message["tool_call_id"],
-                                "content": [{"json": {"text": message["content"]}}],
-                            }
+                    tool_result = {
+                        "toolResult": {
+                            "toolUseId": message["tool_call_id"],
+                            "content": [{"json": {"text": message["content"]}}],
                         }
-                    )
-                    messages.append(tool_result)
+                    }
+
+                    messages[-1]["content"].append(tool_result)
 
                 if message.get("role") in ["system"]:
                     system_prompt = [{"text": message.get("content")}]
@@ -298,38 +291,27 @@ class BedrockAnthropicProvider(ProviderCore):
 
         try:
             if parameters.get("tools"):
-                parsed_tools = (
-                    [OpenAITool(**tool) for tool in parameters.get("tools")]
-                    if isinstance(parameters.get("tools"), list)
-                    else [OpenAITool(**parameters.get("tools"))]
-                )
+                parsed_tools = [
+                    OpenAIToolFunction(**tool["function"])
+                    for tool in parameters["tools"]
+                ]
+
             if parameters.get("functions"):
-                parsed_tools = (
-                    [OpenAIToolFunction(**tool) for tool in parameters.get("functions")]
-                    if isinstance(parameters.get("functions"), list)
-                    else [OpenAIToolFunction(**parameters.get("functions"))]
-                )
+                parsed_tools = [
+                    OpenAIToolFunction(**tool) for tool in parameters["functions"]
+                ]
+
             tool_configurations = []
             for tool in parsed_tools:
                 tool_config = {
                     "toolSpec": {
-                        "name": tool.function.name
-                        if parameters.get("tools")
-                        else tool.name,
-                        "description": tool.function.description
-                        if parameters.get("tools")
-                        else tool.description,
+                        "name": tool.name,
+                        "description": tool.description,
                         "inputSchema": {
                             "json": {
-                                "type": tool.function.parameters.type
-                                if parameters.get("tools")
-                                else tool.parameters.type,
-                                "properties": tool.function.parameters.properties
-                                if parameters.get("tools")
-                                else tool.parameters.properties,
-                                "required": tool.function.parameters.required
-                                if parameters.get("tools")
-                                else tool.parameters.required,
+                                "type": tool.parameters.type,
+                                "properties": tool.parameters.properties,
+                                "required": tool.parameters.required,
                             }
                         },
                     }
@@ -338,15 +320,11 @@ class BedrockAnthropicProvider(ProviderCore):
             return {"tools": tool_configurations}
 
         except ValidationError:
-            return (
-                parameters.get("tools")
-                if parameters.get("tools")
-                else parameters.get("functions")
-            )
+            return parameters.get("tools", parameters.get("functions"))
 
     @staticmethod
     def _process_parameters(parameters: dict) -> dict:
-        remove_keys = ["system", "stop", "tools"]
+        remove_keys = ["system", "stop", "tools", "functions"]
         for key in remove_keys:
             parameters.pop(key, None)
         return parameters

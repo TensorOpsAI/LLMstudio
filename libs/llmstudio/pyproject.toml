@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "llmstudio"
-version = "1.0.1"
+version = "1.0.1a9"
 description = "Prompt Perfection at Your Fingertips"
 authors = ["Cláudio Lemos <claudio@tensorops.ai>"]
 license = "MIT"
@@ -16,7 +16,7 @@ keywords = ["ml", "ai", "llm", "llmops", "openai", "langchain", "chatgpt", "llms
 [tool.poetry.dependencies]
 python = "^3.9"
 pydantic = "^2.5"
-python-dotenv = "^0"
+python-dotenv = "^1.0.1"
 langchain = "^0"
 langchain-experimental = "^0"
 llmstudio-core = "^1.0.0"
