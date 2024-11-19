@@ -303,8 +303,4 @@ class VertexAIProvider(ProviderCore):
                 function_declarations.append(tool.model_dump())
             return {"function_declarations": function_declarations}
         except ValidationError:
-            return (
-                parameters.get("tools")
-                if parameters.get("tools")
-                else parameters.get("functions")
-            )
+            return parameters.get("tools", parameters.get("functions"))
