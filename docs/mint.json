@@ -59,6 +59,7 @@
       "group": "How to",
       "pages": [
         "how-to/deploy-on-gke/deploy-on-google-kubernetes-engine",
+        "how-to/deploy-on-aws-eks",
         "how-to/build-a-tool-agent"
       ]
     },

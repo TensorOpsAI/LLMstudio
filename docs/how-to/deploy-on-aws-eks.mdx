@@ -1,0 +1,357 @@
+---
+title: "Deploy on AWS Elastic Kubernetes Engine"
+---
+
+LLMstudio is available as a container service on [AWS Marketplace](https://aws.amazon.com/marketplace). 
+This tutorial shows to deploy the containerized application on EKS.
+
+
+
+## Prerequisites
+
+In order to follow this tutorial you need to:
+
+- Have AWSMarketplaceFullAccess policy permission in your AWS account
+- Have a valid subscription to LLMstudio on AWS marketplace
+
+
+## Setup Prerequisite command-line tools
+
+1. Open AWS CloudShell
+2. Run the following commands to install the prerequisite command-line tools:
+
+```bash
+mkdir software \
+&& cd software \
+&& ARCH=amd64 PLATFORM=$(uname -s)_$ARCH && \
+curl -sLO "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$PLATFORM.tar.gz" && \
+tar -xzf eksctl_$PLATFORM.tar.gz -C /tmp && \
+sudo mv /tmp/eksctl /usr/local/bin && \
+rm eksctl_$PLATFORM.tar.gz && \
+curl -o kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.27.4/2023-08-16/bin/linux/amd64/kubectl && \
+chmod +x kubectl && \
+sudo mv kubectl /usr/local/bin && \
+wget -q https://get.helm.sh/helm-v3.12.3-linux-amd64.tar.gz && \
+tar -zxvf helm-v3.12.3-linux-amd64.tar.gz && \
+sudo mv linux-amd64/helm /usr/local/bin/helm && \
+rm -rf helm-v3.12.3-linux-amd64.tar.gz linux-amd64 && \
+curl -L https://github.com/a8m/envsubst/releases/download/v1.2.0/envsubst-$(uname -s)-$(uname -m) -o envsubst && \
+chmod +x envsubst && \
+sudo mv envsubst /usr/local/bin && \
+sudo yum install -y yum-utils && \
+sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo && \
+sudo yum -y install terraform && \
+sudo yum update -y && \
+sudo amazon-linux-extras install -y docker \
+&& echo $(nohup sudo dockerd > /tmp/dockerd.log 2>&1 &);
+
+```
+
+## Pull Images from ECR
+
+When you subscribe to the product on AWS Marketplace, you'll be given a command to pull the images from ECR.
+After running the given commanf you'll get the ECR Repository URL and the image version, which you need to set as environment variables.
+
+ ```bash
+export ECR_REPOSITORY=<ecrrepourl>
+export PRODUCT_VERSION=<version>
+```
+
+
+## Create cluster
+
+1.  Create a file called cluster.yaml with the following format
+
+<Accordion title="cluster.yaml">
+  ```yaml cluster.yaml
+---
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: ${PRODUCT_NAME}-cluster
+  region: ${AWS_REGION}
+  version: "1.30"
+
+availabilityZones: ["${AWS_REGION}a", "${AWS_REGION}b"]
+
+fargateProfiles:
+  - name: fp-default
+    selectors:
+      # All workloads in the "default" Kubernetes namespace will be
+      # scheduled onto Fargate:
+      - namespace: default
+      # All workloads in the "kube-system" Kubernetes namespace will be
+      # scheduled onto Fargate:
+      - namespace: kube-system
+      - namespace: mcp
+iam:
+  withOIDC: true
+  serviceAccounts:
+    - metadata:
+        name: ${PRODUCT_NAME}-sa
+        namespace: mcp
+      attachPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Action:
+              - "aws-marketplace:MeterUsage"
+              - "aws-marketplace:RegisterUsage"
+              - "license-manager:CheckoutLicense"
+              - "license-manager:CheckInLicense"
+              - "license-manager:ExtendLicenseConsumption"
+              - "license-manager:GetLicense"
+            Effect: Allow
+            Resource: "*"
+    - metadata:
+        name: ${PRODUCT_NAME}-icsa
+        namespace: kube-system
+      attachPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - acm:DescribeCertificate
+              - acm:ListCertificates
+              - acm:GetCertificate
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - ec2:AuthorizeSecurityGroupIngress
+              - ec2:CreateSecurityGroup
+              - ec2:CreateTags
+              - ec2:DeleteTags
+              - ec2:DeleteSecurityGroup
+              - ec2:DescribeAccountAttributes
+              - ec2:DescribeAddresses
+              - ec2:DescribeInstances
+              - ec2:DescribeInstanceStatus
+              - ec2:DescribeInternetGateways
+              - ec2:DescribeNetworkInterfaces
+              - ec2:DescribeSecurityGroups
+              - ec2:DescribeSubnets
+              - ec2:DescribeTags
+              - ec2:DescribeVpcs
+              - ec2:ModifyInstanceAttribute
+              - ec2:ModifyNetworkInterfaceAttribute
+              - ec2:RevokeSecurityGroupIngress
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - elasticloadbalancing:AddListenerCertificates
+              - elasticloadbalancing:AddTags
+              - elasticloadbalancing:CreateListener
+              - elasticloadbalancing:CreateLoadBalancer
+              - elasticloadbalancing:CreateRule
+              - elasticloadbalancing:CreateTargetGroup
+              - elasticloadbalancing:DeleteListener
+              - elasticloadbalancing:DeleteLoadBalancer
+              - elasticloadbalancing:DeleteRule
+              - elasticloadbalancing:DeleteTargetGroup
+              - elasticloadbalancing:DeregisterTargets
+              - elasticloadbalancing:DescribeListenerCertificates
+              - elasticloadbalancing:DescribeListeners
+              - elasticloadbalancing:DescribeLoadBalancers
+              - elasticloadbalancing:DescribeLoadBalancerAttributes
+              - elasticloadbalancing:DescribeRules
+              - elasticloadbalancing:DescribeSSLPolicies
+              - elasticloadbalancing:DescribeTags
+              - elasticloadbalancing:DescribeTargetGroups
+              - elasticloadbalancing:DescribeTargetGroupAttributes
+              - elasticloadbalancing:DescribeTargetHealth
+              - elasticloadbalancing:ModifyListener
+              - elasticloadbalancing:ModifyLoadBalancerAttributes
+              - elasticloadbalancing:ModifyRule
+              - elasticloadbalancing:ModifyTargetGroup
+              - elasticloadbalancing:ModifyTargetGroupAttributes
+              - elasticloadbalancing:RegisterTargets
+              - elasticloadbalancing:RemoveListenerCertificates
+              - elasticloadbalancing:RemoveTags
+              - elasticloadbalancing:SetIpAddressType
+              - elasticloadbalancing:SetSecurityGroups
+              - elasticloadbalancing:SetSubnets
+              - elasticloadbalancing:SetWebACL
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - iam:CreateServiceLinkedRole
+              - iam:GetServerCertificate
+              - iam:ListServerCertificates
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - cognito-idp:DescribeUserPoolClient
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - waf-regional:GetWebACLForResource
+              - waf-regional:GetWebACL
+              - waf-regional:AssociateWebACL
+              - waf-regional:DisassociateWebACL
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - tag:GetResources
+              - tag:TagResources
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - waf:GetWebACL
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - shield:DescribeProtection
+              - shield:GetSubscriptionState
+              - shield:DeleteProtection
+              - shield:CreateProtection
+              - shield:DescribeSubscription
+              - shield:ListProtections
+            Resource: "*"
+cloudWatch:
+  clusterLogging:
+    enableTypes: ["*"]
+    logRetentionInDays: 1
+
+```
+</Accordion>
+
+
+2. Run the following command to create an **EKS cluster**.
+
+
+```bash
+export AWS_REGION=<REGION>
+export PRODUCT_NAME=<PRODUCT_NAME>
+envsubst < cluster.yaml > $PRODUCT_NAME-cluster.yaml
+eksctl create cluster -f $PRODUCT_NAME-cluster.yaml
+```
+
+## Wait for EKS Cluster
+- It takes **10-20 minutes** for the EKS cluster to be created.  
+- You will see a prompt in the CLI when the cluster is ready.
+
+---
+
+## Create Deployment File
+
+1.  Create a file called cluster.yaml with the following format:
+
+<Accordion title="deployment.yaml">
+
+```yaml
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llmstudio-proxy
+  namespace: mcp
+  labels:
+    app: llmstudio-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llmstudio-proxy
+  template:
+    metadata:
+      labels:
+        app: llmstudio-proxy
+    spec:
+      serviceAccountName: ${PRODUCT_NAME}-sa
+      volumes:
+        - name: shared-data
+          emptyDir: {}
+      containers:
+        - name: llmstudio-proxy
+          image: $ECR_REPOSITORY:$PRODUCT_VERSION 
+          ports:
+            - containerPort: 50001
+          env:
+            - name: PROD_ID
+              value: $PRODUCT_ID
+            - name: ISSUER_FT
+              value: $ISSUER_FOOTPRINT
+            - name: OPENAI_API_KEY
+              value: $OPENAI_API_KEY
+            # Add here the keys for other providers as needed
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llmstudio-proxy
+  namespace: mcp
+spec:
+  type: NodePort
+  selector:
+    app: llmstudio-proxy
+  ports:
+    - protocol: TCP
+      port: 50001
+      targetPort: 50001
+
+
+```
+
+
+</Accordion>
+
+
+
+2. Add environment variables needed, e.g the API Keys for the models you need:
+```bash
+
+export OPENAI_API_KEY="...."
+
+```
+
+3. Run the following command to create a deployment file for your container image with the correct environment variables:
+
+```bash
+envsubst < deployment.yaml > $PRODUCT_NAME-deployment.yaml 
+```
+
+---
+
+## Deploy Container Image
+Run the following command to deploy the container image into the EKS cluster:
+
+```bash
+kubectl apply -f $PRODUCT_NAME-deployment.yaml
+```
+
+---
+
+## Check Pod Status
+Once the container starts, check the pod status with the following command:
+
+```bash
+kubectl get pods -n mcp
+```
+
+- Wait and re-run the previous command until the **STATUS** shows `Running`.  
+- The output should look similar to this:
+
+```plaintext
+NAME                  READY   STATUS    RESTARTS   AGE
+llmstudio-proxy       1/1     Running   0          79s
+```
+
+---
+
+## View Logs
+Run the following command to get the log output of the pod:
+
+```bash
+kubectl logs "$(kubectl get pods -n mcp --output name)" -c contract-app -n mcp
+```
+
+
+You'll see the application server startup:
+
+```plaintext
+Running LLMstudio Proxy on http://0.0.0.0:50001 
+```
+
+And that's it! You've deployed LLMstudio 🎉
