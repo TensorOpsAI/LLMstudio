@@ -22,9 +22,15 @@ from openai.types.chat.chat_completion_chunk import (
 @provider
 class AzureProvider(ProviderCore):
     def __init__(
-        self, config, api_key=None, api_endpoint=None, api_version=None, base_url=None
+        self,
+        config,
+        api_key=None,
+        api_endpoint=None,
+        api_version=None,
+        base_url=None,
+        **kwargs,
     ):
-        super().__init__(config)
+        super().__init__(config, **kwargs)
         self.API_KEY = api_key or os.getenv("AZURE_API_KEY")
         self.API_ENDPOINT = api_endpoint
         self.API_VERSION = api_version or os.getenv("AZURE_API_VERSION")
