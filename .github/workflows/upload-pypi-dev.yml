@@ -8,10 +8,10 @@ on:
         type: choice
         description: "Choose the library to deploy (note: it points to develop branch only)"
         options: 
-          - llmstudio
-          - llmstudio-core
-          - llmstudio-proxy
-          - llmstudio-tracker
+          - ./libs/llmstudio
+          - ./libs/core
+          - ./libs/proxy
+          - ./libs/tracker
       target_version:
         description: "Target version (e.g., 1.1.0)"
         required: true
