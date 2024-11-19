@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  llmstudio-proxy:
+    image: tensoropsai/llmstudio-proxy
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - 8001:50001
+  llmstudio-tracking:
+    image: tensoropsai/llmstudio-tracker
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - 8002:50002
