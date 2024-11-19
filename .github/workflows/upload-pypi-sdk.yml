@@ -1,4 +1,4 @@
-name: Upload Python package to PyPI and build/push Docker images.
+name: llmstudio to PyPI.
 
 on:
   push:
