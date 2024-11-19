@@ -16,8 +16,6 @@ from typing import (
 import boto3
 from llmstudio_core.exceptions import ProviderError
 from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
-
-# from llmstudio_core.providers.bedrock import BedrockProvider
 from llmstudio_core.utils import OpenAIToolFunction
 from openai.types.chat import ChatCompletionChunk
 from openai.types.chat.chat_completion_chunk import (
@@ -322,11 +320,7 @@ class BedrockAnthropicProvider(ProviderCore):
             return {"tools": tool_configurations}
 
         except ValidationError:
-            return (
-                parameters.get("tools")
-                if parameters.get("tools")
-                else parameters.get("functions")
-            )
+            return parameters.get("tools", parameters.get("functions"))
 
     @staticmethod
     def _process_parameters(parameters: dict) -> dict:

@@ -30,8 +30,7 @@ class BedrockProvider(ProviderCore):
 
     def generate_client(self, request: ChatRequest) -> Coroutine[Any, Any, Generator]:
         self.selected_model = self._get_provider(request.model)
-        client = self.selected_model.generate_client(request=request)
-        return client
+        return self.selected_model.generate_client(request=request)
 
     async def aparse_response(
         self, response: Any, **kwargs
