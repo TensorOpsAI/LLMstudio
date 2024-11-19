@@ -1,10 +1,10 @@
-from llmstudio_tracker.config import TRACKING_URI
+from llmstudio_tracker.config import TRACKING_URI, DB_TYPE
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 
 def create_tracking_engine(uri: str):
-    if uri.split("://")[0] == "sqlite":
+    if DB_TYPE == "sqlite":
         return create_engine(uri, connect_args={"check_same_thread": False})
     return create_engine(uri)
 

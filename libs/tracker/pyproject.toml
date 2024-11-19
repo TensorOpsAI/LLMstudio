@@ -6,13 +6,15 @@ authors = ["Diogo Goncalves <diogo.goncalves@tensorops.ai>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.9,<3.13"
 pydantic = "^2.5"
 sqlalchemy = "^2"
 toml = "^0.10"
 requests = "^2.31"
 fastapi = "^0.109"
 uvicorn = "^0.27"
+sqlalchemy-bigquery = "^1.12.0"
+google-cloud-bigquery-storage = "^2.27.0"
 
 [build-system]
 requires = ["poetry-core"]
