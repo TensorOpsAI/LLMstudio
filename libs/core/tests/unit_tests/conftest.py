@@ -11,14 +11,6 @@ class MockProvider(ProviderCore):
     def parse_response(self, response, **kwargs):
         return response
 
-    def chat(self, chat_input, model, **kwargs):
-        # Mock the response to match expected structure
-        return MagicMock(choices=[MagicMock(finish_reason="stop")])
-
-    async def achat(self, chat_input, model, **kwargs):
-        # Mock the response to match expected structure
-        return MagicMock(choices=[MagicMock(finish_reason="stop")])
-
     def output_to_string(self, output):
         # Handle string inputs
         if isinstance(output, str):
@@ -26,6 +18,22 @@ class MockProvider(ProviderCore):
         if output.choices[0].finish_reason == "stop":
             return output.choices[0].message.content
         return ""
+    
+    def validate_request(self, request):
+        # For testing, simply return the request
+        return request
+
+    async def agenerate_client(self, request):
+        # For testing, return an async generator
+        async def async_gen():
+            yield {}
+        return async_gen()
+
+    def generate_client(self, request):
+        # For testing, return a generator
+        def gen():
+            yield {}
+        return gen()
 
     @staticmethod
     def _provider_config_name():
