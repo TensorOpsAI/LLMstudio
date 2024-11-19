@@ -47,7 +47,7 @@ VERTEXAI_KEY="sk-api-key"
 Now you should be able to run **LLMstudio** using the following command.
 
 ```bash
-llmstudio server --proxy --tacker
+llmstudio server --proxy --tracker
 ```
 
 When the `--proxy` flag is set, you'll be able to access the [Swagger at http://0.0.0.0:50001/docs (default port)](http://0.0.0.0:50001/docs)
