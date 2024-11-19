@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "llmstudio-proxy"
-version = "1.0.1a0"
+version = "1.0.1"
 description = ""
 authors = ["Diogo Goncalves <diogo.goncalves@tensorops.ai>"]
 readme = "README.md"
