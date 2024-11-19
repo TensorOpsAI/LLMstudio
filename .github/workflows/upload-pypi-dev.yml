@@ -23,10 +23,10 @@ jobs:
     env:
       MODULE_PATH: |
         ${{ 
-          inputs.library == 'llmstudio' && 'libs/llmstudio' ||
-          inputs.library == 'llmstudio-core' && 'libs/core' ||
-          inputs.library == 'llmstudio-proxy' && 'libs/proxy' ||
-          inputs.library == 'llmstudio-tracker' && 'libs/tracker'
+          inputs.library == 'llmstudio' && '.libs/llmstudio' ||
+          inputs.library == 'llmstudio-core' && '.libs/core' ||
+          inputs.library == 'llmstudio-proxy' && '.libs/proxy' ||
+          inputs.library == 'llmstudio-tracker' && '.libs/tracker'
         }}
     steps:
       - name: Checkout code
