@@ -18,6 +18,9 @@ class LLM(Provider):
         api_endpoint: Optional[str] = None,
         api_version: Optional[str] = None,
         base_url: Optional[str] = None,
+        access_key: Optional[str] = None,
+        secret_key: Optional[str] = None,
+        region: Optional[str] = None,
         **kwargs,
     ):
         """
@@ -62,7 +65,9 @@ class LLM(Provider):
                 base_url=base_url,
                 **kwargs,
             )
-
+        self.access_key = access_key
+        self.secret_key = secret_key
+        self.region = region
         self._session_id = None
         self._tracker = None
         if tracking_config is not None:
