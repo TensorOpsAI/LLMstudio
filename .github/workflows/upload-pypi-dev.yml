@@ -114,9 +114,8 @@ jobs:
         working-directory: ${{ inputs.library }}
         id: get_version
         run: |
-        echo "VERSION=$(poetry version --short)" >> $GITHUB_ENV
-        echo "PACKAGE_NAME=$(poetry version | awk '{print $1}')" >> $GITHUB_ENV
-
+          echo "VERSION=$(poetry version --short)" >> $GITHUB_ENV
+          echo "PACKAGE_NAME=$(poetry version | awk '{print $1}')" >> $GITHUB_ENV
 
       - name: Build Docker images
         working-directory: ./deploy
