@@ -12,7 +12,7 @@ requests = "^2.31"
 fastapi = "^0.115.5"
 uvicorn = "^0.27"
 tiktoken = "^0.7"
-python-dotenv = "^1.0.1"
+python-dotenv = ">=0.4.0,<2.0.0"
 toml = "^0.10"
 llmstudio-core = "^1.0.0"
 
