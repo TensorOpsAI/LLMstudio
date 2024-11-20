@@ -13,7 +13,9 @@ class LogDefault(Base):
         log_id = Column(
             Integer,
             primary_key=True,
-            default=lambda: int(datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S%f")[:-1]),
+            default=lambda: int(
+                datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S%f")[:-1]
+            ),
         )
         created_at = Column(
             DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
