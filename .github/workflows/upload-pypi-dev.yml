@@ -1,40 +1,95 @@
-name: Upload Python package to PyPI as dev release and build/push Docker image.
+name: PyPI prerelease and build/push Docker image.
 
 on:
   workflow_dispatch:
+    inputs:
+      library:
+        required: true
+        type: choice
+        description: "Choose the library to deploy (note: it points to develop branch only)"
+        options: 
+          - llmstudio
+          - llmstudio-core
+          - llmstudio-proxy
+          - llmstudio-tracker
+      target_version:
+        description: "Target version (e.g., 1.1.0)"
+        required: true
+        default: "1.1.0"
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      MODULE_PATH: |
+        ${{ 
+          inputs.library == 'llmstudio' && './libs/llmstudio' ||
+          inputs.library == 'llmstudio-core' && './libs/core' ||
+          inputs.library == 'llmstudio-proxy' && './libs/proxy' ||
+          inputs.library == 'llmstudio-tracker' && './libs/tracker'
+        }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: develop
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: "3.x"
 
       - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
+        run: curl -sSL https://install.python-poetry.org | python3 -
 
       - name: Configure Poetry
+        run: poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Check PyPI for Target Version
+        working-directory: ${{ env.MODULE_PATH }}
+        id: check-version
         run: |
-          poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
+          TARGET_VERSION="${{ github.event.inputs.target_version }}"
+          PACKAGE_NAME=${{ inputs.library }}
+          RESPONSE=$(curl -s "https://pypi.org/pypi/$PACKAGE_NAME/json" || echo "{}")
+          echo "$RESPONSE" | jq -r '.releases | keys[]' > all_versions.txt
+          if grep -qx "$TARGET_VERSION" all_versions.txt; then
+            echo "exists=true" >> $GITHUB_ENV
+          else
+            echo "exists=false" >> $GITHUB_ENV
+          fi
+
+      # Step 4: Decide on the next alpha version
+      - name: Determine Next Alpha Version
+        id: determine-version
+        run: |
+          if [[ "${{ env.exists }}" == "true" ]]; then
+            echo "Error: Version ${{ github.event.inputs.target_version }} already exists on PyPI."
+            exit 1
+          fi
+          BASE_VERSION="${{ github.event.inputs.target_version }}"
+          PACKAGE_NAME=${{ inputs.library }}
+          ALPHA_VERSIONS=$(grep -E "^$BASE_VERSIONa[0-9]+$" all_versions.txt | sort -V || true)
+          if [[ -z "$ALPHA_VERSIONS" ]]; then
+            NEW_VERSION="${BASE_VERSION}a0"
+          else
+            LATEST_ALPHA=$(echo "$ALPHA_VERSIONS" | tail -n 1)
+            NEXT_ALPHA_NUM=$(( $(echo "$LATEST_ALPHA" | grep -oE '[0-9]+$') + 1 ))
+            NEW_VERSION="${BASE_VERSION}a${NEXT_ALPHA_NUM}"
+          fi
+          echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
+          echo "Determined new version: $NEW_VERSION"
 
       - name: Build and publish to PyPI as development release
-        working-directory: ./libs/llmstudio
+        working-directory: ${{ env.MODULE_PATH }}
         run: |
-          poetry version prerelease
+          poetry version ${{ env.new_version }}
           poetry build
           poetry publish
 
       - name: Commit and push updated pyproject.toml
-        working-directory: ./libs/llmstudio
+        working-directory: ${{ env.MODULE_PATH }}
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
@@ -42,18 +97,17 @@ jobs:
           git commit -m "[fix] bump prerelease version in pyproject.toml"
           git push
 
-      # Wait for PyPI to update
       - name: Wait for PyPI to update
-        working-directory: ./libs/llmstudio
+        working-directory: ${{ env.MODULE_PATH }}
         run: |
           VERSION=$(poetry version --short)
-          echo "Checking for llmstudio==$VERSION on PyPI..."
+          echo "Checking for ${{ github.event.inputs.library }}==$VERSION on PyPI..."
           for i in {1..10}; do
-            if python -m pip install llmstudio==${VERSION} --dry-run >/dev/null 2>&1; then
-              echo "Package llmstudio==${VERSION} is available on PyPI."
+            if python -m pip install ${{ github.event.inputs.library }}==${VERSION} --dry-run >/dev/null 2>&1; then
+              echo "Package ${{ github.event.inputs.library }}==${VERSION} is available on PyPI."
               break
             else
-              echo "Package llmstudio==${VERSION} not available yet. Waiting 15 seconds..."
+              echo "Package ${{ github.event.inputs.library }}==${VERSION} not available yet. Waiting 15 seconds..."
               sleep 15
             fi
             if [ $i -eq 10 ]; then
@@ -62,7 +116,6 @@ jobs:
             fi
           done
 
-      # Docker build and push section
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -73,28 +126,15 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Extract version for tagging Docker image
-        working-directory: ./libs/llmstudio
+        working-directory: ${{ env.MODULE_PATH }}
         id: get_version
-        run: |
-          echo "VERSION=$(poetry version --short)" >> $GITHUB_ENV
+        run: echo "VERSION=$(poetry version --short)" >> $GITHUB_ENV
 
-      # Build and tag Docker images with both :latest and :[NEW_VERSION]
-      - name: Proxy Build and tag Docker images
+      - name: Build Docker images
         working-directory: ./deploy
         run: |
-          make version=${{ env.VERSION }} build-proxy
+          make version=${{ env.VERSION }} build-${{ github.event.inputs.library }}
 
-      # Build and tag Docker images with both :latest and :[NEW_VERSION]
-      - name: Tracker Build and tag Docker images
-        working-directory: ./deploy
+      - name: Push Docker images
         run: |
-          make version=${{ env.VERSION }} build-tracker
-
-      # Push both Docker images to Docker Hub
-      - name: Push Proxy Docker images to Docker Hub
-        run: |
-          docker push tensoropsai/llmstudio-proxy:${{ env.VERSION }}
-      # Push both Docker images to Docker Hub
-      - name: Push Tracker Docker images to Docker Hub
-        run: |
-          docker push tensoropsai/llmstudio-tracker:${{ env.VERSION }}
+          docker push tensoropsai/${{ github.event.inputs.library }}:${{ env.VERSION }}

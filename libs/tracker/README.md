@@ -39,7 +39,7 @@ OPENAI_API_KEY="sk-api_key"
 Now you should be able to run **LLMstudio Tracker** using the following command.
 
 ```bash
-llmstudio server --tacker
+llmstudio server --tracker
 ```
 
 When the `--tracker` flag is set, you'll be able to access the [Swagger at http://0.0.0.0:50002/docs (default port)](http://0.0.0.0:50002/docs)
