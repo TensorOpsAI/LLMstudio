@@ -1,4 +1,4 @@
-from llmstudio_tracker.config import TRACKING_URI, DB_TYPE
+from llmstudio_tracker.config import DB_TYPE, TRACKING_URI
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 

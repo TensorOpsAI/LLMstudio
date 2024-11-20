@@ -1,9 +1,12 @@
-from sqlalchemy.types import TypeDecorator
 import json
+
 from sqlalchemy import Text
+from sqlalchemy.types import TypeDecorator
+
 
 class JSONEncodedDict(TypeDecorator):
     """JSON-encoded dictionary for compatibility with BigQuery."""
+
     impl = Text
 
     def process_bind_param(self, value, dialect):

@@ -1,19 +1,23 @@
-from sqlalchemy import Column, Integer, String, DateTime, JSON
 from datetime import datetime, timezone
 
 from llmstudio_tracker.config import DB_TYPE
 from llmstudio_tracker.database import Base
 from llmstudio_tracker.db_utils import JSONEncodedDict
+from sqlalchemy import JSON, Column, DateTime, Integer, String
 
 
 class LogDefault(Base):
     __tablename__ = "logs_default"
 
     if DB_TYPE == "bigquery":
-        log_id = Column(Integer, primary_key=True, default=lambda: int(
-            datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S%f')))
-        created_at = Column(DateTime(timezone=True),
-                            default=lambda: datetime.now(timezone.utc))
+        log_id = Column(
+            Integer,
+            primary_key=True,
+            default=lambda: int(datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S%f")),
+        )
+        created_at = Column(
+            DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+        )
         session_id = Column(String)
         chat_input = Column(String)
         chat_output = Column(String)
@@ -25,8 +29,9 @@ class LogDefault(Base):
         metrics = Column(JSONEncodedDict)
     else:
         log_id = Column(Integer, primary_key=True, index=True)
-        created_at = Column(DateTime(timezone=True),
-                            default=lambda: datetime.now(timezone.utc))
+        created_at = Column(
+            DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+        )
         session_id = Column(String)
         chat_input = Column(String)
         chat_output = Column(String)
