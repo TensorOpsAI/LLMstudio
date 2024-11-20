@@ -13,7 +13,7 @@ class SessionDefault(Base):
         message_id = Column(
             Integer,
             primary_key=True,
-            default=lambda: int(datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S%f")),
+            default=lambda: int(datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S%f")[:-1]),
         )
         session_id = Column(String)
         chat_history = Column(JSONEncodedDict)
