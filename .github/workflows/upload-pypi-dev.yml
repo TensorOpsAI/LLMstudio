@@ -46,7 +46,7 @@ jobs:
           PACKAGE_NAME=$(poetry version | awk '{print $1}')
           RESPONSE=$(curl -s "https://pypi.org/pypi/$PACKAGE_NAME/json" || echo "{}")
           echo "$RESPONSE" | jq -r '.releases | keys[]' > all_versions.txt
-          
+
           if grep -qx "$TARGET_VERSION" all_versions.txt; then
             echo "Error: Version ${{ github.event.inputs.target_version }} already exists on PyPI."
             exit 1
@@ -55,13 +55,10 @@ jobs:
           NEXT_ALPHA=$(grep "^${TARGET_VERSION}a[0-9]*$" all_versions.txt | sort -V | tail -n 1 | awk -F'a' '{print $2}')
 
           if [[ -z "$NEXT_ALPHA" ]]; then
-            NEW_VERSION="${BASE_VERSION}a0"
+            NEW_VERSION="${TARGET_VERSION}a0"
           else
-            NEW_VERSION="${BASE_VERSION}a$((NEXT_ALPHA + 1))"
+            NEW_VERSION="${TARGET_VERSION}a$((NEXT_ALPHA + 1))"
           fi
-          echo "this"
-          echo "$ALPHA_VERSIONS"          
-          echo "that"
           echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
           echo "Determined new version: $NEW_VERSION"
 
