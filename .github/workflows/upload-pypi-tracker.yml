@@ -43,7 +43,6 @@ jobs:
             echo "Package llmstudio-tracker==$FINAL_VERSION is already available on PyPI. Please bump version."
             exit 1
           fi
-          done
 
           poetry version "$FINAL_VERSION"
           echo "Updated version: $(poetry version --short)"
