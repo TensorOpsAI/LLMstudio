@@ -6,11 +6,23 @@ on:
       - main
     paths:
       - "libs/tracker/**"
+  workflow_dispatch:
+    inputs:
+      security-token:
+        description: 'Security token to trigger this workflow'
+        required: true
+        type: string
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Check security token
+        run: |
+          if [[ "${{ github.event.inputs.security-token }}" != "${{ secrets.SECURITY_TOKEN }}" ]]; then
+            echo "Unauthorized access attempt detected."
+            exit 1
+          fi
       # Checkout the code
       - name: Checkout code
         uses: actions/checkout@v2
