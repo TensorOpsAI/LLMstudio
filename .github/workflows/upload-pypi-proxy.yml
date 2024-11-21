@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "libs/proxy/**"
+      - "!libs/proxy/pyproject.toml"
   workflow_dispatch:
     inputs:
       security-token:

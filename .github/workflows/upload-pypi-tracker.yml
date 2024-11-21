@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "libs/tracker/**"
+      - "!libs/tracker/pyproject.toml"
   workflow_dispatch:
     inputs:
       security-token:

@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "libs/llmstudio/**"
+      - "!libs/llmstudio/pyproject.toml"
   workflow_dispatch:
     inputs:
       security-token:

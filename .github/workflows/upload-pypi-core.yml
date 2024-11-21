@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "libs/core/**"
+      - "!libs/core/pyproject.toml"
   workflow_dispatch:
     inputs:
       security-token:
