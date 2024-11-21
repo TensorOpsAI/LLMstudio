@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "llmstudio"
-version = "1.0.2a4"
+version = "1.0.2"
 description = "Prompt Perfection at Your Fingertips"
 authors = ["Cláudio Lemos <claudio@tensorops.ai>"]
 license = "MIT"
