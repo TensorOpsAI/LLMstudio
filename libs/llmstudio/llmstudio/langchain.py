@@ -57,7 +57,7 @@ class ChatLLMstudio(BaseChatModel):
                 generation_info=generation_info,
             )
             generations.append(gen)
-        token_usage = response.get("usage", {})
+        token_usage = response.get("metrics", {})
         llm_output = {
             "token_usage": token_usage,
             "model_name": response["model"],

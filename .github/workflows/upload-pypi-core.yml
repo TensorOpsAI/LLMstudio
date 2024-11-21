@@ -35,11 +35,33 @@ jobs:
       - name: Build and publish to PyPI
         working-directory: ./libs/core
         run: |
+          CURRENT_VERSION=$(poetry version --short)
+          FINAL_VERSION=$(echo "$CURRENT_VERSION" | sed -E 's/[a-zA-Z]+[0-9]*//')
+
+          echo "Checking for llmstudio-core==$FINAL_VERSION on PyPI..."
+          if python -m pip install llmstudio-core==$FINAL_VERSION --dry-run >/dev/null 2>&1; then
+            echo "Package llmstudio-core==$FINAL_VERSION is already available on PyPI. Please bump version."
+            exit 1
+          fi
+          done
+
+          poetry version "$FINAL_VERSION"
+          echo "Updated version: $(poetry version --short)"
+
           poetry build
           poetry publish
 
+      - name: Commit and push updated pyproject.toml
+        working-directory: ./libs/core
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add pyproject.toml
+          git commit -m "[fix] bump release version in pyproject.toml"
+          git push
+
       # Extract the new version number from pyproject.toml
-      - name: Extract version for tagging Docker image
+      - name: Extract version.
         working-directory: ./libs/core
         run: |
           echo "VERSION=$(poetry version --short)" >> $GITHUB_ENV
