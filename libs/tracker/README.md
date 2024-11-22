@@ -11,7 +11,7 @@ It supports seamless integration with the LLMstudio environment through configur
 
 ## Installation
 
-Install the latest version of **LLMstudio** using `pip`. We suggest that you create and activate a new virtual environment. 
+Install the latest version of **LLMstudio** using `pip`. We suggest that you create and activate a new virtual environment.
 
 ```bash
 pip install 'llmstudio[tracker]'
@@ -54,7 +54,7 @@ When the `--tracker` flag is set, you'll be able to access the [Swagger at http:
 
 If you didn't provide the URI to your database, LLMstudio will create an SQLite database at the root of your project and write the logs there.
 
-## Usage 
+## Usage
 
 Now, you can initialize an LLM to make calls and link it to your tracking configuration so that the tracker will log the calls.
 
