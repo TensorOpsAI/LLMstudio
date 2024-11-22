@@ -14,6 +14,9 @@ requests = "^2.31"
 fastapi = "^0.115.5"
 uvicorn = "^0.27"
 
+[tool.poetry.scripts]
+llmstudio-proxy = "llmstudio_tracker.cli:main"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

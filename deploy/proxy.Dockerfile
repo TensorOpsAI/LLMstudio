@@ -6,6 +6,6 @@ RUN apt-get clean && apt-get update
 
 # Install llmstudio
 ARG LLMSTUDIO_VERSION
-RUN pip install 'llmstudio[proxy]'==${LLMSTUDIO_VERSION}
+RUN pip install 'llmstudio-proxy'==${LLMSTUDIO_VERSION}
 
-CMD ["llmstudio", "server", "--proxy"]
+CMD ["llmstudio-proxy", "server"]
