@@ -26,7 +26,7 @@ def server():
 
     stop_event = threading.Event()
     try:
-        stop_event.wait() 
+        stop_event.wait()
     except KeyboardInterrupt:
         print("Shutting down server...")
 
