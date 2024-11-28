@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - "libs/core/**"
+      - "!libs/core/pyproject.toml"
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -13,7 +15,10 @@ jobs:
     steps:
       # Checkout the code
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          token: ${{ secrets.GH_TOKEN }}
 
       # Set up Python environment
       - name: Set up Python
@@ -35,11 +40,40 @@ jobs:
       - name: Build and publish to PyPI
         working-directory: ./libs/core
         run: |
+          CURRENT_VERSION=$(poetry version --short)
+          FINAL_VERSION=$(echo "$CURRENT_VERSION" | sed -E 's/[a-zA-Z]+[0-9]*//')
+
+          echo "Checking for llmstudio-core==$FINAL_VERSION on PyPI..."
+          if python -m pip install llmstudio-core==$FINAL_VERSION --dry-run >/dev/null 2>&1; then
+            echo "Package llmstudio-core==$FINAL_VERSION is already available on PyPI. Please bump version."
+            exit 1
+          fi
+
+          poetry version "$FINAL_VERSION"
+          echo "Updated version: $(poetry version --short)"
+
           poetry build
           poetry publish
 
+          if [ "$CURRENT_VERSION" = "$FINAL_VERSION" ]; then
+            echo "SAME_VERSION=true" >> $GITHUB_ENV
+          else
+            echo "SAME_VERSION=false" >> $GITHUB_ENV
+          fi
+
+      - name: Commit and push updated pyproject.toml
+        working-directory: ./libs/core
+        run: |
+          if [ "${{ env.SAME_VERSION }}" = "false" ]; then
+            git config user.name "GitHub Actions"
+            git config user.email "actions@github.com"
+            git add pyproject.toml
+            git commit -m "[fix] bump release version in pyproject.toml"
+            git push
+          fi
+
       # Extract the new version number from pyproject.toml
-      - name: Extract version for tagging Docker image
+      - name: Extract version.
         working-directory: ./libs/core
         run: |
           echo "VERSION=$(poetry version --short)" >> $GITHUB_ENV
