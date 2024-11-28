@@ -32,3 +32,4 @@ for key, default in defaults.items():
 TRACKING_HOST = os.environ["LLMSTUDIO_TRACKING_HOST"]
 TRACKING_PORT = os.environ["LLMSTUDIO_TRACKING_PORT"]
 TRACKING_URI = os.environ["LLMSTUDIO_TRACKING_URI"]
+DB_TYPE = TRACKING_URI.split("://")[0]
