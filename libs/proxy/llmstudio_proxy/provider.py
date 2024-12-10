@@ -18,26 +18,24 @@ class ProxyConfig(BaseModel):
 
     def __init__(self, **data):
         super().__init__(**data)
-        if (self.host is None and self.port is None) and self.url is None:
-            raise ValueError(
-                "Either both 'host' and 'port' must be provided, or 'url' must be specified."
-            )
+        if self.url is None:
+            if self.host is not None and self.port is not None:
+                self.url = f"http://{self.host}:{self.port}"
+            else:
+                raise ValueError(
+                    "You must provide either both 'host' and 'port', or 'url'."
+                )
 
 
 class LLMProxyProvider(Provider):
     def __init__(self, provider: str, proxy_config: ProxyConfig):
         self.provider = provider
+        self.engine_url = proxy_config.url
 
-        self.engine_host = proxy_config.host
-        self.engine_port = proxy_config.port
-        if is_server_running(host=self.engine_host, port=self.engine_port):
-            print(
-                f"Connected to LLMStudio Proxy @ {self.engine_host}:{self.engine_port}"
-            )
+        if is_server_running(url=self.engine_url):
+            print(f"Connected to LLMStudio Proxy @ {self.engine_url}")
         else:
-            raise Exception(
-                f"LLMStudio Proxy is not running @ {self.engine_host}:{self.engine_port}"
-            )
+            raise Exception(f"LLMStudio Proxy is not running @ {self.engine_url}")
 
     @staticmethod
     def _provider_config_name():
@@ -53,7 +51,7 @@ class LLMProxyProvider(Provider):
         **kwargs,
     ) -> Union[ChatCompletion]:
         response = requests.post(
-            f"http://{self.engine_host}:{self.engine_port}/api/engine/chat/{self.provider}",
+            f"{self.engine_url}/api/engine/chat/{self.provider}",
             json={
                 "chat_input": chat_input,
                 "model": model,
@@ -109,7 +107,7 @@ class LLMProxyProvider(Provider):
     ):
         response = await asyncio.to_thread(
             requests.post,
-            f"http://{self.engine_host}:{self.engine_port}/api/engine/chat/{self.provider}",
+            f"{self.engine_url}/api/engine/chat/{self.provider}",
             json={
                 "chat_input": chat_input,
                 "model": model,
@@ -131,7 +129,7 @@ class LLMProxyProvider(Provider):
     ):
         response = await asyncio.to_thread(
             requests.post,
-            f"http://{self.engine_host}:{self.engine_port}/api/engine/chat/{self.provider}",
+            f"{self.engine_url}/api/engine/chat/{self.provider}",
             json={
                 "chat_input": chat_input,
                 "model": model,
