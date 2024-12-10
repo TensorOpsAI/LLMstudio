@@ -15,7 +15,7 @@ class TrackingConfig(BaseModel):
         super().__init__(**data)
         if self.url is None:
             if self.host is not None and self.port is not None:
-                self.url = f"{self.host}:{self.port}"
+                self.url = f"http://{self.host}:{self.port}"
             else:
                 raise ValueError(
                     "You must provide either both 'host' and 'port', or 'url'."
@@ -29,7 +29,7 @@ class Tracker:
 
     def log(self, data: dict):
         req = self._session.post(
-            f"https://{self.tracking_url}/api/tracking/logs",
+            f"{self.tracking_url}/api/tracking/logs",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             data=json.dumps(data),
             timeout=100,
@@ -38,7 +38,7 @@ class Tracker:
 
     def get_logs(self):
         req = self._session.get(
-            f"https://{self.tracking_url}/api/tracking/logs",
+            f"{self.tracking_url}/api/tracking/logs",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             timeout=100,
         )
@@ -46,7 +46,7 @@ class Tracker:
 
     def get_session_logs(self, session_id: str):
         req = self._session.get(
-            f"https://{self.tracking_url}/api/tracking/logs/{session_id}",
+            f"{self.tracking_url}/api/tracking/logs/{session_id}",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             timeout=100,
         )
@@ -54,7 +54,7 @@ class Tracker:
 
     def update_session(self, data: dict):
         req = self._session.post(
-            f"https://{self.tracking_url}/api/tracking/session",
+            f"{self.tracking_url}/api/tracking/session",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             data=json.dumps(data),
             timeout=100,
@@ -63,7 +63,7 @@ class Tracker:
 
     def get_session(self, session_id: str):
         req = self._session.get(
-            f"https://{self.tracking_url}/api/tracking/session/{session_id}",
+            f"{self.tracking_url}/api/tracking/session/{session_id}",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             timeout=100,
         )
@@ -71,7 +71,7 @@ class Tracker:
 
     def add_extras(self, message_id: int):
         req = self._session.patch(
-            f"https://{self.tracking_url}/api/tracking/session/{message_id}",
+            f"{self.tracking_url}/api/tracking/session/{message_id}",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             timeout=100,
         )
