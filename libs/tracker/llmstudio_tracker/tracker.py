@@ -13,21 +13,23 @@ class TrackingConfig(BaseModel):
 
     def __init__(self, **data):
         super().__init__(**data)
-        if (self.host is None and self.port is None) and self.url is None:
-            raise ValueError(
-                "You must provide either both 'host' and 'port', or 'url', or 'database_uri'."
-            )
+        if self.url is None:
+            if self.host is not None and self.port is not None:
+                self.url = f"http://{self.host}:{self.port}"
+            else:
+                raise ValueError(
+                    "You must provide either both 'host' and 'port', or 'url'."
+                )
 
 
 class Tracker:
     def __init__(self, tracking_config: TrackingConfig):
-        self.tracking_host = tracking_config.host
-        self.tracking_port = tracking_config.port
+        self.tracking_url = tracking_config.url
         self._session = requests.Session()
 
     def log(self, data: dict):
         req = self._session.post(
-            f"http://{self.tracking_host}:{self.tracking_port}/api/tracking/logs",
+            f"{self.tracking_url}/api/tracking/logs",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             data=json.dumps(data),
             timeout=100,
@@ -36,7 +38,7 @@ class Tracker:
 
     def get_logs(self):
         req = self._session.get(
-            f"http://{self.tracking_host}:{self.tracking_port}/api/tracking/logs",
+            f"{self.tracking_url}/api/tracking/logs",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             timeout=100,
         )
@@ -44,7 +46,7 @@ class Tracker:
 
     def get_session_logs(self, session_id: str):
         req = self._session.get(
-            f"http://{self.tracking_host}:{self.tracking_port}/api/tracking/logs/{session_id}",
+            f"{self.tracking_url}/api/tracking/logs/{session_id}",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             timeout=100,
         )
@@ -52,7 +54,7 @@ class Tracker:
 
     def update_session(self, data: dict):
         req = self._session.post(
-            f"http://{self.tracking_host}:{self.tracking_port}/api/tracking/session",
+            f"{self.tracking_url}/api/tracking/session",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             data=json.dumps(data),
             timeout=100,
@@ -61,7 +63,7 @@ class Tracker:
 
     def get_session(self, session_id: str):
         req = self._session.get(
-            f"http://{self.tracking_host}:{self.tracking_port}/api/tracking/session/{session_id}",
+            f"{self.tracking_url}/api/tracking/session/{session_id}",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             timeout=100,
         )
@@ -69,7 +71,7 @@ class Tracker:
 
     def add_extras(self, message_id: int):
         req = self._session.patch(
-            f"http://{self.tracking_host}:{self.tracking_port}/api/tracking/session/{message_id}",
+            f"{self.tracking_url}/api/tracking/session/{message_id}",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             timeout=100,
         )

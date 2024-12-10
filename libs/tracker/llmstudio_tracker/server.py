@@ -66,9 +66,9 @@ def run_tracker_app(started_event: Event):
         print(f"Error running LLMstudio Tracking: {e}")
 
 
-def is_server_running(host, port, path="/health"):
+def is_server_running(url, path="/health"):
     try:
-        response = requests.get(f"http://{host}:{port}{path}")
+        response = requests.get(f"{url}{path}")
         if response.status_code == 200 and response.json().get("status") == "healthy":
             return True
     except requests.ConnectionError:
@@ -77,7 +77,7 @@ def is_server_running(host, port, path="/health"):
 
 
 def start_server_component(host, port, run_func, server_name):
-    if not is_server_running(host, port):
+    if not is_server_running(url=f"http://{host}:{port}"):
         started_event = Event()
         thread = Thread(target=run_func, daemon=True, args=(started_event,))
         thread.start()
