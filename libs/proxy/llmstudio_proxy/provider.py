@@ -26,19 +26,16 @@ class ProxyConfig(BaseModel):
                     "You must provide either both 'host' and 'port', or 'url'."
                 )
 
+
 class LLMProxyProvider(Provider):
     def __init__(self, provider: str, proxy_config: ProxyConfig):
         self.provider = provider
         self.engine_url = proxy_config.url
 
         if is_server_running(url=self.engine_url):
-            print(
-                f"Connected to LLMStudio Proxy @ {self.engine_url}"
-            )
+            print(f"Connected to LLMStudio Proxy @ {self.engine_url}")
         else:
-            raise Exception(
-                f"LLMStudio Proxy is not running @ {self.engine_url}"
-            )
+            raise Exception(f"LLMStudio Proxy is not running @ {self.engine_url}")
 
     @staticmethod
     def _provider_config_name():
