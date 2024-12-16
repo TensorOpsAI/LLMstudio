@@ -11,20 +11,7 @@ def run_provider(provider, model, api_key, **kwargs):
     llm = LLMCore(provider=provider, api_key=api_key, **kwargs)
 
     latencies = {}
-    chat_request = {
-        "chat_input": "Hello, my name is Json",
-        "model": model,
-        "is_stream": False,
-        "retries": 0,
-        "parameters": {
-            "temperature": 0,
-            "max_tokens": 100,
-            "response_format": {"type": "json_object"},
-            "functions": None,
-        }
-    }
-
-
+    chat_request = build_chat_request(model, chat_input="Hello, my name is Jason Json", is_stream=False)
     
     import asyncio
     response_async = asyncio.run(llm.achat(**chat_request))
@@ -34,18 +21,7 @@ def run_provider(provider, model, api_key, **kwargs):
     # stream
     print("\nasync stream")
     async def async_stream():
-        chat_request = {
-            "chat_input": "Hello, my name is Json",
-            "model": model,
-            "is_stream": True,
-            "retries": 0,
-            "parameters": {
-                "temperature": 0,
-                "max_tokens": 100,
-                "response_format": {"type": "json_object"},
-                "functions": None,
-            }
-        }
+        chat_request = build_chat_request(model, chat_input="Hello, my name is Tom Json", is_stream=True)
         
         response_async = await llm.achat(**chat_request)
         async for p in response_async:
@@ -61,36 +37,14 @@ def run_provider(provider, model, api_key, **kwargs):
     
     
     print("# Now sync calls")
-    chat_request = {
-        "chat_input": "Hello, my name is Json",
-        "model": model,
-        "is_stream": False,
-        "retries": 0,
-        "parameters": {
-            "temperature": 0,
-            "max_tokens": 100,
-            "response_format": {"type": "json_object"},
-            "functions": None,
-        }
-    }
+    chat_request = build_chat_request(model, chat_input="Hello, my name is Alice Json", is_stream=False)
     
     response_sync = llm.chat(**chat_request)
     pprint(response_sync)
     latencies["sync (ms)"]= response_sync.metrics["latency_s"]*1000
 
     print("# Now sync calls streaming")
-    chat_request = {
-        "chat_input": "Hello, my name is Json",
-        "model": model,
-        "is_stream": True,
-        "retries": 0,
-        "parameters": {
-            "temperature": 0,
-            "max_tokens": 100,
-            "response_format": {"type": "json_object"},
-            "functions": None,
-        }
-    }
+    chat_request = build_chat_request(model, chat_input="Hello, my name is Mary Json", is_stream=True)
     
     response_sync_stream = llm.chat(**chat_request)
     for p in response_sync_stream:
@@ -101,12 +55,54 @@ def run_provider(provider, model, api_key, **kwargs):
             pprint(p)
             latencies["sync stream (ms)"]= p.metrics["latency_s"]*1000
 
-    print(f"\n\n###EPORT for {provider}, {model} ###")
+    print(f"\n\n###REPORT for <{provider}>, <{model}> ###")
     return latencies
+
+def build_chat_request(model: str, chat_input: str, is_stream: bool, max_tokens: int=1000):
+    if model == "o1-preview" or model == "o1-mini":
+        chat_request = {
+            "chat_input": chat_input,
+            "model": model,
+            "is_stream": is_stream,
+            "retries": 0,
+            "parameters": {
+                "max_completion_tokens": max_tokens
+            }
+        }
+    else:
+        chat_request = {
+            "chat_input": chat_input,
+            "model": model,
+            "is_stream": is_stream,
+            "retries": 0,
+            "parameters": {
+                "temperature": 0,
+                "max_tokens": max_tokens,
+                "response_format": {"type": "json_object"},
+                "functions": None,
+            }
+        }
+    return chat_request
+
+
+
 
 
 provider = "openai"
 model = "gpt-4o-mini"
+for _ in range(1):
+    latencies = run_provider(provider=provider, model=model, api_key=os.environ["OPENAI_API_KEY"])
+    pprint(latencies)
+
+    
+provider = "openai"
+model = "o1-preview"
+for _ in range(1):
+    latencies = run_provider(provider=provider, model=model, api_key=os.environ["OPENAI_API_KEY"])
+    pprint(latencies)
+    
+provider = "openai"
+model = "o1-mini"
 for _ in range(1):
     latencies = run_provider(provider=provider, model=model, api_key=os.environ["OPENAI_API_KEY"])
     pprint(latencies)
@@ -137,10 +133,10 @@ for _ in range(1):
 #     pprint(latencies)
 
 
-provider = "vertexai"
-model = "gemini-1.5-pro-latest"
-for _ in range(1):
-    latencies = run_provider(provider=provider, model=model, 
-                            api_key=os.environ["GOOGLE_API_KEY"], 
-                            )
-    pprint(latencies)
+# provider = "vertexai"
+# model = "gemini-1.5-pro-latest"
+# for _ in range(1):
+#     latencies = run_provider(provider=provider, model=model, 
+#                             api_key=os.environ["GOOGLE_API_KEY"], 
+#                             )
+#     pprint(latencies)
