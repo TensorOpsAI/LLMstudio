@@ -290,6 +290,16 @@ providers:
       - AZURE_API_ENDPOINT
       - AZURE_API_VERSION
     models:
+      o1-preview:
+        mode: chat
+        max_completion_tokens: 128000
+        input_token_cost: 0.0000165
+        output_token_cost: 0.000066
+      o1-mini:
+        mode: chat
+        max_completion_tokens: 128000
+        input_token_cost: 0.0000033
+        output_token_cost: 0.0000132
       gpt-4o-mini:
         mode: chat
         max_tokens: 128000

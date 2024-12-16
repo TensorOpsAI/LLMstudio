@@ -122,6 +122,24 @@ for _ in range(1):
                             api_version=os.environ["AZURE_API_VERSION"],
                             api_endpoint=os.environ["AZURE_API_ENDPOINT"])
     pprint(latencies)
+    
+provider = "azure"
+model = "o1-preview"
+for _ in range(1):
+    latencies = run_provider(provider=provider, model=model, 
+                            api_key=os.environ["AZURE_API_KEY"], 
+                            api_version=os.environ["AZURE_API_VERSION"],
+                            api_endpoint=os.environ["AZURE_API_ENDPOINT"])
+    pprint(latencies)
+    
+provider = "azure"
+model = "o1-mini"
+for _ in range(1):
+    latencies = run_provider(provider=provider, model=model, 
+                            api_key=os.environ["AZURE_API_KEY"], 
+                            api_version=os.environ["AZURE_API_VERSION"],
+                            api_endpoint=os.environ["AZURE_API_ENDPOINT"])
+    pprint(latencies)
 
 # provider = "azure"
 # model = "gpt-4o"
