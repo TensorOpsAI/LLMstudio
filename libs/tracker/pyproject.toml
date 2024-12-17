@@ -2,7 +2,7 @@
 name = "llmstudio-tracker"
 version = "1.0.5a0"
 description = "LLMstudio Tracker is the module of LLMstudio that allows monitoring and logging your LLM calls. By leveraging LLMstudio Tracker, users can gain insights on model performance and streamline development workflows with actionable analytics."
-authors = ["Diogo Goncalves <diogo.goncalves@tensorops.ai>"]
+authors = ["Claudio Lemos <claudio.lemos@tensorops.ai>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
