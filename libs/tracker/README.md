@@ -17,6 +17,15 @@ Install the latest version of **LLMstudio** using `pip`. We suggest that you cre
 pip install 'llmstudio[tracker]'
 ```
 
+## BigQuery:
+If you want to use BigQuery, you need to instal these dependencies:
+- `sqlalchemy-bigquery`
+- `google-cloud-bigquery-storage`
+
+## PostgreSQL
+If you want to use PostgreSQL as your database, install this dependency:
+- `psycopg2-binary`
+
 ## How to run
 
 To configure the tracker host, port, and database URI, create a `.env` file at the same path you'll run **LLMstudio** and set values for:

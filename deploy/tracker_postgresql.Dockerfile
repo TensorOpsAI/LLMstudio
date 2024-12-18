@@ -7,5 +7,6 @@ RUN apt-get clean && apt-get update
 # Install llmstudio
 ARG LLMSTUDIO_VERSION
 RUN pip install 'llmstudio-tracker'==${LLMSTUDIO_VERSION}
+RUN pip install psycopg2-binary
 
 CMD ["llmstudio-tracker", "server"]

@@ -6,17 +6,12 @@ Prompt Engineering at your fingertips
 
 ## 🌟 Features
 
-![LLMstudio UI](https://imgur.com/wrwiIUs.png)
-
 - **LLM Proxy Access**: Seamless access to all the latest LLMs by OpenAI, Anthropic, Google.
 - **Custom and Local LLM Support**: Use custom or local open-source LLMs through Ollama.
-- **Prompt Playground UI**: A user-friendly interface for engineering and fine-tuning your prompts.
 - **Python SDK**: Easily integrate LLMstudio into your existing workflows.
 - **Monitoring and Logging**: Keep track of your usage and performance for all requests.
 - **LangChain Integration**: LLMstudio integrates with your already existing LangChain projects.
-- **Batch Calling**: Send multiple requests at once for improved efficiency.
 - **Smart Routing and Fallback**: Ensure 24/7 availability by routing your requests to trusted LLMs.
-- **Type Casting (soon)**: Convert data types as needed for your specific use case.
 
 ## 🚀 Quickstart
 
@@ -24,23 +19,21 @@ Don't forget to check out [https://docs.llmstudio.ai](docs) page.
 
 ## Installation
 
-Install the latest version of **LLMstudio** using `pip`. We suggest that you create and activate a new environment using `conda`
+Install the latest version of **LLMstudio** using `pip`. We suggest that you create and activate a new virtual environment:
 
 ```bash
-pip install llmstudio
+pip install 'llmstudio[proxy]'
 ```
 
-Install `bun` if you want to use the UI
-
+or the lightweight version:
 ```bash
-curl -fsSL https://bun.sh/install | bash
+pip install 'llmstudio-proxy'
 ```
 
 Create a `.env` file at the same path you'll run **LLMstudio**
 
 ```bash
 OPENAI_API_KEY="sk-api_key"
-ANTHROPIC_API_KEY="sk-api_key"
 ```
 
 Now you should be able to run **LLMstudio Proxy** using the following command.
