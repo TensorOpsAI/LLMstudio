@@ -10,7 +10,7 @@ on:
       - reopened
 
 jobs:
-  lint:
+  tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -25,13 +25,17 @@ jobs:
       - name: Install Poetry
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
-
       # Install lib and dev dependencies
       - name: Install llmstudio-core
         working-directory: ./libs/core
         run: |
           poetry install
-
-      - name: Run unit-tests
+          POETRY_ENV=$(poetry env info --path)
+          echo $POETRY_ENV
+          echo "POETRY_ENV=$POETRY_ENV" >> $GITHUB_ENV
+          
+      - name: Run unit tests
         run: |
-          make unit-tests
+          echo ${{ env.POETRY_ENV }}
+          source ${{ env.POETRY_ENV }}/bin/activate
+          poetry run pytest libs/core
