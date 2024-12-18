@@ -1,11 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from llmstudio_core.providers.provider import (
-    ChatRequest,
-    ProviderError,
-    time,
-)
+from llmstudio_core.providers.provider import ChatRequest, ProviderError, time
 
 request = ChatRequest(chat_input="Hello World", model="test_model")
 
