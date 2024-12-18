@@ -18,6 +18,9 @@ class LLM(Provider):
         api_endpoint: Optional[str] = None,
         api_version: Optional[str] = None,
         base_url: Optional[str] = None,
+        access_key: Optional[str] = None,
+        secret_key: Optional[str] = None,
+        region: Optional[str] = None,
         **kwargs,
     ):
         """
@@ -60,6 +63,9 @@ class LLM(Provider):
                 api_endpoint=api_endpoint,
                 api_version=api_version,
                 base_url=base_url,
+                region=region,
+                secret_key=secret_key,
+                access_key=access_key,
                 **kwargs,
             )
 

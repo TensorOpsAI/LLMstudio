@@ -1,0 +1,58 @@
+name: Push Prerelease Docker Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      module:
+        description: "Select the module to push (e.g., tracker or proxy)"
+        required: true
+        type: choice
+        options:
+          - tracker
+          - proxy
+      version:
+        description: "Alpha version to push (e.g., 1.1.0a1)"
+        required: true
+
+jobs:
+  push-docker-alpha:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: develop
+          token: ${{ secrets.GH_TOKEN }}
+
+      # Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Build Docker image
+      - name: Build Docker image
+        run: |
+          MODULE=${{ github.event.inputs.module }}
+          VERSION=${{ github.event.inputs.version }}
+          IMAGE_NAME="tensoropsai/llmstudio-$MODULE"
+          echo "Building Docker image: $IMAGE_NAME:$VERSION"
+          
+          cd ./deploy
+          make version=$VERSION build-llmstudio-$MODULE
+
+      # Push Docker image
+      - name: Push Docker image
+        run: |
+          MODULE=${{ github.event.inputs.module }}
+          VERSION=${{ github.event.inputs.version }}
+          IMAGE_NAME="tensoropsai/llmstudio-$MODULE"
+          echo "Pushing Docker image: $IMAGE_NAME:$VERSION"
+          
+          docker push $IMAGE_NAME:$VERSION

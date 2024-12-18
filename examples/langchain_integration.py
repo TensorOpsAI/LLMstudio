@@ -233,7 +233,7 @@ def dim_lights(brightness: float) -> bool:
 from langchain.agents import AgentExecutor, create_tool_calling_agent, create_openai_tools_agent
 from langchain_core.prompts import ChatPromptTemplate
 
-def assistant_new(question: str)->str:
+def assistant_new(question: str,chat_llm)->str:
     tools = [power_disco_ball, start_music, dim_lights]
     print(tools)
 
@@ -264,7 +264,7 @@ llm = LLM(provider="azure",
           api_endpoint=os.environ["AZURE_API_ENDPOINT"])
 chat_llm = ChatLLMstudio(llm=llm, model = "gpt-4o-mini", parameters={"temperature":0})
 
-print("\n\nresult:\n", assistant_new("Turn this into a party!"),"\n")
+print("\n\nresult:\n", assistant_new("Turn this into a party!",chat_llm),"\n")
 
 
 print("###### vertex")
@@ -321,6 +321,66 @@ def assistant_vertex(question: str) -> str:
 
 
 print("\n\nresult:\n", assistant_vertex("Turn this into a party!"),"\n")
+
+
+
+
+print("###### bedrock anthropic")
+import os
+from llmstudio.langchain import ChatLLMstudio
+from llmstudio.providers import LLM
+
+llm = LLM(provider="bedrock", 
+          region=os.environ["BEDROCK_REGION"],
+          secret_key=os.environ["BEDROCK_SECRET_KEY"],
+          access_key=os.environ["BEDROCK_ACCESS_KEY"])
+chat_llm = ChatLLMstudio(llm=llm, model = "anthropic.claude-3-5-sonnet-20240620-v1:0", parameters={"temperature":0})
+
+from langchain.tools import tool
+
+@tool
+def power_disco_ball(power: bool) -> bool:
+    """Powers the spinning disco ball."""
+    print(f"Disco ball is {'spinning!' if power else 'stopped.'}")
+    return True
+
+@tool
+def start_music(energetic: bool, loud: bool, bpm: int) -> str:
+    """Play some music matching the specified parameters."""
+    print(f"Starting music! {energetic=} {loud=}, {bpm=}")
+    return "Never gonna give you up."
+
+@tool
+def dim_lights(brightness: float) -> bool:
+    """Dim the lights."""
+    print(f"Lights are now set to {brightness:.0%}")
+    return True
+
+from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain_core.prompts import ChatPromptTemplate
+
+
+def assistant_bedrock_anthropic(question: str) -> str:
+    tools = [power_disco_ball, start_music, dim_lights]
+    print(tools)
+
+    # Rebuild agent with new tools
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are a helpful assistant"),
+            ("human", "{input}"),
+            ("placeholder", "{agent_scratchpad}"),
+        ]
+    )
+    agent = create_tool_calling_agent(chat_llm, tools, prompt)
+    agent_executor = AgentExecutor(agent=agent, tools=tools)
+
+    response = agent_executor.invoke({"input": question})
+
+    return response
+
+
+print("\n\nresult:\n", assistant_bedrock_anthropic("Turn this into a party!"),"\n")
 
 
 print("###### proxy")
