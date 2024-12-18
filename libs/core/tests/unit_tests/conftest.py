@@ -75,5 +75,10 @@ class MockAzureProvider(AzureProvider):
 def mock_azure_provider():
     config = MagicMock()
     config.id = "mock_azure_provider"
-    base_url = "mock_url.com"
-    return MockAzureProvider(config=config, base_url=base_url)
+    api_key="key"
+    api_endpoint="http://azureopenai.com"
+    api_version="2025-01-01-preview"
+    return MockAzureProvider(config=config, 
+                             api_endpoint=api_endpoint,
+                             api_key=api_key,
+                             api_version=api_version)
