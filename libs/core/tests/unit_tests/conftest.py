@@ -18,7 +18,7 @@ class MockProvider(ProviderCore):
         if output.choices[0].finish_reason == "stop":
             return output.choices[0].message.content
         return ""
-    
+
     def validate_request(self, request):
         # For testing, simply return the request
         return request
@@ -27,12 +27,14 @@ class MockProvider(ProviderCore):
         # For testing, return an async generator
         async def async_gen():
             yield {}
+
         return async_gen()
 
     def generate_client(self, request):
         # For testing, return a generator
         def gen():
             yield {}
+
         return gen()
 
     @staticmethod

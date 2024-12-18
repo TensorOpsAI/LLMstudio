@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock
 
+
 def test_calculate_metrics(mock_provider):
 
     metrics = mock_provider.calculate_metrics(
@@ -18,10 +19,13 @@ def test_calculate_metrics(mock_provider):
     assert metrics["total_tokens"] == 3
     assert metrics["cost_usd"] == 0.01 * 1 + 0.02 * 2  # input_cost + output_cost
     assert metrics["latency_s"] == 1.0  # end_time - start_time
-    assert metrics["time_to_first_token_s"] == 0.5 - 0.0  # first_token_time - start_time
+    assert (
+        metrics["time_to_first_token_s"] == 0.5 - 0.0
+    )  # first_token_time - start_time
     assert metrics["inter_token_latency_s"] == 0.1  # Average of token_times
     assert metrics["tokens_per_second"] == 2 / 1.0  # token_count / total_time
-    
+
+
 def test_calculate_metrics_single_token(mock_provider):
 
     metrics = mock_provider.calculate_metrics(
@@ -43,12 +47,14 @@ def test_calculate_metrics_single_token(mock_provider):
     assert metrics["time_to_first_token_s"] == 0.5 - 0.0
     assert metrics["inter_token_latency_s"] == 0
     assert metrics["tokens_per_second"] == 1 / 1.0
-    
+
+
 def test_calculate_cost_fixed_cost(mock_provider):
     fixed_cost = 0.02
     token_count = 100
     expected_cost = token_count * fixed_cost
     assert mock_provider.calculate_cost(token_count, fixed_cost) == expected_cost
+
 
 def test_calculate_cost_variable_cost(mock_provider):
     cost_range_1 = MagicMock()
@@ -63,6 +69,7 @@ def test_calculate_cost_variable_cost(mock_provider):
     token_count = 75
     expected_cost = token_count * 0.02
     assert mock_provider.calculate_cost(token_count, variable_cost) == expected_cost
+
 
 def test_calculate_cost_variable_cost_higher_range(mock_provider):
     cost_range_1 = MagicMock()
@@ -82,6 +89,7 @@ def test_calculate_cost_variable_cost_higher_range(mock_provider):
     expected_cost = token_count * 0.03
     assert mock_provider.calculate_cost(token_count, variable_cost) == expected_cost
 
+
 def test_calculate_cost_variable_cost_no_matching_range(mock_provider):
     cost_range_1 = MagicMock()
     cost_range_1.range = (0, 50)
@@ -99,7 +107,8 @@ def test_calculate_cost_variable_cost_no_matching_range(mock_provider):
     token_count = 200
     expected_cost = 0
     assert mock_provider.calculate_cost(token_count, variable_cost) == expected_cost
-    
+
+
 def test_calculate_cost_variable_cost_no_matching_range_inferior(mock_provider):
     cost_range_1 = MagicMock()
     cost_range_1.range = (10, 50)
