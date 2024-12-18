@@ -23,6 +23,7 @@ If you want to use BigQuery, you need to instal these dependencies:
 - `google-cloud-bigquery-storage`
 
 ## PostgreSQL
+If you want to use PostgreSQL as your database, install this dependency:
 - `psycopg2-binary`
 
 ## How to run
