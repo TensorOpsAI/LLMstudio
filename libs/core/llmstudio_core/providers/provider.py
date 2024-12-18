@@ -152,8 +152,38 @@ class ProviderCore(Provider):
         parameters: Optional[dict] = {},
         **kwargs,
     ):
+        """
+        Asynchronously establishes a chat connection with the provider’s API, handling retries,
+        request validation, and streaming response options.
 
-        """Makes a chat connection with the provider's API"""
+        Parameters
+        ----------
+        chat_input : Any
+            The input data for the chat request, such as a string or dictionary, to be sent to the API.
+        model : str
+            The identifier of the model to be used for the chat request.
+        is_stream : Optional[bool], default=False
+            Flag to indicate if the response should be streamed. If True, returns an async generator
+            for streaming content; otherwise, returns the complete response.
+        retries : Optional[int], default=0
+            Number of retry attempts on error. Retries will be attempted for specific HTTP errors like rate limits.
+        parameters : Optional[dict], default={}
+            Additional configuration parameters for the request, such as temperature or max tokens.
+        **kwargs
+            Additional keyword arguments to customize the request.
+
+        Returns
+        -------
+        Union[AsyncGenerator, Any]
+            - If `is_stream` is True, returns an async generator yielding response chunks.
+            - If `is_stream` is False, returns the first complete response chunk.
+
+        Raises
+        ------
+        ProviderError
+            - Raised if the request validation fails or if all retry attempts are exhausted.
+            - Also raised for unexpected exceptions during request handling.
+        """
         try:
             request = self.validate_request(
                 dict(
@@ -198,8 +228,38 @@ class ProviderCore(Provider):
         parameters: Optional[dict] = {},
         **kwargs,
     ):
+        """
+        Establishes a chat connection with the provider’s API, handling retries, request validation,
+        and streaming response options.
 
-        """Makes a chat connection with the provider's API"""
+        Parameters
+        ----------
+        chat_input : Any
+            The input data for the chat request, often a string or dictionary, to be sent to the API.
+        model : str
+            The model identifier for selecting the model used in the chat request.
+        is_stream : Optional[bool], default=False
+            Flag to indicate if the response should be streamed. If True, the function returns a generator
+            for streaming content. Otherwise, it returns the complete response.
+        retries : Optional[int], default=0
+            Number of retry attempts on error. Retries will be attempted on specific HTTP errors like rate limits.
+        parameters : Optional[dict], default={}
+            Additional configuration parameters for the request, such as temperature or max tokens.
+        **kwargs
+            Additional keyword arguments that can be passed to customize the request.
+
+        Returns
+        -------
+        Union[Generator, Any]
+            - If `is_stream` is True, returns a generator that yields chunks of the response.
+            - If `is_stream` is False, returns the first complete response chunk.
+
+        Raises
+        ------
+        ProviderError
+            - Raised if the request validation fails or if the request fails after the specified number of retries.
+            - Also raised on other unexpected exceptions during request handling.
+        """
         try:
             request = self.validate_request(
                 dict(
@@ -238,7 +298,28 @@ class ProviderCore(Provider):
     async def ahandle_response(
         self, request: ChatRequest, response: AsyncGenerator, start_time: float
     ) -> AsyncGenerator[str, None]:
-        """Handles the response from an API"""
+        """
+        Asynchronously handles the response from an API, processing response chunks for either
+        streaming or non-streaming responses.
+
+        Buffers response chunks for non-streaming responses to output one single message. For streaming responses sends incremental chunks.
+
+        Parameters
+        ----------
+        request : ChatRequest
+            The chat request object, which includes input data, model name, and streaming options.
+        response : AsyncGenerator
+            The async generator yielding response chunks from the API.
+        start_time : float
+            The timestamp when the response handling started, used for latency calculations.
+
+        Yields
+        ------
+        Union[ChatCompletionChunk, ChatCompletion]
+            - If `request.is_stream` is True, yields `ChatCompletionChunk` objects with incremental
+            response chunks for streaming.
+            - If `request.is_stream` is False, yields a final `ChatCompletion` object after processing all chunks.
+        """
         first_token_time = None
         previous_token_time = None
         token_times = []
@@ -294,7 +375,7 @@ class ProviderCore(Provider):
         chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
         model = next(chunk["model"] for chunk in chunks if chunk.get("model"))
 
-        response, output_string = self.join_chunks(chunks, request)
+        response, output_string = self.join_chunks(chunks)
 
         metrics = self.calculate_metrics(
             request.chat_input,
@@ -346,7 +427,29 @@ class ProviderCore(Provider):
     def handle_response(
         self, request: ChatRequest, response: Generator, start_time: float
     ) -> Generator:
-        """Handles the response from an API"""
+        """
+        Processes API response chunks to build a structured, complete response, yielding
+        each chunk if streaming is enabled.
+
+        If streaming, each chunk is yielded as soon as it’s processed. Otherwise, all chunks
+        are combined and yielded as a single response at the end.
+
+        Parameters
+        ----------
+        request : ChatRequest
+            The original request details, including model, input, and streaming preference.
+        response : Generator
+            A generator yielding partial response chunks from the API.
+        start_time : float
+            The start time for measuring response timing.
+
+        Yields
+        ------
+        Union[ChatCompletionChunk, ChatCompletion]
+            If streaming (`is_stream=True`), yields each `ChatCompletionChunk` as it’s processed.
+            Otherwise, yields a single `ChatCompletion` with the full response data.
+
+        """
         first_token_time = None
         previous_token_time = None
         token_times = []
@@ -402,7 +505,7 @@ class ProviderCore(Provider):
         chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
         model = next(chunk["model"] for chunk in chunks if chunk.get("model"))
 
-        response, output_string = self.join_chunks(chunks, request)
+        response, output_string = self.join_chunks(chunks)
 
         metrics = self.calculate_metrics(
             request.chat_input,
@@ -451,7 +554,29 @@ class ProviderCore(Provider):
         else:
             yield ChatCompletion(**response)
 
-    def join_chunks(self, chunks, request):
+    def join_chunks(self, chunks):
+        """
+        Combine multiple response chunks from the model into a single, structured response.
+        Handles tool calls, function calls, and standard text completion based on the
+        purpose indicated by the final chunk.
+
+        Parameters
+        ----------
+        chunks : List[Dict]
+            A list of partial responses (chunks) from the model.
+
+        Returns
+        -------
+        Tuple[ChatCompletion, str]
+            - `ChatCompletion`: The structured response based on the type of completion
+            (tool calls, function call, or text).
+            - `str`: The concatenated content or arguments, depending on the completion type.
+
+        Raises
+        ------
+        Exception
+            If there is an issue constructing the response, an exception is raised.
+        """
 
         finish_reason = chunks[-1].get("choices")[0].get("finish_reason")
         if finish_reason == "tool_calls":
@@ -612,7 +737,42 @@ class ProviderCore(Provider):
         token_times: Tuple[float, ...],
         token_count: int,
     ) -> Dict[str, Any]:
-        """Calculates metrics based on token times and output"""
+        """
+        Calculates performance and cost metrics for a model response based on timing
+        information, token counts, and model-specific costs.
+
+        Parameters
+        ----------
+        input : Any
+            The input provided to the model, used to determine input token count.
+        output : Any
+            The output generated by the model, used to determine output token count.
+        model : str
+            The model identifier, used to retrieve model-specific configuration and costs.
+        start_time : float
+            The timestamp marking the start of the model response.
+        end_time : float
+            The timestamp marking the end of the model response.
+        first_token_time : float
+            The timestamp when the first token was received, used for latency calculations.
+        token_times : Tuple[float, ...]
+            A tuple of time intervals between received tokens, used for inter-token latency.
+        token_count : int
+            The total number of tokens processed in the response.
+
+        Returns
+        -------
+        Dict[str, Any]
+            A dictionary containing calculated metrics, including:
+            - `input_tokens`: Number of tokens in the input.
+            - `output_tokens`: Number of tokens in the output.
+            - `total_tokens`: Total token count (input + output).
+            - `cost_usd`: Total cost of the response in USD.
+            - `latency_s`: Total time taken for the response, in seconds.
+            - `time_to_first_token_s`: Time to receive the first token, in seconds.
+            - `inter_token_latency_s`: Average time between tokens, in seconds. If `token_times` is empty sets it to 0.
+            - `tokens_per_second`: Processing rate of tokens per second.
+        """
         model_config = self.config.models[model]
         input_tokens = len(self.tokenizer.encode(self.input_to_string(input)))
         output_tokens = len(self.tokenizer.encode(self.output_to_string(output)))
@@ -628,17 +788,42 @@ class ProviderCore(Provider):
             "cost_usd": input_cost + output_cost,
             "latency_s": total_time,
             "time_to_first_token_s": first_token_time - start_time,
-            "inter_token_latency_s": sum(token_times) / len(token_times),
-            "tokens_per_second": token_count / total_time,
+            "inter_token_latency_s": sum(token_times) / len(token_times)
+            if token_times
+            else 0,
+            "tokens_per_second": token_count / total_time
+            if token_times
+            else 1 / total_time,
         }
 
     def calculate_cost(
         self, token_count: int, token_cost: Union[float, List[Dict[str, Any]]]
     ) -> float:
+        """
+        Calculates the cost for a given number of tokens based on a fixed cost per token
+        or a variable rate structure.
+
+        If `token_cost` is a fixed float, the total cost is `token_count * token_cost`.
+        If `token_cost` is a list, it checks each range and calculates cost based on the applicable range's rate.
+
+        Parameters
+        ----------
+        token_count : int
+            The total number of tokens for which the cost is being calculated.
+        token_cost : Union[float, List[Dict[str, Any]]]
+            Either a fixed cost per token (as a float) or a list of dictionaries defining
+            variable cost ranges. Each dictionary in the list represents a range with
+            'range' (a tuple of minimum and maximum token counts) and 'cost' (cost per token) keys.
+
+        Returns
+        -------
+        float
+            The calculated cost based on the token count and cost structure.
+        """
         if isinstance(token_cost, list):
             for cost_range in token_cost:
                 if token_count >= cost_range.range[0] and (
-                    token_count <= cost_range.range[1] or cost_range.range[1] is None
+                    cost_range.range[1] is None or token_count <= cost_range.range[1]
                 ):
                     return cost_range.cost * token_count
         else:
@@ -646,6 +831,23 @@ class ProviderCore(Provider):
         return 0
 
     def input_to_string(self, input):
+        """
+        Converts an input, which can be a string or a structured list of messages, into a single concatenated string.
+
+        Parameters
+        ----------
+        input : Any
+            The input data to be converted. This can be:
+            - A simple string, which is returned as-is.
+            - A list of message dictionaries, where each dictionary may contain `content`, `role`,
+            and nested items like `text` or `image_url`.
+
+        Returns
+        -------
+        str
+            A concatenated string representing the text content of all messages,
+            including text and URLs from image content if present.
+        """
         if isinstance(input, str):
             return input
         else:
@@ -667,6 +869,23 @@ class ProviderCore(Provider):
             return "".join(result)
 
     def output_to_string(self, output):
+        """
+        Extracts and returns the content or arguments from the output based on
+        the `finish_reason` of the first choice in `output`.
+
+        Parameters
+        ----------
+        output : Any
+            The model output object, expected to have a `choices` attribute that should contain a `finish_reason` indicating the type of output
+            ("stop", "tool_calls", or "function_call") and corresponding content or arguments.
+
+        Returns
+        -------
+        str
+            - If `finish_reason` is "stop": Returns the message content.
+            - If `finish_reason` is "tool_calls": Returns the arguments for the first tool call.
+            - If `finish_reason` is "function_call": Returns the arguments for the function call.
+        """
         if output.choices[0].finish_reason == "stop":
             return output.choices[0].message.content
         elif output.choices[0].finish_reason == "tool_calls":
