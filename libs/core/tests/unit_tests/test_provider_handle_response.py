@@ -142,7 +142,6 @@ async def test_ahandle_response_streaming_stop(mock_provider):
 
     assert isinstance(response[0], ChatCompletionChunk)
     assert response[0].chat_output == "Streamed response"
-    # assert response[0].chat_output_stream == "Streamed response"
 
 
 def test_handle_response_non_streaming(mock_provider):
@@ -280,4 +279,3 @@ def test_handle_response_streaming_stop(mock_provider):
 
     assert isinstance(response[0], ChatCompletionChunk)
     assert response[0].chat_output == "Streamed response"
-    # assert response[0].chat_output_stream == "Streamed response"
