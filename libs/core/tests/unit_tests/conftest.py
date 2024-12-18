@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+from llmstudio_core.providers.azure import AzureProvider
 from llmstudio_core.providers.provider import ProviderCore
 
 
@@ -52,3 +53,27 @@ def mock_provider():
     tokenizer = MagicMock()
     tokenizer.encode = lambda x: x.split()  # Simple tokenizer mock
     return MockProvider(config=config, tokenizer=tokenizer)
+
+
+class MockAzureProvider(AzureProvider):
+    async def aparse_response(self, response, **kwargs):
+        return response
+
+    async def agenerate_client(self, request):
+        # For testing, return an async generator
+        async def async_gen():
+            yield {}
+
+        return async_gen()
+
+    @staticmethod
+    def _provider_config_name():
+        return "mock_azure_provider"
+
+
+@pytest.fixture
+def mock_azure_provider():
+    config = MagicMock()
+    config.id = "mock_azure_provider"
+    base_url = "mock_url.com"
+    return MockAzureProvider(config=config, base_url=base_url)

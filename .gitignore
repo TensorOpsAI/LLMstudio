@@ -67,6 +67,7 @@ venv.bak/
 config.yaml
 bun.lockb
 
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
