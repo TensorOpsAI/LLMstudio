@@ -116,7 +116,7 @@ class AzureProvider(ProviderCore):
         these with the base arguments for the API call.
 
         Args:
-            request (ChatRequest): The chat request object containing the model, 
+            request (ChatRequest): The chat request object containing the model,
                                 parameters, and other necessary details.
 
         Returns:
@@ -207,8 +207,8 @@ class AzureProvider(ProviderCore):
         """
         Processes a generator response and yields processed chunks.
 
-        If `is_llama` is True and tools or functions are enabled, it processes the response 
-        using `handle_tool_response`. Otherwise, it processes each chunk and yields only those 
+        If `is_llama` is True and tools or functions are enabled, it processes the response
+        using `handle_tool_response`. Otherwise, it processes each chunk and yields only those
         containing "choices".
 
         Args:
@@ -473,7 +473,7 @@ class AzureProvider(ProviderCore):
         """
         Builds a complete system message for Llama based on OpenAI's message, tools, and functions.
 
-        If a system message is present in the OpenAI message, it is included in the result. 
+        If a system message is present in the OpenAI message, it is included in the result.
         Otherwise, a default system message is used. Additional tool and function instructions
         are appended if provided.
 
@@ -505,7 +505,9 @@ class AzureProvider(ProviderCore):
             system_message = system_message + self.build_tool_instructions(tools)
 
         if functions:
-            system_message = system_message + self.build_function_instructions(functions)
+            system_message = system_message + self.build_function_instructions(
+                functions
+            )
 
         end_tag = "\n<|eot_id|>"
         return llama_message + system_message + end_tag
@@ -514,12 +516,12 @@ class AzureProvider(ProviderCore):
         """
         Builds a detailed instructional prompt for tools available to the assistant.
 
-        This function generates a message describing the available tools, focusing on tools 
-        of type "function." It explains to the LLM how to use each tool and provides an example of the 
+        This function generates a message describing the available tools, focusing on tools
+        of type "function." It explains to the LLM how to use each tool and provides an example of the
         correct response format for function calls.
 
         Args:
-            tools (list): A list of tool dictionaries, where each dictionary contains tool 
+            tools (list): A list of tool dictionaries, where each dictionary contains tool
             details such as type, function name, description, and parameters.
 
         Returns:
@@ -562,12 +564,12 @@ NOTE: There is no prefix before the symbol '§' and nothing comes after the call
         """
         Builds a detailed instructional prompt for available functions.
 
-        This method creates a message describing the functions accessible to the assistant. 
-        It includes the function name, description, and required parameters, along with 
+        This method creates a message describing the functions accessible to the assistant.
+        It includes the function name, description, and required parameters, along with
         specific guidelines for calling functions.
 
         Args:
-            functions (list): A list of function dictionaries, each containing details such as 
+            functions (list): A list of function dictionaries, each containing details such as
             name, description, and parameters.
 
         Returns:
@@ -606,12 +608,12 @@ Reminder:
         """
         Appends the OpenAI message to the Llama message while formatting OpenAI messages.
 
-        This function iterates through a list of OpenAI messages and formats them for inclusion 
-        in a Llama message. It handles user messages that might include nested content (lists of 
+        This function iterates through a list of OpenAI messages and formats them for inclusion
+        in a Llama message. It handles user messages that might include nested content (lists of
         messages) by safely evaluating the content. System messages are skipped.
 
         Args:
-            openai_message (list): A list of dictionaries representing the OpenAI messages. Each 
+            openai_message (list): A list of dictionaries representing the OpenAI messages. Each
                                 dictionary should have "role" and "content" keys.
             llama_message (str): The initial Llama message to which the conversation is appended.
 
@@ -643,17 +645,17 @@ Reminder:
         """
         Formats a single message dictionary into a structured string for a conversation.
 
-        The formatting depends on the content of the message, such as tool calls, 
-        function calls, or simple user/assistant messages. Each type of message 
+        The formatting depends on the content of the message, such as tool calls,
+        function calls, or simple user/assistant messages. Each type of message
         is formatted with specific headers and tags.
 
         Args:
-            message (dict): A dictionary containing message details. Expected keys 
-                            include "role", "content", and optionally "tool_calls", 
+            message (dict): A dictionary containing message details. Expected keys
+                            include "role", "content", and optionally "tool_calls",
                             "tool_call_id", or "function_call".
 
         Returns:
-            str: A formatted string representing the message. Returns an empty 
+            str: A formatted string representing the message. Returns an empty
             string if the message cannot be formatted.
         """
         if "tool_calls" in message:

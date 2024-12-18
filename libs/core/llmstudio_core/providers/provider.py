@@ -148,7 +148,7 @@ class ProviderCore(Provider):
         **kwargs,
     ):
         """
-        Asynchronously establishes a chat connection with the provider’s API, handling retries, 
+        Asynchronously establishes a chat connection with the provider’s API, handling retries,
         request validation, and streaming response options.
 
         Parameters
@@ -158,7 +158,7 @@ class ProviderCore(Provider):
         model : str
             The identifier of the model to be used for the chat request.
         is_stream : Optional[bool], default=False
-            Flag to indicate if the response should be streamed. If True, returns an async generator 
+            Flag to indicate if the response should be streamed. If True, returns an async generator
             for streaming content; otherwise, returns the complete response.
         retries : Optional[int], default=0
             Number of retry attempts on error. Retries will be attempted for specific HTTP errors like rate limits.
@@ -224,7 +224,7 @@ class ProviderCore(Provider):
         **kwargs,
     ):
         """
-        Establishes a chat connection with the provider’s API, handling retries, request validation, 
+        Establishes a chat connection with the provider’s API, handling retries, request validation,
         and streaming response options.
 
         Parameters
@@ -234,7 +234,7 @@ class ProviderCore(Provider):
         model : str
             The model identifier for selecting the model used in the chat request.
         is_stream : Optional[bool], default=False
-            Flag to indicate if the response should be streamed. If True, the function returns a generator 
+            Flag to indicate if the response should be streamed. If True, the function returns a generator
             for streaming content. Otherwise, it returns the complete response.
         retries : Optional[int], default=0
             Number of retry attempts on error. Retries will be attempted on specific HTTP errors like rate limits.
@@ -294,9 +294,9 @@ class ProviderCore(Provider):
         self, request: ChatRequest, response: AsyncGenerator, start_time: float
     ) -> AsyncGenerator[str, None]:
         """
-        Asynchronously handles the response from an API, processing response chunks for either 
+        Asynchronously handles the response from an API, processing response chunks for either
         streaming or non-streaming responses.
-        
+
         Buffers response chunks for non-streaming responses to output one single message. For streaming responses sends incremental chunks.
 
         Parameters
@@ -311,7 +311,7 @@ class ProviderCore(Provider):
         Yields
         ------
         Union[ChatCompletionChunk, ChatCompletion]
-            - If `request.is_stream` is True, yields `ChatCompletionChunk` objects with incremental 
+            - If `request.is_stream` is True, yields `ChatCompletionChunk` objects with incremental
             response chunks for streaming.
             - If `request.is_stream` is False, yields a final `ChatCompletion` object after processing all chunks.
         """
@@ -423,10 +423,10 @@ class ProviderCore(Provider):
         self, request: ChatRequest, response: Generator, start_time: float
     ) -> Generator:
         """
-        Processes API response chunks to build a structured, complete response, yielding 
+        Processes API response chunks to build a structured, complete response, yielding
         each chunk if streaming is enabled.
-        
-        If streaming, each chunk is yielded as soon as it’s processed. Otherwise, all chunks 
+
+        If streaming, each chunk is yielded as soon as it’s processed. Otherwise, all chunks
         are combined and yielded as a single response at the end.
 
         Parameters
@@ -551,8 +551,8 @@ class ProviderCore(Provider):
 
     def join_chunks(self, chunks):
         """
-        Combine multiple response chunks from the model into a single, structured response. 
-        Handles tool calls, function calls, and standard text completion based on the 
+        Combine multiple response chunks from the model into a single, structured response.
+        Handles tool calls, function calls, and standard text completion based on the
         purpose indicated by the final chunk.
 
         Parameters
@@ -563,7 +563,7 @@ class ProviderCore(Provider):
         Returns
         -------
         Tuple[ChatCompletion, str]
-            - `ChatCompletion`: The structured response based on the type of completion 
+            - `ChatCompletion`: The structured response based on the type of completion
             (tool calls, function call, or text).
             - `str`: The concatenated content or arguments, depending on the completion type.
 
@@ -733,7 +733,7 @@ class ProviderCore(Provider):
         token_count: int,
     ) -> Dict[str, Any]:
         """
-        Calculates performance and cost metrics for a model response based on timing 
+        Calculates performance and cost metrics for a model response based on timing
         information, token counts, and model-specific costs.
 
         Parameters
@@ -783,17 +783,21 @@ class ProviderCore(Provider):
             "cost_usd": input_cost + output_cost,
             "latency_s": total_time,
             "time_to_first_token_s": first_token_time - start_time,
-            "inter_token_latency_s": sum(token_times) / len(token_times) if token_times else 0,
-            "tokens_per_second": token_count / total_time if token_times else 1 / total_time,
+            "inter_token_latency_s": sum(token_times) / len(token_times)
+            if token_times
+            else 0,
+            "tokens_per_second": token_count / total_time
+            if token_times
+            else 1 / total_time,
         }
 
     def calculate_cost(
         self, token_count: int, token_cost: Union[float, List[Dict[str, Any]]]
     ) -> float:
         """
-        Calculates the cost for a given number of tokens based on a fixed cost per token 
+        Calculates the cost for a given number of tokens based on a fixed cost per token
         or a variable rate structure.
-        
+
         If `token_cost` is a fixed float, the total cost is `token_count * token_cost`.
         If `token_cost` is a list, it checks each range and calculates cost based on the applicable range's rate.
 
@@ -802,14 +806,14 @@ class ProviderCore(Provider):
         token_count : int
             The total number of tokens for which the cost is being calculated.
         token_cost : Union[float, List[Dict[str, Any]]]
-            Either a fixed cost per token (as a float) or a list of dictionaries defining 
-            variable cost ranges. Each dictionary in the list represents a range with 
+            Either a fixed cost per token (as a float) or a list of dictionaries defining
+            variable cost ranges. Each dictionary in the list represents a range with
             'range' (a tuple of minimum and maximum token counts) and 'cost' (cost per token) keys.
 
         Returns
         -------
         float
-            The calculated cost based on the token count and cost structure.            
+            The calculated cost based on the token count and cost structure.
         """
         if isinstance(token_cost, list):
             for cost_range in token_cost:
@@ -830,13 +834,13 @@ class ProviderCore(Provider):
         input : Any
             The input data to be converted. This can be:
             - A simple string, which is returned as-is.
-            - A list of message dictionaries, where each dictionary may contain `content`, `role`, 
+            - A list of message dictionaries, where each dictionary may contain `content`, `role`,
             and nested items like `text` or `image_url`.
 
         Returns
         -------
         str
-            A concatenated string representing the text content of all messages, 
+            A concatenated string representing the text content of all messages,
             including text and URLs from image content if present.
         """
         if isinstance(input, str):
@@ -861,13 +865,13 @@ class ProviderCore(Provider):
 
     def output_to_string(self, output):
         """
-        Extracts and returns the content or arguments from the output based on 
+        Extracts and returns the content or arguments from the output based on
         the `finish_reason` of the first choice in `output`.
 
         Parameters
         ----------
         output : Any
-            The model output object, expected to have a `choices` attribute that should contain a `finish_reason` indicating the type of output 
+            The model output object, expected to have a `choices` attribute that should contain a `finish_reason` indicating the type of output
             ("stop", "tool_calls", or "function_call") and corresponding content or arguments.
 
         Returns
