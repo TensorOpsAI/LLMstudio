@@ -1,23 +1,26 @@
 [tool.poetry]
 name = "llmstudio-proxy"
-version = "1.0.1"
-description = ""
-authors = ["Diogo Goncalves <diogo.goncalves@tensorops.ai>"]
+version = "1.0.4"
+description = "LLMstudio Proxy is the module of LLMstudio that allows calling any LLM as a Service Provider in proxy server. By leveraging LLMstudio Proxy, you can have a centralized point for connecting to any provider running independently from your application."
+authors = ["Claudio Lemos <claudio.lemos@tensorops.ai>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"
 pydantic = "^2.5"
 requests = "^2.31"
-fastapi = "^0.109"
+fastapi = "^0.115.5"
 uvicorn = "^0.27"
 tiktoken = "^0.7"
-python-dotenv = "^0"
+python-dotenv = ">=0.4.0,<2.0.0"
 toml = "^0.10"
-llmstudio-core = "1.0.0"
+llmstudio-core = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 llmstudio-core = { path = "../core/", develop = true }
+
+[tool.poetry.scripts]
+llmstudio-proxy = "llmstudio_proxy.cli:main"
 
 [build-system]
 requires = ["poetry-core"]

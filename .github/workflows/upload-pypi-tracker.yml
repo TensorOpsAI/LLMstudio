@@ -1,0 +1,114 @@
+name: llmstudio-tracker to PyPI and build/push Docker images.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "libs/tracker/**"
+      - "!libs/tracker/pyproject.toml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          token: ${{ secrets.GH_TOKEN }}
+
+      # Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+
+      # Install Poetry
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+
+      # Configure Poetry with PyPI token
+      - name: Configure Poetry
+        run: |
+          poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
+
+      # Build and publish package to PyPI
+      - name: Build and publish to PyPI
+        working-directory: ./libs/tracker
+        run: |
+          CURRENT_VERSION=$(poetry version --short)
+          FINAL_VERSION=$(echo "$CURRENT_VERSION" | sed -E 's/[a-zA-Z]+[0-9]*//')
+
+          echo "Checking for llmstudio-tracker==$FINAL_VERSION on PyPI..."
+          if python -m pip install llmstudio-tracker==$FINAL_VERSION --dry-run >/dev/null 2>&1; then
+            echo "Package llmstudio-tracker==$FINAL_VERSION is already available on PyPI. Please bump version."
+            exit 1
+          fi
+
+          poetry version "$FINAL_VERSION"
+          echo "Updated version: $(poetry version --short)"
+
+          poetry build
+          poetry publish
+
+          if [ "$CURRENT_VERSION" = "$FINAL_VERSION" ]; then
+            echo "SAME_VERSION=true" >> $GITHUB_ENV
+          else
+            echo "SAME_VERSION=false" >> $GITHUB_ENV
+          fi
+
+      - name: Commit and push updated pyproject.toml
+        working-directory: ./libs/tracker
+        run: |
+          if [ "${{ env.SAME_VERSION }}" = "false" ]; then
+            git config user.name "GitHub Actions"
+            git config user.email "actions@github.com"
+            git add pyproject.toml
+            git commit -m "[fix] bump release version in pyproject.toml"
+            git push
+          fi
+
+      - name: Extract version for tagging Docker image
+        working-directory: ./libs/tracker
+        id: get_version
+        run: echo "VERSION=$(poetry version --short)" >> $GITHUB_ENV
+
+      # Wait for the package to become available on PyPI
+      - name: Wait for PyPI to update
+        run: |
+          echo "Checking for llmstudio-tracker==${{ env.VERSION }} on PyPI..."
+          for i in {1..10}; do
+            if python -m pip install llmstudio-tracker==${{ env.VERSION }} --dry-run >/dev/null 2>&1; then
+              echo "Package llmstudio-tracker==${{ env.VERSION }} is available on PyPI."
+              break
+            else
+              echo "Package llmstudio-tracker==${{ env.VERSION }} not available yet. Waiting 15 seconds..."
+              sleep 15
+            fi
+            if [ $i -eq 10 ]; then
+              echo "Package did not become available in time."
+              exit 1
+            fi
+          done
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker images
+        working-directory: ./deploy
+        run: |
+          make version=${{ env.VERSION }} build-llmstudio-tracker
+
+      - name: Push Docker images
+        run: |
+          docker push tensoropsai/llmstudio-tracker:${{ env.VERSION }}

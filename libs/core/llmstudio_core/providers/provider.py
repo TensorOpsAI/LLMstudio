@@ -63,13 +63,18 @@ class Provider(ABC):
         api_version: Optional[str] = None,
         base_url: Optional[str] = None,
         tokenizer: Optional[Any] = None,
+        access_key: Optional[str] = None,
+        secret_key: Optional[str] = None,
+        region: Optional[str] = None,
     ):
         self.config = config
         self.API_KEY = api_key
         self.api_endpoint = api_endpoint
         self.api_version = api_version
         self.base_url = base_url
-
+        self.access_key = access_key
+        self.secret_key = secret_key
+        self.region = region
         self.tokenizer = tokenizer if tokenizer else self._get_tokenizer()
         self.count = 0
 

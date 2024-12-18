@@ -3,7 +3,24 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import yaml
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
+
+
+class OpenAIToolParameters(BaseModel):
+    type: str
+    properties: Dict
+    required: List[str]
+
+
+class OpenAIToolFunction(BaseModel):
+    name: str
+    description: str
+    parameters: OpenAIToolParameters
+
+
+class OpenAITool(BaseModel):
+    type: str
+    function: OpenAIToolFunction
 
 
 class CostRange(BaseModel):
@@ -13,9 +30,10 @@ class CostRange(BaseModel):
 
 class ModelConfig(BaseModel):
     mode: str
-    max_tokens: int
-    input_token_cost: Union[float, List[CostRange]]
-    output_token_cost: Union[float, List[CostRange]]
+    max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")
+    max_completion_tokens: Optional[int] = None
+    input_token_cost: Union[float, List["CostRange"]]
+    output_token_cost: Union[float, List["CostRange"]]
 
 
 class ProviderConfig(BaseModel):
