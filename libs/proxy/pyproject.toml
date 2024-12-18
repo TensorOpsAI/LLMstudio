@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "llmstudio-proxy"
-version = "1.0.3a0"
-description = ""
-authors = ["Diogo Goncalves <diogo.goncalves@tensorops.ai>"]
+version = "1.0.4"
+description = "LLMstudio Proxy is the module of LLMstudio that allows calling any LLM as a Service Provider in proxy server. By leveraging LLMstudio Proxy, you can have a centralized point for connecting to any provider running independently from your application."
+authors = ["Claudio Lemos <claudio.lemos@tensorops.ai>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
