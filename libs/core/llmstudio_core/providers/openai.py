@@ -31,16 +31,18 @@ class OpenAIProvider(ProviderCore):
         """Generate an OpenAI client"""
 
         try:
-            return self._client.chat.completions.create(
+            response= self._client.chat.completions.create(
                 model=request.model,
                 messages=(
                     [{"role": "user", "content": request.chat_input}]
                     if isinstance(request.chat_input, str)
                     else request.chat_input
                 ),
-                stream=True,
+                stream=request.is_stream,
+                stream_options={"include_usage":True},
                 **request.parameters,
             )
+            return response
         except openai._exceptions.APIError as e:
             raise ProviderError(str(e))
 

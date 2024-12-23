@@ -110,7 +110,7 @@ class Provider(ABC):
         )
 
 
-class ProviderCore(Provider):
+class ProviderCoreStream(Provider):
     END_TOKEN = "<END_TOKEN>"
 
     @abstractmethod
@@ -279,18 +279,14 @@ class ProviderCore(Provider):
         for _ in range(request.retries + 1):
             try:
                 start_time = time.time()
-                response = self.generate_client(request)
-                response_handler = self.handle_response(request, response, start_time)
+                response = self.generate_client(request) # post to provider
 
                 if request.is_stream:
+                    response_handler = self.handle_response(request, response, start_time) #rename
                     return response_handler
                 else:
-                    return response_handler.__next__()
-            # except HTTPExceptio as e:
-            #     if e.status_code == 429:
-            #         continue  # Retry on rate limit error
-            #     else:
-            #         raise e  # Raise other HTTP exceptions
+                    return self.handle_response_non_stream(request, response, start_time)
+
             except Exception as e:
                 raise ProviderError(str(e))
         raise ProviderError("Too many requests")
@@ -424,6 +420,9 @@ class ProviderCore(Provider):
         else:
             yield ChatCompletion(**response)
 
+    class ChatCompletionLLMstudio(ChatCompletion):
+        metrics:
+
     def handle_response(
         self, request: ChatRequest, response: Generator, start_time: float
     ) -> Generator:
@@ -450,109 +449,50 @@ class ProviderCore(Provider):
             Otherwise, yields a single `ChatCompletion` with the full response data.
 
         """
-        first_token_time = None
-        previous_token_time = None
-        token_times = []
-        token_count = 0
-        chunks = []
+        
+        start_time
+        total_time = time.time()-start_time
+        # response = ChatCompletion | any response from provider
+        # response.usage = {
+        #                 "prompt_tokens": 19,
+        #                 "completion_tokens": 10,
+        #                 "total_tokens": 29,
+        #                 "prompt_tokens_details": {
+        #                     "cached_tokens": 0
+        #                 },
+        #                 "completion_tokens_details": {
+        #                     "reasoning_tokens": 0,
+        #                     "accepted_prediction_tokens": 0,
+        #                     "rejected_prediction_tokens": 0
+        #                 }
+        #             }
+        # request
+        
 
-        for chunk in self.parse_response(response, request=request):
-            token_count += 1
-            current_time = time.time()
-            first_token_time = first_token_time or current_time
-            if previous_token_time is not None:
-                token_times.append(current_time - previous_token_time)
-            previous_token_time = current_time
+        response: ChatCompletion = self._parse_response(response, request=request) # if openai pass
 
-            chunks.append(chunk)
-            if request.is_stream:
-                chunk = chunk[0] if isinstance(chunk, tuple) else chunk
-                model = chunk.get("model")
-                if chunk.get("choices")[0].get("finish_reason") != "stop":
-                    chat_output = chunk.get("choices")[0].get("delta").get("content")
-                    chunk = {
-                        **chunk,
-                        "id": str(uuid.uuid4()),
-                        "chat_input": (
-                            request.chat_input
-                            if isinstance(request.chat_input, str)
-                            else request.chat_input[-1]["content"]
-                        ),
-                        "chat_output": None,
-                        "chat_output_stream": chat_output if chat_output else "",
-                        "context": (
-                            [{"role": "user", "content": request.chat_input}]
-                            if isinstance(request.chat_input, str)
-                            else request.chat_input
-                        ),
-                        "provider": self.config.id,
-                        "model": (
-                            request.model
-                            if model and model.startswith(request.model)
-                            else (model or request.model)
-                        ),
-                        "deployment": (
-                            model
-                            if model and model.startswith(request.model)
-                            else (request.model if model != request.model else None)
-                        ),
-                        "timestamp": time.time(),
-                        "parameters": request.parameters,
-                        "metrics": None,
-                    }
-                    yield ChatCompletionChunk(**chunk)
-
-        chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
-        model = next(chunk["model"] for chunk in chunks if chunk.get("model"))
-
-        response, output_string = self.join_chunks(chunks)
+        model = response.get("model", request.model)
 
         metrics = self.calculate_metrics(
-            request.chat_input,
             response,
             request.model,
             start_time,
-            time.time(),
-            first_token_time,
-            token_times,
-            token_count,
+            time.time()
         )
 
-        response = {
-            **(chunk if request.is_stream else response.model_dump()),
-            "id": str(uuid.uuid4()),
-            "chat_input": (
-                request.chat_input
-                if isinstance(request.chat_input, str)
-                else request.chat_input[-1]["content"]
-            ),
-            "chat_output": output_string,
-            "chat_output_stream": "",
-            "context": (
-                [{"role": "user", "content": request.chat_input}]
-                if isinstance(request.chat_input, str)
-                else request.chat_input
-            ),
-            "provider": self.config.id,
-            "model": (
-                request.model
-                if model and model.startswith(request.model)
-                else (model or request.model)
-            ),
-            "deployment": (
-                model
-                if model and model.startswith(request.model)
-                else (request.model if model != request.model else None)
-            ),
-            "timestamp": time.time(),
-            "parameters": request.parameters,
-            "metrics": metrics,
-        }
+        response.metrics = metrics
+        response.chat_output = response.completions[0].content
+        response.chat_output_stream = response.completions[0].content
+        ...
 
-        if request.is_stream:
-            yield ChatCompletionChunk(**response)
-        else:
-            yield ChatCompletion(**response)
+        response_final = ChatCompletionLLMstudio(
+            **response.model_dump(), 
+            metrics = metrics
+            chat_output = response.completions[0].content
+            chat_output_stream = response.completions[0].content
+        ...)
+        
+        return response #: ChatCompletionLLMstudio
 
     def join_chunks(self, chunks):
         """
@@ -773,28 +713,42 @@ class ProviderCore(Provider):
             - `inter_token_latency_s`: Average time between tokens, in seconds. If `token_times` is empty sets it to 0.
             - `tokens_per_second`: Processing rate of tokens per second.
         """
+        # Retrieve model configuration
         model_config = self.config.models[model]
-        input_tokens = len(self.tokenizer.encode(self.input_to_string(input)))
-        output_tokens = len(self.tokenizer.encode(self.output_to_string(output)))
 
-        input_cost = self.calculate_cost(input_tokens, model_config.input_token_cost)
-        output_cost = self.calculate_cost(output_tokens, model_config.output_token_cost)
+        # Calculate input and output tokens
+        input_tokens = (
+            response.usage.input_tokens 
+            or len(self.tokenizer.encode(self.input_to_string(input)))
+        )
+        output_tokens = (
+            response.usage.output_tokens 
+            or len(self.tokenizer.encode(self.output_to_string(output)))
+        )
 
+        # Calculate costs
+        input_cost = self.calculate_cost(
+            token_count=input_tokens, 
+            token_cost=model_config.input_token_cost
+        )
+        output_cost = self.calculate_cost(
+            token_count=output_tokens, 
+            token_cost=model_config.output_token_cost
+        )
+        cache_cost = self.calculate_cache_cost(
+            token_count=input_tokens, 
+            token_cost=model_config.cache_token_cost
+        )
+        reasoning_cost = self.calculate_reasoning_cost(
+            token_count=output_tokens, 
+            token_cost=model_config.reasoning_token_cost
+        )
+
+        # Calculate total time
         total_time = end_time - start_time
-        return {
-            "input_tokens": input_tokens,
-            "output_tokens": output_tokens,
-            "total_tokens": input_tokens + output_tokens,
-            "cost_usd": input_cost + output_cost,
-            "latency_s": total_time,
-            "time_to_first_token_s": first_token_time - start_time,
-            "inter_token_latency_s": sum(token_times) / len(token_times)
-            if token_times
-            else 0,
-            "tokens_per_second": token_count / total_time
-            if token_times
-            else 1 / total_time,
-        }
+
+        # Return calculated metrics
+        return Metrics(BaseModel)(...)
 
     def calculate_cost(
         self, token_count: int, token_cost: Union[float, List[Dict[str, Any]]]
