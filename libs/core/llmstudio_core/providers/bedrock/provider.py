@@ -32,12 +32,12 @@ class BedrockProvider(ProviderCore):
         self.selected_model = self._get_provider(request.model)
         return self.selected_model.generate_client(request=request)
 
-    async def aparse_response(
+    async def _aparse_response(
         self, response: Any, **kwargs
     ) -> AsyncGenerator[Any, None]:
-        result = await self.selected_model.aparse_response(response=response, **kwargs)
+        result = await self.selected_model._aparse_response(response=response, **kwargs)
         for chunk in result:
             yield chunk
 
-    def parse_response(self, response: AsyncGenerator[Any, None], **kwargs) -> Any:
-        return self.selected_model.parse_response(response=response, **kwargs)
+    def _parse_response(self, response: AsyncGenerator[Any, None], **kwargs) -> Any:
+        return self.selected_model._parse_response(response=response, **kwargs)

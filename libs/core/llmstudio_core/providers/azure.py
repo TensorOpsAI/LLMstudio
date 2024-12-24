@@ -109,7 +109,7 @@ class AzureProvider(ProviderCore):
             base_args = {
                 "model": request.model,
                 "messages": messages,
-                "stream": True,
+                "stream": request.is_stream,
             }
 
             combined_args = {
@@ -145,14 +145,14 @@ class AzureProvider(ProviderCore):
                 else request.chat_input
             )
 
-    async def aparse_response(
+    async def _aparse_response(
         self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:
-        result = self.parse_response(response=response, **kwargs)
+        result = self._parse_response(response=response, **kwargs)
         for chunk in result:
             yield chunk
 
-    def parse_response(self, response: AsyncGenerator, **kwargs) -> Any:
+    def _parse_response(self, response: AsyncGenerator, **kwargs) -> Any:
         """
         Processes a generator response and yields processed chunks.
 

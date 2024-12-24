@@ -65,7 +65,7 @@ class VertexAIProvider(ProviderCore):
         except Exception as e:
             raise ProviderError(str(e))
 
-    def parse_response(self, response: AsyncGenerator[Any, None], **kwargs) -> Any:
+    def _parse_response(self, response: AsyncGenerator[Any, None], **kwargs) -> Any:
 
         for chunk in response.iter_content(chunk_size=None):
 
@@ -202,10 +202,10 @@ class VertexAIProvider(ProviderCore):
                     object="chat.completion.chunk",
                 ).model_dump()
 
-    async def aparse_response(
+    async def _aparse_response(
         self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:
-        result = self.parse_response(response=response, **kwargs)
+        result = self._parse_response(response=response, **kwargs)
         for chunk in result:
             yield chunk
 

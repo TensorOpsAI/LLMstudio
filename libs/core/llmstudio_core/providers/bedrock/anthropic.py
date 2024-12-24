@@ -80,12 +80,12 @@ class BedrockAnthropicProvider(ProviderCore):
         except Exception as e:
             raise ProviderError(str(e))
 
-    async def aparse_response(
+    async def _aparse_response(
         self, response: Any, **kwargs
     ) -> AsyncGenerator[Any, None]:
-        return self.parse_response(response=response, **kwargs)
+        return self._parse_response(response=response, **kwargs)
 
-    def parse_response(self, response: AsyncGenerator[Any, None], **kwargs) -> Any:
+    def _parse_response(self, response: AsyncGenerator[Any, None], **kwargs) -> Any:
         tool_name = None
         tool_arguments = ""
         tool_id = None

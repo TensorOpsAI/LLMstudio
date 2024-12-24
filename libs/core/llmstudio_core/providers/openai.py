@@ -31,7 +31,7 @@ class OpenAIProvider(ProviderCore):
         """Generate an OpenAI client"""
 
         try:
-            response= self._client.chat.completions.create(
+            return self._client.chat.completions.create(
                 model=request.model,
                 messages=(
                     [{"role": "user", "content": request.chat_input}]
@@ -39,20 +39,18 @@ class OpenAIProvider(ProviderCore):
                     else request.chat_input
                 ),
                 stream=request.is_stream,
-                stream_options={"include_usage":True},
                 **request.parameters,
             )
-            return response
         except openai._exceptions.APIError as e:
             raise ProviderError(str(e))
 
-    async def aparse_response(
+    async def _aparse_response(
         self, response: AsyncGenerator, **kwargs
     ) -> AsyncGenerator[str, None]:
-        result = self.parse_response(response=response, **kwargs)
+        result = self._parse_response(response=response, **kwargs)
         for chunk in result:
             yield chunk
 
-    def parse_response(self, response: Generator, **kwargs) -> Generator:
+    def _parse_response(self, response: Generator, **kwargs) -> Generator:
         for chunk in response:
             yield chunk.model_dump()

@@ -6,10 +6,10 @@ from llmstudio_core.providers.provider import ProviderCore
 
 
 class MockProvider(ProviderCore):
-    async def aparse_response(self, response, **kwargs):
+    async def _aparse_response(self, response, **kwargs):
         return response
 
-    def parse_response(self, response, **kwargs):
+    def _parse_response(self, response, **kwargs):
         return response
 
     def output_to_string(self, output):
@@ -56,7 +56,7 @@ def mock_provider():
 
 
 class MockAzureProvider(AzureProvider):
-    async def aparse_response(self, response, **kwargs):
+    async def _aparse_response(self, response, **kwargs):
         return response
 
     async def agenerate_client(self, request):
