@@ -17,12 +17,15 @@ keywords = ["ml", "ai", "llm", "llmops", "openai", "langchain", "chatgpt", "llms
 python = "^3.9"
 pydantic = "^2.5"
 python-dotenv = ">=0.4.0,<2.0.0"
-langchain = "^0"
-langchain-experimental = "^0"
+langchain = "^0.3.14"
+langchain-experimental = "^0.3.4"
 llmstudio-core = "^1.0.0"
 
 llmstudio-tracker = { version = "^1.0.1", optional = true }
 llmstudio-proxy = { version = "^1.0.1", optional = true }
+langchain-core = "^0.3.29"
+langchain-community = "^0.3.14"
+langchain-openai = "^0.3.0"
 
 [tool.poetry.extras]
 proxy = ["llmstudio-proxy"]
