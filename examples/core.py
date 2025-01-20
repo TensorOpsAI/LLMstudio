@@ -88,27 +88,25 @@ def build_chat_request(model: str, chat_input: str, is_stream: bool, max_tokens:
     return chat_request
 
 
-
-
-
-provider = "openai"
-model = "gpt-4o-mini"
-for _ in range(1):
-    latencies = run_provider(provider=provider, model=model, api_key=os.environ["OPENAI_API_KEY"])
-    pprint(latencies)
-
+def multiple_provider_runs(provider:str, model:str, num_runs:int, api_key:str, **kwargs):
+    for _ in range(num_runs):
+        latencies = run_provider(provider=provider, model=model, api_key=api_key, **kwargs)
+        pprint(latencies)
     
-provider = "openai"
-model = "o1-preview"
-for _ in range(1):
-    latencies = run_provider(provider=provider, model=model, api_key=os.environ["OPENAI_API_KEY"])
-    pprint(latencies)
     
-provider = "openai"
-model = "o1-mini"
-for _ in range(1):
-    latencies = run_provider(provider=provider, model=model, api_key=os.environ["OPENAI_API_KEY"])
-    pprint(latencies)
+
+# OpenAI
+multiple_provider_runs(provider="openai", model="gpt-4o-mini", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
+#multiple_provider_runs(provider="openai", model="o1-mini", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
+#multiple_provider_runs(provider="openai", model="o1-preview", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
+
+
+# Azure
+multiple_provider_runs(provider="azure", model="gpt-4o-mini", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
+#multiple_provider_runs(provider="azure", model="gpt-4o", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
+#multiple_provider_runs(provider="azure", model="o1-mini", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
+#multiple_provider_runs(provider="azure", model="o1-preview", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
+
 
 # provider = "anthropic"
 # model = "claude-3-opus-20240229"
@@ -117,42 +115,8 @@ for _ in range(1):
 #     pprint(latencies)
 # # we need credits
 
-
-provider = "azure"
-model = "gpt-4o-mini"
-for _ in range(1):
-    latencies = run_provider(provider=provider, model=model, 
-                            api_key=os.environ["AZURE_API_KEY"], 
-                            api_version=os.environ["AZURE_API_VERSION"],
-                            api_endpoint=os.environ["AZURE_API_ENDPOINT"])
-    pprint(latencies)
-"""
-provider = "azure"
-model = "o1-preview"
-for _ in range(1):
-    latencies = run_provider(provider=provider, model=model, 
-                            api_key=os.environ["AZURE_API_KEY"], 
-                            api_version=os.environ["AZURE_API_VERSION"],
-                            api_endpoint=os.environ["AZURE_API_ENDPOINT"])
-    pprint(latencies)
-    
-provider = "azure"
-model = "o1-mini"
-for _ in range(1):
-    latencies = run_provider(provider=provider, model=model, 
-                            api_key=os.environ["AZURE_API_KEY"], 
-                            api_version=os.environ["AZURE_API_VERSION"],
-                            api_endpoint=os.environ["AZURE_API_ENDPOINT"])
-    pprint(latencies)
-"""
-# provider = "azure"
-# model = "gpt-4o"
-# for _ in range(1):
-#     latencies = run_provider(provider=provider, model=model, 
-#                             api_key=os.environ["AZURE_API_KEY_llama"], 
-#                             base_url=os.environ["AZURE_BASE_URL"]
-#                             )
-#     pprint(latencies)
+#multiple_provider_runs(provider="azure", model="o1-preview", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
+#multiple_provider_runs(provider="azure", model="o1-mini", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
 
 
 # provider = "vertexai"
