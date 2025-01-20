@@ -325,6 +325,8 @@ class ProviderCore(Provider):
         token_times = []
         token_count = 0
         chunks = []
+        is_next_usage = False
+        usage = {}
 
         async for chunk in self.aparse_response(response, request=request):
             token_count += 1
@@ -333,44 +335,50 @@ class ProviderCore(Provider):
             if previous_token_time is not None:
                 token_times.append(current_time - previous_token_time)
             previous_token_time = current_time
+            
+            if is_next_usage:
+                usage = chunk.get("usage")
+                break
 
             chunks.append(chunk)
+            if chunk.get("choices")[0].get("finish_reason") == "stop":
+                is_next_usage = True
+            
             if request.is_stream:
                 chunk = chunk[0] if isinstance(chunk, tuple) else chunk
                 model = chunk.get("model")
-                if chunk.get("choices")[0].get("finish_reason") != "stop":
-                    chat_output = chunk.get("choices")[0].get("delta").get("content")
-                    chunk = {
-                        **chunk,
-                        "id": str(uuid.uuid4()),
-                        "chat_input": (
-                            request.chat_input
-                            if isinstance(request.chat_input, str)
-                            else request.chat_input[-1]["content"]
-                        ),
-                        "chat_output": None,
-                        "chat_output_stream": chat_output if chat_output else "",
-                        "context": (
-                            [{"role": "user", "content": request.chat_input}]
-                            if isinstance(request.chat_input, str)
-                            else request.chat_input
-                        ),
-                        "provider": self.config.id,
-                        "model": (
-                            request.model
-                            if model and model.startswith(request.model)
-                            else (model or request.model)
-                        ),
-                        "deployment": (
-                            model
-                            if model and model.startswith(request.model)
-                            else (request.model if model != request.model else None)
-                        ),
-                        "timestamp": time.time(),
-                        "parameters": request.parameters,
-                        "metrics": None,
-                    }
-                    yield ChatCompletionChunk(**chunk)
+                chat_output = chunk.get("choices")[0].get("delta").get("content")
+                chunk = {
+                    **chunk,
+                    "id": str(uuid.uuid4()),
+                    "chat_input": (
+                        request.chat_input
+                        if isinstance(request.chat_input, str)
+                        else request.chat_input[-1]["content"]
+                    ),
+                    "chat_output": None,
+                    "chat_output_stream": chat_output if chat_output else "",
+                    "context": (
+                        [{"role": "user", "content": request.chat_input}]
+                        if isinstance(request.chat_input, str)
+                        else request.chat_input
+                    ),
+                    "provider": self.config.id,
+                    "model": (
+                        request.model
+                        if model and model.startswith(request.model)
+                        else (model or request.model)
+                    ),
+                    "deployment": (
+                        model
+                        if model and model.startswith(request.model)
+                        else (request.model if model != request.model else None)
+                    ),
+                    "timestamp": time.time(),
+                    "parameters": request.parameters,
+                    "metrics": None,
+                }
+                yield ChatCompletionChunk(**chunk)
 
         chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
         model = next(chunk["model"] for chunk in chunks if chunk.get("model"))
@@ -386,6 +394,7 @@ class ProviderCore(Provider):
             first_token_time,
             token_times,
             token_count,
+            usage
         )
 
         response = {
@@ -455,6 +464,8 @@ class ProviderCore(Provider):
         token_times = []
         token_count = 0
         chunks = []
+        is_next_usage = False
+        usage = {}
 
         for chunk in self.parse_response(response, request=request):
             token_count += 1
@@ -463,44 +474,51 @@ class ProviderCore(Provider):
             if previous_token_time is not None:
                 token_times.append(current_time - previous_token_time)
             previous_token_time = current_time
+            
+            if is_next_usage:
+                usage = chunk.get("usage")
+                break
 
             chunks.append(chunk)
+            if chunk.get("choices")[0].get("finish_reason") == "stop":
+                is_next_usage = True
+            
             if request.is_stream:
                 chunk = chunk[0] if isinstance(chunk, tuple) else chunk
                 model = chunk.get("model")
-                if chunk.get("choices")[0].get("finish_reason") != "stop":
-                    chat_output = chunk.get("choices")[0].get("delta").get("content")
-                    chunk = {
-                        **chunk,
-                        "id": str(uuid.uuid4()),
-                        "chat_input": (
-                            request.chat_input
-                            if isinstance(request.chat_input, str)
-                            else request.chat_input[-1]["content"]
-                        ),
-                        "chat_output": None,
-                        "chat_output_stream": chat_output if chat_output else "",
-                        "context": (
-                            [{"role": "user", "content": request.chat_input}]
-                            if isinstance(request.chat_input, str)
-                            else request.chat_input
-                        ),
-                        "provider": self.config.id,
-                        "model": (
-                            request.model
-                            if model and model.startswith(request.model)
-                            else (model or request.model)
-                        ),
-                        "deployment": (
-                            model
-                            if model and model.startswith(request.model)
-                            else (request.model if model != request.model else None)
-                        ),
-                        "timestamp": time.time(),
-                        "parameters": request.parameters,
-                        "metrics": None,
-                    }
-                    yield ChatCompletionChunk(**chunk)
+
+                chat_output = chunk.get("choices")[0].get("delta").get("content")
+                chunk = {
+                    **chunk,
+                    "id": str(uuid.uuid4()),
+                    "chat_input": (
+                        request.chat_input
+                        if isinstance(request.chat_input, str)
+                        else request.chat_input[-1]["content"]
+                    ),
+                    "chat_output": None,
+                    "chat_output_stream": chat_output if chat_output else "",
+                    "context": (
+                        [{"role": "user", "content": request.chat_input}]
+                        if isinstance(request.chat_input, str)
+                        else request.chat_input
+                    ),
+                    "provider": self.config.id,
+                    "model": (
+                        request.model
+                        if model and model.startswith(request.model)
+                        else (model or request.model)
+                    ),
+                    "deployment": (
+                        model
+                        if model and model.startswith(request.model)
+                        else (request.model if model != request.model else None)
+                    ),
+                    "timestamp": time.time(),
+                    "parameters": request.parameters,
+                    "metrics": None,
+                }
+                yield ChatCompletionChunk(**chunk)
 
         chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
         model = next(chunk["model"] for chunk in chunks if chunk.get("model"))
@@ -516,6 +534,7 @@ class ProviderCore(Provider):
             first_token_time,
             token_times,
             token_count,
+            usage
         )
 
         response = {
@@ -736,6 +755,7 @@ class ProviderCore(Provider):
         first_token_time: float,
         token_times: Tuple[float, ...],
         token_count: int,
+        usage: Dict
     ) -> Dict[str, Any]:
         """
         Calculates performance and cost metrics for a model response based on timing
@@ -781,6 +801,9 @@ class ProviderCore(Provider):
         output_cost = self.calculate_cost(output_tokens, model_config.output_token_cost)
 
         total_time = end_time - start_time
+        
+        print(usage)
+        
         return {
             "input_tokens": input_tokens,
             "output_tokens": output_tokens,

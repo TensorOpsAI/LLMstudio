@@ -4,22 +4,24 @@ from llmstudio_core.providers import LLMCore
 
 from pprint import pprint
 import os
+import asyncio
 from dotenv import load_dotenv
 load_dotenv()
 
 def run_provider(provider, model, api_key, **kwargs):
+    print(f"\n\n###RUNNING for <{provider}>, <{model}> ###")
     llm = LLMCore(provider=provider, api_key=api_key, **kwargs)
 
     latencies = {}
+    
+    print("\nAsync Non-Stream")
     chat_request = build_chat_request(model, chat_input="Hello, my name is Jason Json", is_stream=False)
     
-    import asyncio
     response_async = asyncio.run(llm.achat(**chat_request))
     pprint(response_async)
     latencies["async (ms)"]= response_async.metrics["latency_s"]*1000
-
-    # stream
-    print("\nasync stream")
+    
+    print("\nAsync Stream")
     async def async_stream():
         chat_request = build_chat_request(model, chat_input="Hello, my name is Tom Json", is_stream=True)
         
@@ -36,14 +38,15 @@ def run_provider(provider, model, api_key, **kwargs):
     asyncio.run(async_stream())
     
     
-    print("# Now sync calls")
+    print("\nSync Non-Stream")
     chat_request = build_chat_request(model, chat_input="Hello, my name is Alice Json", is_stream=False)
     
     response_sync = llm.chat(**chat_request)
     pprint(response_sync)
     latencies["sync (ms)"]= response_sync.metrics["latency_s"]*1000
+    
 
-    print("# Now sync calls streaming")
+    print("\nSync Stream")
     chat_request = build_chat_request(model, chat_input="Hello, my name is Mary Json", is_stream=True)
     
     response_sync_stream = llm.chat(**chat_request)
@@ -114,6 +117,7 @@ for _ in range(1):
 #     pprint(latencies)
 # # we need credits
 
+
 provider = "azure"
 model = "gpt-4o-mini"
 for _ in range(1):
@@ -122,7 +126,7 @@ for _ in range(1):
                             api_version=os.environ["AZURE_API_VERSION"],
                             api_endpoint=os.environ["AZURE_API_ENDPOINT"])
     pprint(latencies)
-    
+"""
 provider = "azure"
 model = "o1-preview"
 for _ in range(1):
@@ -140,7 +144,7 @@ for _ in range(1):
                             api_version=os.environ["AZURE_API_VERSION"],
                             api_endpoint=os.environ["AZURE_API_ENDPOINT"])
     pprint(latencies)
-
+"""
 # provider = "azure"
 # model = "gpt-4o"
 # for _ in range(1):
