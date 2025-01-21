@@ -136,7 +136,7 @@ class ProviderCore(Provider):
     @abstractmethod
     def parse_response(self, response: AsyncGenerator, **kwargs) -> Any:
         raise NotImplementedError("ProviderCore needs a parse_response method.")
-    
+
     @abstractmethod
     def get_usage(self, response: AsyncGenerator, **kwargs) -> Any:
         raise NotImplementedError("ProviderCore needs a get_usage method.")
@@ -146,7 +146,7 @@ class ProviderCore(Provider):
             raise ProviderError(
                 f"Model {request.model} is not supported by {self.config.name}"
             )
-            
+
     class ChatCompletionLLMstudio(ChatCompletion):
         chat_input: str
         """The input prompt for the chat completion."""
@@ -202,20 +202,20 @@ class ProviderCore(Provider):
 
         metrics: Optional["ProviderCore.Metrics"]
         """Performance and usage metrics calculated for the response chunk."""
-        
+
     class Metrics(BaseModel):
         input_tokens: int
         """Number of tokens in the input."""
 
         output_tokens: int
         """Number of tokens in the output."""
-        
+
         reasoning_tokens: int
         """Number of reasoning tokens used by the model."""
 
         total_tokens: int
         """Total token count (input + output + reasoning)."""
-        
+
         cached_tokens: int
         """Number of cached tokens which will lower the price of input."""
 
@@ -233,7 +233,7 @@ class ProviderCore(Provider):
 
         tokens_per_second: Optional[float] = None
         """Processing rate of tokens per second. Defaults to None if not provided."""
-        
+
         def __getitem__(self, key: str) -> Any:
             """
             Allows subscriptable access to class fields.
@@ -480,16 +480,20 @@ class ProviderCore(Provider):
             if previous_token_time is not None:
                 token_times.append(current_time - previous_token_time)
             previous_token_time = current_time
-            
+
             if is_next_usage:
                 usage = self.get_usage(chunk)
                 break
 
             chunks.append(chunk)
             finish_reason = chunk.get("choices")[0].get("finish_reason")
-            if finish_reason == "stop" or finish_reason == "length" or finish_reason == "content_filter":
+            if (
+                finish_reason == "stop"
+                or finish_reason == "length"
+                or finish_reason == "content_filter"
+            ):
                 is_next_usage = True
-            
+
             if request.is_stream:
                 chunk = chunk[0] if isinstance(chunk, tuple) else chunk
                 model = chunk.get("model")
@@ -541,7 +545,7 @@ class ProviderCore(Provider):
             token_times,
             token_count,
             usage,
-            is_stream=request.is_stream
+            is_stream=request.is_stream,
         )
 
         response = {
@@ -621,16 +625,20 @@ class ProviderCore(Provider):
             if previous_token_time is not None:
                 token_times.append(current_time - previous_token_time)
             previous_token_time = current_time
-            
+
             if is_next_usage:
                 usage = self.get_usage(chunk)
                 break
 
             chunks.append(chunk)
             finish_reason = chunk.get("choices")[0].get("finish_reason")
-            if finish_reason == "stop" or finish_reason == "length" or finish_reason == "content_filter":
+            if (
+                finish_reason == "stop"
+                or finish_reason == "length"
+                or finish_reason == "content_filter"
+            ):
                 is_next_usage = True
-            
+
             if request.is_stream:
                 chunk = chunk[0] if isinstance(chunk, tuple) else chunk
                 model = chunk.get("model")
@@ -683,7 +691,7 @@ class ProviderCore(Provider):
             token_times,
             token_count,
             usage,
-            is_stream=request.is_stream
+            is_stream=request.is_stream,
         )
 
         response = {
@@ -905,7 +913,7 @@ class ProviderCore(Provider):
         token_times: Tuple[float, ...],
         token_count: int,
         usage: Dict,
-        is_stream: bool
+        is_stream: bool,
     ) -> Metrics:
         """
         Calculates performance and cost metrics for a model response based on timing
@@ -935,7 +943,7 @@ class ProviderCore(Provider):
         Metrics
         """
         print(f"\nUsage: {usage}\n")
-        
+
         model_config = self.config.models[model]
 
         # Token counts
@@ -949,29 +957,37 @@ class ProviderCore(Provider):
         input_cost = self.calculate_cost(input_tokens, model_config.input_token_cost)
         output_cost = self.calculate_cost(output_tokens, model_config.output_token_cost)
         total_cost_usd = input_cost + output_cost
-        
+
         if usage:
-            if getattr(model_config, 'cached_token_cost', None):
+            if getattr(model_config, "cached_token_cost", None):
                 cached_tokens = usage["prompt_tokens_details"]["cached_tokens"]
-                cached_savings = self.calculate_cost(cached_tokens, model_config.cached_token_cost)
+                cached_savings = self.calculate_cost(
+                    cached_tokens, model_config.cached_token_cost
+                )
                 print(f"Cached Savings: {cached_savings}")
                 total_cost_usd -= cached_savings
-                
-            reasoning_tokens = usage.get("completion_tokens_details", {}).get("reasoning_tokens", None)
+
+            reasoning_tokens = usage.get("completion_tokens_details", {}).get(
+                "reasoning_tokens", None
+            )
             if reasoning_tokens:
                 total_tokens += reasoning_tokens
-                reasoning_cost = self.calculate_cost(reasoning_tokens, model_config.output_token_cost) # billed as output tokens
+                reasoning_cost = self.calculate_cost(
+                    reasoning_tokens, model_config.output_token_cost
+                )  # billed as output tokens
                 print(f"Reasoning Cost: {reasoning_cost}")
                 total_cost_usd += reasoning_cost
-        
+
         # Latency calculations
         total_time = end_time - start_time
-        
+
         if is_stream:
             time_to_first_token = first_token_time - start_time
-            inter_token_latency = sum(token_times) / len(token_times) if token_times else 0.0
+            inter_token_latency = (
+                sum(token_times) / len(token_times) if token_times else 0.0
+            )
             tokens_per_second = token_count / total_time if total_time > 0 else 0.0
-        
+
             return self.Metrics(
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
@@ -992,7 +1008,7 @@ class ProviderCore(Provider):
                 total_tokens=total_tokens,
                 cached_tokens=cached_tokens,
                 cost_usd=total_cost_usd,
-                latency_s=total_time
+                latency_s=total_time,
             )
 
     def calculate_cost(
@@ -1028,12 +1044,15 @@ class ProviderCore(Provider):
         else:
             return token_cost * token_count
         return 0
-    
+
     def get_usage(self, chunk) -> Dict:
         """
-        Gets Usage Object from chunk - usually the last one
+        Gets Usage Object from chunk - usually the last one.
+        Returns an empty dictionary if usage does not exist or is None.
         """
-        return dict(chunk.get("usage"))
+        if not chunk or "usage" not in chunk or chunk["usage"] is None:
+            return {}
+        return dict(chunk["usage"])
 
     def input_to_string(self, input):
         """
