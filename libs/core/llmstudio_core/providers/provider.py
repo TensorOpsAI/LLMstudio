@@ -533,7 +533,8 @@ class ProviderCore(Provider):
             first_token_time,
             token_times,
             token_count,
-            usage
+            usage,
+            is_stream=request.is_stream
         )
 
         response = {
@@ -673,7 +674,8 @@ class ProviderCore(Provider):
             first_token_time,
             token_times,
             token_count,
-            usage
+            usage,
+            is_stream=request.is_stream
         )
 
         response = {
@@ -894,7 +896,8 @@ class ProviderCore(Provider):
         first_token_time: float,
         token_times: Tuple[float, ...],
         token_count: int,
-        usage: Dict
+        usage: Dict,
+        is_stream: bool
     ) -> Metrics:
         """
         Calculates performance and cost metrics for a model response based on timing
@@ -932,31 +935,60 @@ class ProviderCore(Provider):
             - `inter_token_latency_s`: Average time between tokens, in seconds. If `token_times` is empty sets it to 0.
             - `tokens_per_second`: Processing rate of tokens per second.
         """
+        print(f"\nUsage: {usage}\n")
+        
         model_config = self.config.models[model]
+
+        # Token counts
         input_tokens = len(self.tokenizer.encode(self.input_to_string(input)))
         output_tokens = len(self.tokenizer.encode(self.output_to_string(output)))
+        total_tokens = input_tokens + output_tokens
 
+        # Cost calculations
         input_cost = self.calculate_cost(input_tokens, model_config.input_token_cost)
         output_cost = self.calculate_cost(output_tokens, model_config.output_token_cost)
-
+        total_cost_usd = input_cost + output_cost
+        
+        if usage:
+            if getattr(model_config, 'cached_token_cost', None):
+                cached_tokens = usage["prompt_tokens_details"]["cached_tokens"]
+                cached_savings = self.calculate_cost(cached_tokens, model_config.cached_token_cost)
+                print(f"Cached Savings: {cached_savings}")
+                total_cost_usd -= cached_savings
+                
+            reasoning_tokens = usage.get("completion_tokens_details", {}).get("reasoning_tokens", None)
+            if reasoning_tokens:
+                total_tokens += reasoning_tokens
+                reasoning_cost = self.calculate_cost(reasoning_tokens, model_config.output_token_cost) # billed as output tokens
+                print(f"Reasoning Cost: {reasoning_cost}")
+                total_cost_usd += reasoning_cost
+        
+        # Latency calculations
         total_time = end_time - start_time
         
-        print(usage)
+        if is_stream:
+            time_to_first_token = first_token_time - start_time
+            inter_token_latency = sum(token_times) / len(token_times) if token_times else 0.0
+            tokens_per_second = token_count / total_time if total_time > 0 else 0.0
         
-        return {
-            "input_tokens": input_tokens,
-            "output_tokens": output_tokens,
-            "total_tokens": input_tokens + output_tokens,
-            "cost_usd": input_cost + output_cost,
-            "latency_s": total_time,
-            "time_to_first_token_s": first_token_time - start_time,
-            "inter_token_latency_s": sum(token_times) / len(token_times)
-            if token_times
-            else 0,
-            "tokens_per_second": token_count / total_time
-            if token_times
-            else 1 / total_time,
-        }
+            return self.Metrics(
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                total_tokens=total_tokens,
+                cost_usd=total_cost_usd,
+                latency_s=total_time,
+                time_to_first_token_s=time_to_first_token,
+                inter_token_latency_s=inter_token_latency,
+                tokens_per_second=tokens_per_second,
+            )
+        else:
+            return self.Metrics(
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                total_tokens=total_tokens,
+                cost_usd=total_cost_usd,
+                latency_s=total_time
+            )
 
     def calculate_cost(
         self, token_count: int, token_cost: Union[float, List[Dict[str, Any]]]
@@ -992,11 +1024,11 @@ class ProviderCore(Provider):
             return token_cost * token_count
         return 0
     
-    def get_usage(self, chunk):
+    def get_usage(self, chunk) -> Dict:
         """
         Gets Usage Object from chunk - usually the last one
         """
-        return chunk.get("usage")
+        return dict(chunk.get("usage"))
 
     def input_to_string(self, input):
         """
