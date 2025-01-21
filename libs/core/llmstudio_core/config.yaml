@@ -208,6 +208,7 @@ providers:
         mode: chat
         max_completion_tokens: 128000
         input_token_cost: 0.000015
+        cached_token_cost: 0.0000075
         output_token_cost: 0.000060
       o1-mini:
         mode: chat

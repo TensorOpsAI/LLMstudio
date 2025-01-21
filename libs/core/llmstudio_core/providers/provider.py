@@ -209,12 +209,18 @@ class ProviderCore(Provider):
 
         output_tokens: int
         """Number of tokens in the output."""
+        
+        reasoning_tokens: int
+        """Number of reasoning tokens used by the model."""
 
         total_tokens: int
-        """Total token count (input + output)."""
+        """Total token count (input + output + reasoning)."""
+        
+        cached_tokens: int
+        """Number of cached tokens which will lower the price of input."""
 
         cost_usd: float
-        """Total cost of the response in USD."""
+        """Total cost of the response in USD (input + output + reasoning - cached)."""
 
         latency_s: float
         """Total time taken for the response, in seconds."""
@@ -926,22 +932,15 @@ class ProviderCore(Provider):
 
         Returns
         -------
-        Dict[str, Any]
-            A dictionary containing calculated metrics, including:
-            - `input_tokens`: Number of tokens in the input.
-            - `output_tokens`: Number of tokens in the output.
-            - `total_tokens`: Total token count (input + output).
-            - `cost_usd`: Total cost of the response in USD.
-            - `latency_s`: Total time taken for the response, in seconds.
-            - `time_to_first_token_s`: Time to receive the first token, in seconds.
-            - `inter_token_latency_s`: Average time between tokens, in seconds. If `token_times` is empty sets it to 0.
-            - `tokens_per_second`: Processing rate of tokens per second.
+        Metrics
         """
         print(f"\nUsage: {usage}\n")
         
         model_config = self.config.models[model]
 
         # Token counts
+        cached_tokens = 0
+        reasoning_tokens = 0
         input_tokens = len(self.tokenizer.encode(self.input_to_string(input)))
         output_tokens = len(self.tokenizer.encode(self.output_to_string(output)))
         total_tokens = input_tokens + output_tokens
@@ -976,7 +975,9 @@ class ProviderCore(Provider):
             return self.Metrics(
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
+                reasoning_tokens=reasoning_tokens,
                 total_tokens=total_tokens,
+                cached_tokens=cached_tokens,
                 cost_usd=total_cost_usd,
                 latency_s=total_time,
                 time_to_first_token_s=time_to_first_token,
@@ -987,7 +988,9 @@ class ProviderCore(Provider):
             return self.Metrics(
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
+                reasoning_tokens=reasoning_tokens,
                 total_tokens=total_tokens,
+                cached_tokens=cached_tokens,
                 cost_usd=total_cost_usd,
                 latency_s=total_time
             )
