@@ -480,7 +480,8 @@ class ProviderCore(Provider):
                 break
 
             chunks.append(chunk)
-            if chunk.get("choices")[0].get("finish_reason") == "stop":
+            finish_reason = chunk.get("choices")[0].get("finish_reason")
+            if finish_reason == "stop" or finish_reason == "length" or finish_reason == "content_filter":
                 is_next_usage = True
             
             if request.is_stream:
@@ -620,7 +621,8 @@ class ProviderCore(Provider):
                 break
 
             chunks.append(chunk)
-            if chunk.get("choices")[0].get("finish_reason") == "stop":
+            finish_reason = chunk.get("choices")[0].get("finish_reason")
+            if finish_reason == "stop" or finish_reason == "length" or finish_reason == "content_filter":
                 is_next_usage = True
             
             if request.is_stream:
