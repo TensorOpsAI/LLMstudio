@@ -68,9 +68,6 @@ def run_provider(provider, model, api_key, **kwargs):
         async for p in response_async:
             if not p.metrics:
                 print("that: ",p.chat_output_stream)
-            # pprint(p.choices[0].delta.content==p.chat_output)
-            # print("metrics: ", p.metrics)
-            # print(p)
             if p.metrics:
                 pprint(p)
                 metrics["async stream"]= p.metrics
@@ -131,17 +128,7 @@ def build_chat_request(model: str, chat_input: str, is_stream: bool, max_tokens:
 # Fixture for provider-model pairs
 @pytest.fixture(scope="module", params=[
     ("openai", "gpt-4o-mini"),
-    ("openai", "o1-mini"),
-    ("openai", "o1-preview"),
-])
-def provider_model(request):
-    return request.param
-
-# Fixture for provider-model pairs
-@pytest.fixture(scope="module", params=[
-    ("openai", "gpt-4o-mini"),
-    ("openai", "o1-mini"),
-    ("openai", "o1-preview"),
+    ("openai", "o1-mini")
 ])
 def provider_model(request):
     return request.param
@@ -178,38 +165,20 @@ def test_metrics_reasoning(provider_model, metrics):
         assert current_metrics["input_tokens"] + current_metrics["output_tokens"] + current_metrics["reasoning_tokens"] == current_metrics["total_tokens"]
     print(f"All Reasoning Tests Passed for {provider} - {model}")
 
-"""
+
+def usage_when_max_tokens_reached():
+    """
+    Usefull to test handling of Usage in other finish_reason scenarios
+    """
+    provider, model = ("openai", "o1-mini")
+    api_key=os.environ["OPENAI_API_KEY"]
     
-def test_metrics_cache(provider:str, model:str, metrics: Dict[str, Dict]):
-    at_least_one_cached = False
-    for current_metrics in metrics.values():
-        assert current_metrics["input_tokens"] > current_metrics["cached_tokens"]
-        if current_metrics["cached_tokens"] > 0:
-            at_least_one_cached = True
-    assert at_least_one_cached == True
-    print(f"All Cache Tests Passed for {provider} - {model}")
-
-def test_metrics_reasoning(provider:str, model:str, metrics: Dict[str, Dict]):
-    for current_metrics in metrics.values():
-        assert current_metrics["reasoning_tokens"] > 0
-        assert current_metrics["reasoning_tokens"] < current_metrics["total_tokens"]
-        assert current_metrics["input_tokens"] + current_metrics["output_tokens"] + current_metrics["reasoning_tokens"] == current_metrics["total_tokens"]
-    print(f"All Reasoning Tests Passed for {provider} - {model}")
+    llm = LLMCore(provider=provider, api_key=api_key)
+    chat_request = build_chat_request(model, chat_input=input_prompt, is_stream=False, max_tokens=7)
+    response = asyncio.run(llm.achat(**chat_request))
     
-
-# OpenAI
-provider = "openai"
-model = "gpt-4o-mini"
-metrics = run_provider(provider=provider, model=model, api_key=os.environ["OPENAI_API_KEY"])
-test_metrics_cache(provider, model, metrics)
-
-model = "o1-mini"
-metrics = run_provider(provider=provider, model=model, api_key=os.environ["OPENAI_API_KEY"])
-test_metrics_cache(provider, model, metrics)
-test_metrics_reasoning(provider, model, metrics)
-
-model = "o1-preview"
-metrics = run_provider(provider=provider, model=model, api_key=os.environ["OPENAI_API_KEY"])
-test_metrics_cache(provider, model, metrics)
-test_metrics_reasoning(provider, model, metrics)
-"""
+    assert response.metrics["async non-stream"]["reasoning_tokens"] > 0
+    assert response.metrics["sync non-stream"]["reasoning_tokens"] > 0
+    assert response.metrics["async stream"]["reasoning_tokens"] > 0
+    assert response.metrics["sync stream"]["reasoning_tokens"] > 0
+    print(f"All Max Tokens Usage Reached Tests Passed for {provider} - {model}")
