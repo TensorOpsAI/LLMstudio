@@ -1,8 +1,6 @@
-from typing import List
-
 from fastapi import APIRouter, Depends
 from llmstudio_tracker.database import engine, get_db
-from llmstudio_tracker.prompt_management import crud, models, schemas
+from llmstudio_tracker.prompt_manager import crud, models, schemas
 from sqlalchemy.orm import Session
 
 models.Base.metadata.create_all(bind=engine)
@@ -14,13 +12,12 @@ class PromptsRoutes:
         self.define_routes()
 
     def define_routes(self):
-        # Add session
         self.router.post(
             "/prompt",
             response_model=schemas.PromptDefault,
         )(self.add_prompt)
 
-        self.router.get("/prompt", response_model=List[schemas.PromptDefault])(
+        self.router.get("/prompt", response_model=schemas.PromptDefault)(
             self.get_prompt
         )
 
@@ -42,12 +39,16 @@ class PromptsRoutes:
 
     async def get_prompt(
         self,
-        prompt_id: int = None,
-        name: str = None,
-        label: str = None,
+        prompt_info: schemas.PromptInfo,
         db: Session = Depends(get_db),
     ):
-        return crud.get_prompt(db, prompt_id=prompt_id, name=name, label=label)
+        return crud.get_prompt(
+            db,
+            prompt_id=prompt_info.prompt_id,
+            name=prompt_info.name,
+            model=prompt_info.model,
+            provider=prompt_info.provider,
+        )
 
     async def delete_prompt(
         self, prompt: schemas.PromptDefault, db: Session = Depends(get_db)
