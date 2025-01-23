@@ -12,17 +12,16 @@ class PromptManager:
 
     def add_prompt(self, prompt: PromptDefault):
         req = self._session.post(
-            f"{self.tracking_url}/api/tracking/prompt",
+            f"{self.tracking_url}/api/tracking/add/prompt",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             data=prompt.model_dump_json(),
             timeout=100,
         )
-        print(req)
         return req
 
     def delete_prompt(self, prompt: PromptDefault):
         req = self._session.delete(
-            f"{self.tracking_url}/api/tracking/prompt",
+            f"{self.tracking_url}/api/tracking/delete/prompt",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             data=prompt.model_dump_json(),
             timeout=100,
@@ -31,7 +30,7 @@ class PromptManager:
 
     def update_prompt(self, prompt: PromptDefault):
         req = self._session.patch(
-            f"{self.tracking_url}/api/tracking/prompt",
+            f"{self.tracking_url}/api/tracking/update/prompt",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             data=prompt.model_dump_json(),
             timeout=100,
@@ -54,7 +53,7 @@ class PromptManager:
         }
 
         req = self._session.get(
-            f"{self.tracking_url}/api/tracking/prompt",
+            f"{self.tracking_url}/api/tracking/get/prompt",
             headers={"accept": "application/json", "Content-Type": "application/json"},
             timeout=100,
             data=json.dumps(data),

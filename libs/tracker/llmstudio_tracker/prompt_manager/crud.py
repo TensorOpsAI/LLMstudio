@@ -2,12 +2,8 @@ from llmstudio_tracker.prompt_manager import models, schemas
 from sqlalchemy.orm import Session
 
 
-def get_project_by_name(db: Session, name: str):
-    return db.query(models.Project).filter(models.Project.name == name).first()
-
-
 def get_prompt_by_name_model_provider(
-    db: Session, name: str, model: str, provider: str, skip: int = 0, limit: int = 100
+    db: Session, name: str, model: str, provider: str
 ):
     return (
         db.query(models.PromptDefault)
@@ -18,8 +14,6 @@ def get_prompt_by_name_model_provider(
             models.PromptDefault.is_active == True,
         )
         .order_by(models.PromptDefault.version.desc())
-        .offset(skip)
-        .limit(limit)
         .first()
     )
 

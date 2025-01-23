@@ -12,8 +12,10 @@ from sqlalchemy import (
     Integer,
     String,
     UniqueConstraint,
+    event,
     func,
 )
+from sqlalchemy.orm import Session
 
 
 class PromptDefault(Base):
@@ -33,11 +35,11 @@ class PromptDefault(Base):
         config = Column(JSON, nullable=True)
 
     prompt = Column(String)
-    is_active = Column(Boolean, default=True)
-    name = Column(String)
-    model = Column(String)
-    provider = Column(String)
-    version = Column(Integer)
+    is_active = Column(Boolean, default=False)
+    name = Column(String, nullable=False)
+    model = Column(String, nullable=False)
+    provider = Column(String, nullable=False)
+    version = Column(Integer, nullable=False)
     label = Column(String)
     updated_at = Column(
         DateTime(timezone=True),
@@ -49,7 +51,9 @@ class PromptDefault(Base):
     )
 
     __table_args__ = (
-        UniqueConstraint("name", "provider", "model", "version", name="uq_name_label"),
+        UniqueConstraint(
+            "name", "provider", "model", "version", name="uq_prompt_version"
+        ),
     )
 
     @staticmethod
@@ -75,10 +79,24 @@ class PromptDefault(Base):
         if not all([name, model, provider]):
             raise ValueError("name, model, and provider must be provided")
 
-        # Determine the next version
         kwargs["version"] = cls.get_next_version(session, name, model, provider)
 
-        # Create and add the new instance
         instance = cls(**kwargs)
         session.add(instance)
         return instance
+
+    @event.listens_for(Session, "before_flush")
+    def ensure_single_active_prompt(session, flush_context, instances):
+        """
+        Ensures only one PromptDefault entry per (name, model, provider) can have is_active=True.
+        If a new entry is set as is_active=True, deactivate others in the same group.
+        """
+        for instance in session.new.union(session.dirty):
+            if isinstance(instance, PromptDefault) and instance.is_active:
+                session.query(PromptDefault).filter(
+                    PromptDefault.name == instance.name,
+                    PromptDefault.model == instance.model,
+                    PromptDefault.provider == instance.provider,
+                    PromptDefault.is_active == True,
+                    PromptDefault.prompt_id != instance.prompt_id,
+                ).update({"is_active": False}, synchronize_session="fetch")

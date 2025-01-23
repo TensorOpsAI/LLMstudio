@@ -13,19 +13,19 @@ class PromptsRoutes:
 
     def define_routes(self):
         self.router.post(
-            "/prompt",
+            "/add/prompt",
             response_model=schemas.PromptDefault,
         )(self.add_prompt)
 
-        self.router.get("/prompt", response_model=schemas.PromptDefault)(
+        self.router.get("/get/prompt", response_model=schemas.PromptDefault)(
             self.get_prompt
         )
 
-        self.router.patch("/prompt", response_model=schemas.PromptDefault)(
+        self.router.patch("/update/prompt", response_model=schemas.PromptDefault)(
             self.update_prompt
         )
 
-        self.router.delete("/prompt")(self.delete_prompt)
+        self.router.delete("/delete/prompt")(self.delete_prompt)
 
     async def add_prompt(
         self, prompt: schemas.PromptDefault, db: Session = Depends(get_db)
