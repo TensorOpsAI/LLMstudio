@@ -1,12 +1,11 @@
-
-from llmstudio_core.providers import LLMCore
-
-from pprint import pprint
-import os
 import asyncio
-from typing import Dict
+import os
+from pprint import pprint
+
 import pytest
 from dotenv import load_dotenv
+from llmstudio_core.providers import LLMCore
+
 load_dotenv()
 
 # input prompt has to be >1024 tokens to auto cache on OpenAI
@@ -44,47 +43,48 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
 After reading this answer just in one line, saying hello how are you in latin.
 """
 
+
 def run_provider(provider, model, api_key, **kwargs):
     print(f"\n\n###RUNNING for <{provider}>, <{model}> ###")
     llm = LLMCore(provider=provider, api_key=api_key, **kwargs)
 
     metrics = {}
-    
+
     print("\nAsync Non-Stream")
 
     chat_request = build_chat_request(model, chat_input=input_prompt, is_stream=False)
-    
-    
+
     response_async = asyncio.run(llm.achat(**chat_request))
     pprint(response_async)
-    metrics["async non-stream"]= response_async.metrics
-    
-    
+    metrics["async non-stream"] = response_async.metrics
+
     print("\nAsync Stream")
+
     async def async_stream():
-        chat_request = build_chat_request(model, chat_input=input_prompt, is_stream=True)
-        
+        chat_request = build_chat_request(
+            model, chat_input=input_prompt, is_stream=True
+        )
+
         response_async = await llm.achat(**chat_request)
         async for p in response_async:
             if not p.metrics:
-                print("that: ",p.chat_output_stream)
+                print("that: ", p.chat_output_stream)
             if p.metrics:
                 pprint(p)
-                metrics["async stream"]= p.metrics
+                metrics["async stream"] = p.metrics
+
     asyncio.run(async_stream())
-    
-    
+
     print("\nSync Non-Stream")
     chat_request = build_chat_request(model, chat_input=input_prompt, is_stream=False)
-    
+
     response_sync = llm.chat(**chat_request)
     pprint(response_sync)
-    metrics["sync non-stream"]= response_sync.metrics
-    
+    metrics["sync non-stream"] = response_sync.metrics
 
     print("\nSync Stream")
     chat_request = build_chat_request(model, chat_input=input_prompt, is_stream=True)
-    
+
     response_sync_stream = llm.chat(**chat_request)
     for p in response_sync_stream:
         # pprint(p.chat_output)
@@ -92,21 +92,22 @@ def run_provider(provider, model, api_key, **kwargs):
         # print("metrics: ",p.metrics)
         if p.metrics:
             pprint(p)
-            metrics["sync stream"]= p.metrics
+            metrics["sync stream"] = p.metrics
 
     print(f"\n\n###REPORT for <{provider}>, <{model}> ###")
     return metrics
 
-def build_chat_request(model: str, chat_input: str, is_stream: bool, max_tokens: int=1000):
+
+def build_chat_request(
+    model: str, chat_input: str, is_stream: bool, max_tokens: int = 1000
+):
     if model == "o1-preview" or model == "o1-mini":
         chat_request = {
             "chat_input": chat_input,
             "model": model,
             "is_stream": is_stream,
             "retries": 0,
-            "parameters": {
-                "max_completion_tokens": max_tokens
-            }
+            "parameters": {"max_completion_tokens": max_tokens},
         }
     else:
         chat_request = {
@@ -119,26 +120,28 @@ def build_chat_request(model: str, chat_input: str, is_stream: bool, max_tokens:
                 "max_tokens": max_tokens,
                 "response_format": {"type": "json_object"},
                 "functions": None,
-            }
+            },
         }
     return chat_request
 
 
-
 # Fixture for provider-model pairs
-@pytest.fixture(scope="module", params=[
-    ("openai", "gpt-4o-mini"),
-    ("openai", "o1-mini")
-])
+@pytest.fixture(
+    scope="module", params=[("openai", "gpt-4o-mini"), ("openai", "o1-mini")]
+)
 def provider_model(request):
     return request.param
+
 
 # Fixture for metrics, computes them once per provider-model pair
 @pytest.fixture(scope="module")
 def metrics(provider_model):
     provider, model = provider_model
     print(f"Running provider {provider} with model {model}")
-    return run_provider(provider=provider, model=model, api_key=os.environ["OPENAI_API_KEY"])
+    return run_provider(
+        provider=provider, model=model, api_key=os.environ["OPENAI_API_KEY"]
+    )
+
 
 # Test cache metrics (runs for all models)
 def test_metrics_cache(provider_model, metrics):
@@ -151,6 +154,7 @@ def test_metrics_cache(provider_model, metrics):
     assert at_least_one_cached == True
     print(f"All Cache Tests Passed for {provider} - {model}")
 
+
 # Test reasoning metrics (only runs for o1-mini and o1-preview)
 def test_metrics_reasoning(provider_model, metrics):
     provider, model = provider_model
@@ -162,7 +166,12 @@ def test_metrics_reasoning(provider_model, metrics):
     for current_metrics in metrics.values():
         assert current_metrics["reasoning_tokens"] > 0
         assert current_metrics["reasoning_tokens"] < current_metrics["total_tokens"]
-        assert current_metrics["input_tokens"] + current_metrics["output_tokens"] + current_metrics["reasoning_tokens"] == current_metrics["total_tokens"]
+        assert (
+            current_metrics["input_tokens"]
+            + current_metrics["output_tokens"]
+            + current_metrics["reasoning_tokens"]
+            == current_metrics["total_tokens"]
+        )
     print(f"All Reasoning Tests Passed for {provider} - {model}")
 
 
@@ -171,14 +180,81 @@ def usage_when_max_tokens_reached():
     Usefull to test handling of Usage in other finish_reason scenarios
     """
     provider, model = ("openai", "o1-mini")
-    api_key=os.environ["OPENAI_API_KEY"]
-    
+    api_key = os.environ["OPENAI_API_KEY"]
+
     llm = LLMCore(provider=provider, api_key=api_key)
-    chat_request = build_chat_request(model, chat_input=input_prompt, is_stream=False, max_tokens=7)
+    chat_request = build_chat_request(
+        model, chat_input=input_prompt, is_stream=False, max_tokens=7
+    )
     response = asyncio.run(llm.achat(**chat_request))
-    
+
     assert response.metrics["async non-stream"]["reasoning_tokens"] > 0
     assert response.metrics["sync non-stream"]["reasoning_tokens"] > 0
     assert response.metrics["async stream"]["reasoning_tokens"] > 0
     assert response.metrics["sync stream"]["reasoning_tokens"] > 0
     print(f"All Max Tokens Usage Reached Tests Passed for {provider} - {model}")
+
+
+from langchain import hub
+from langchain.agents import AgentExecutor
+from langchain.agents.openai_functions_agent.base import create_openai_functions_agent
+from langchain.tools import tool
+
+
+@tool
+def power_disco_ball(power: bool) -> bool:
+    """Powers the spinning disco ball."""
+    print(f"Disco ball is {'spinning!' if power else 'stopped.'}")
+    return True
+
+
+@tool
+def start_music(energetic: bool, loud: bool, bpm: int) -> str:
+    """Play some music matching the specified parameters."""
+    print(f"Starting music! {energetic=} {loud=}, {bpm=}")
+    return "Never gonna give you up."
+
+
+@tool
+def dim_lights(brightness: float) -> bool:
+    """Dim the lights."""
+    print(f"Lights are now set to {brightness:.0%}")
+    return True
+
+
+from llmstudio.langchain import ChatLLMstudio
+from llmstudio.providers import LLM
+
+
+def assistant(chat_llm: ChatLLMstudio, question: str) -> str:
+    tools = [power_disco_ball, start_music, dim_lights]
+    print(tools)
+
+    # rebuild agent with new tools
+    # agent_executor = initialize_agent(
+    #    tools, chat_llm, agent=AgentType.OPENAI_FUNCTIONS, verbose = True, debug = True
+    # )
+    prompt = hub.pull("hwchase17/openai-functions-agent")
+
+    agent = create_openai_functions_agent(llm=chat_llm, tools=tools, prompt=prompt)
+
+    agent_executor = AgentExecutor(
+        agent=agent, tools=tools, verbose=True, return_intermediate_steps=True
+    )
+
+    response = agent_executor.invoke({"input": question})
+
+    return response
+
+
+@pytest.mark.parametrize(
+    "provider, model",
+    [
+        ("openai", "gpt-4o-mini"),
+    ],
+)
+def test_usage_w_function_calling(provider, model):
+    llm = LLM(provider=provider)
+    chat_llm = ChatLLMstudio(llm=llm, model=model, parameters={"temperature": 0})
+    response = assistant(chat_llm, "Turn this into a party!")
+    assert len(response["intermediate_steps"]) > 0

@@ -487,11 +487,7 @@ class ProviderCore(Provider):
 
             chunks.append(chunk)
             finish_reason = chunk.get("choices")[0].get("finish_reason")
-            if (
-                finish_reason == "stop"
-                or finish_reason == "length"
-                or finish_reason == "content_filter"
-            ):
+            if finish_reason:
                 is_next_usage = True
 
             if request.is_stream:
@@ -632,11 +628,7 @@ class ProviderCore(Provider):
 
             chunks.append(chunk)
             finish_reason = chunk.get("choices")[0].get("finish_reason")
-            if (
-                finish_reason == "stop"
-                or finish_reason == "length"
-                or finish_reason == "content_filter"
-            ):
+            if finish_reason:
                 is_next_usage = True
 
             if request.is_stream:
@@ -964,7 +956,6 @@ class ProviderCore(Provider):
                 cached_savings = self.calculate_cost(
                     cached_tokens, model_config.cached_token_cost
                 )
-                print(f"Cached Savings: {cached_savings}")
                 total_cost_usd -= cached_savings
 
             reasoning_tokens = usage.get("completion_tokens_details", {}).get(
