@@ -934,7 +934,6 @@ class ProviderCore(Provider):
         -------
         Metrics
         """
-        print(f"\nUsage: {usage}\n")
 
         model_config = self.config.models[model]
 
