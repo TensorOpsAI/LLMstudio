@@ -14,12 +14,12 @@ class PromptInfo(BaseModel):
 class PromptDefault(BaseModel):
     prompt_id: Optional[str] = None
     config: Optional[Dict] = {}
-    prompt: str
+    prompt: Optional[str] = None
     is_active: Optional[bool] = None
-    name: str
+    name: Optional[str] = None
     version: Optional[int] = None
     label: Optional[str] = "production"
-    model: str
-    provider: str
+    model: Optional[str] = None
+    provider: Optional[str] = None
     updated_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
