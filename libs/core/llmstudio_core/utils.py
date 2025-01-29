@@ -81,6 +81,3 @@ def _load_config() -> EngineConfig:
         raise RuntimeError(f"Error parsing YAML configuration: {e}")
     except ValidationError as e:
         raise RuntimeError(f"Error in configuration data: {e}")
-    
-
-

@@ -1,7 +1,7 @@
 from typing import Optional
-from lmstudio_core.utils import _load_config
-from lmstudio_core.agents.agent import agent_registry, Agent
 
+from lmstudio_core.agents.agent import Agent, agent_registry
+from lmstudio_core.utils import _load_config
 
 _engine_config = _load_config()
 
@@ -27,5 +27,3 @@ def AgentManagerCore(provider: str, api_key: Optional[str] = None, **kwargs) -> 
     raise NotImplementedError(
         f"Provider not found: {agent_config.id}. Available providers: {str(agent_registry.keys())}"
     )
-
-
