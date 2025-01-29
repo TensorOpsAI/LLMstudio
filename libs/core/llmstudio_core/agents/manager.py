@@ -1,0 +1,85 @@
+import time
+import uuid
+from abc import ABC, abstractmethod
+from typing import (
+    Any,
+    AsyncGenerator,
+    Coroutine,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
+
+from llmstudio_core.exceptions import AgentError
+from pydantic import BaseModel, ValidationError
+
+from llmstudio_core.agents.data_models import AgentBase, RunBase, ResultBase
+
+agent_registry = {}
+
+
+def agent_manager(cls):
+    """Decorator to register a new agent."""
+    agent_registry[cls._agent_config_name()] = cls
+
+    return cls
+
+
+
+class AgentManager(ABC):
+
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        access_key: Optional[str] = None,
+        secret_key: Optional[str] = None,
+        region: Optional[str] = None,
+    ):
+        
+        self.API_KEY = api_key
+        self.access_key = access_key
+        self.secret_key = secret_key
+        self.region = region
+        
+        
+    @abstractmethod
+    def _validate_create_request(self, request):
+        raise NotImplementedError("Agents need to implement the method")
+    
+    @abstractmethod
+    def _validate_run_request(self, request):
+        raise NotImplementedError("Agents need to implement the method")
+    
+    @abstractmethod
+    def _validate_create_request(self, request):
+        raise NotImplementedError("Agents need to implement the method")
+
+    
+    @abstractmethod
+    def create_agent(self, **kargs) -> AgentBase:
+        """
+        Creates a new instance of the agent.
+        """
+
+        raise NotImplementedError("Agents need to implement the 'create' method.")
+
+
+    @abstractmethod
+    def run_agent(self, **kwargs) -> RunBase:
+        """
+        Runs the agent
+        """
+        raise NotImplementedError("Agents need to implement the 'create_thread_and_run' method.")
+    
+
+   
+    @abstractmethod
+    def retrieve_result(self, **kwargs) -> ResultBase:
+        """
+        Retrieves an existing agent.
+        """
+        raise NotImplementedError("Agents need to implement the 'retrieve' method.")
+    

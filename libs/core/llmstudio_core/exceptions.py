@@ -3,4 +3,7 @@ class CustomError(Exception):
 
 
 class ProviderError(CustomError):
-    """Raised when there is a validation error"""
+    """Raised when there is a validation error on provider"""
+
+class AgentError(CustomError):
+    """Raised when there is a validation error on agent"""

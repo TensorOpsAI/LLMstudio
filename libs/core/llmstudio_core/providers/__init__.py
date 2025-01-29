@@ -1,3 +1,4 @@
+
 # from llmstudio_core.providers.anthropic import AnthropicProvider #TODO: adpat it
 from typing import Optional
 
@@ -8,9 +9,9 @@ from llmstudio_core.providers.bedrock.provider import BedrockProvider
 from llmstudio_core.providers.openai import OpenAIProvider
 from llmstudio_core.providers.provider import ProviderCore, provider_registry
 from llmstudio_core.providers.vertexai import VertexAIProvider
-from llmstudio_core.utils import _load_providers_config
+from llmstudio_core.utils import _load_config
 
-_engine_config = _load_providers_config()
+_engine_config = _load_config()
 
 
 def LLMCore(provider: str, api_key: Optional[str] = None, **kwargs) -> ProviderCore:
