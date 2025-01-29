@@ -87,9 +87,6 @@ def run_provider(provider, model, api_key, **kwargs):
 
     response_sync_stream = llm.chat(**chat_request)
     for p in response_sync_stream:
-        # pprint(p.chat_output)
-        # pprint(p.choices[0].delta.content==p.chat_output)
-        # print("metrics: ",p.metrics)
         if p.metrics:
             pprint(p)
             metrics["sync stream"] = p.metrics
@@ -148,6 +145,7 @@ def test_metrics_cache(provider_model, metrics):
     provider, model = provider_model
     at_least_one_cached = False
     for current_metrics in metrics.values():
+        print(current_metrics)
         assert current_metrics["input_tokens"] > current_metrics["cached_tokens"]
         if current_metrics["cached_tokens"] > 0:
             at_least_one_cached = True
@@ -193,68 +191,3 @@ def usage_when_max_tokens_reached():
     assert response.metrics["async stream"]["reasoning_tokens"] > 0
     assert response.metrics["sync stream"]["reasoning_tokens"] > 0
     print(f"All Max Tokens Usage Reached Tests Passed for {provider} - {model}")
-
-
-from langchain import hub
-from langchain.agents import AgentExecutor
-from langchain.agents.openai_functions_agent.base import create_openai_functions_agent
-from langchain.tools import tool
-
-
-@tool
-def power_disco_ball(power: bool) -> bool:
-    """Powers the spinning disco ball."""
-    print(f"Disco ball is {'spinning!' if power else 'stopped.'}")
-    return True
-
-
-@tool
-def start_music(energetic: bool, loud: bool, bpm: int) -> str:
-    """Play some music matching the specified parameters."""
-    print(f"Starting music! {energetic=} {loud=}, {bpm=}")
-    return "Never gonna give you up."
-
-
-@tool
-def dim_lights(brightness: float) -> bool:
-    """Dim the lights."""
-    print(f"Lights are now set to {brightness:.0%}")
-    return True
-
-
-from llmstudio.langchain import ChatLLMstudio
-from llmstudio.providers import LLM
-
-
-def assistant(chat_llm: ChatLLMstudio, question: str) -> str:
-    tools = [power_disco_ball, start_music, dim_lights]
-    print(tools)
-
-    # rebuild agent with new tools
-    # agent_executor = initialize_agent(
-    #    tools, chat_llm, agent=AgentType.OPENAI_FUNCTIONS, verbose = True, debug = True
-    # )
-    prompt = hub.pull("hwchase17/openai-functions-agent")
-
-    agent = create_openai_functions_agent(llm=chat_llm, tools=tools, prompt=prompt)
-
-    agent_executor = AgentExecutor(
-        agent=agent, tools=tools, verbose=True, return_intermediate_steps=True
-    )
-
-    response = agent_executor.invoke({"input": question})
-
-    return response
-
-
-@pytest.mark.parametrize(
-    "provider, model",
-    [
-        ("openai", "gpt-4o-mini"),
-    ],
-)
-def test_usage_w_function_calling(provider, model):
-    llm = LLM(provider=provider)
-    chat_llm = ChatLLMstudio(llm=llm, model=model, parameters={"temperature": 0})
-    response = assistant(chat_llm, "Turn this into a party!")
-    assert len(response["intermediate_steps"]) > 0

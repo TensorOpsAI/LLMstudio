@@ -213,7 +213,7 @@ class ProviderCore(Provider):
             try:
                 start_time = time.time()
                 response = await self.agenerate_client(request)
-                response_handler = self.ahandle_response(request, response, start_time)
+                response_handler = self._ahandle_response(request, response, start_time)
 
                 if request.is_stream:
                     return response_handler
@@ -289,7 +289,7 @@ class ProviderCore(Provider):
             try:
                 start_time = time.time()
                 response = self.generate_client(request)
-                response_handler = self.handle_response(request, response, start_time)
+                response_handler = self._handle_response(request, response, start_time)
 
                 if request.is_stream:
                     return response_handler
@@ -304,7 +304,7 @@ class ProviderCore(Provider):
                 raise ProviderError(str(e))
         raise ProviderError("Too many requests")
 
-    async def ahandle_response(
+    async def _ahandle_response(
         self, request: ChatRequest, response: AsyncGenerator, start_time: float
     ) -> AsyncGenerator[str, None]:
         """
@@ -393,9 +393,9 @@ class ProviderCore(Provider):
         chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
         model = next(chunk["model"] for chunk in chunks if chunk.get("model"))
 
-        response, output_string = self.join_chunks(chunks)
+        response, output_string = self._join_chunks(chunks)
 
-        metrics = self.calculate_metrics(
+        metrics = self._calculate_metrics(
             request.chat_input,
             response,
             request.model,
@@ -404,8 +404,8 @@ class ProviderCore(Provider):
             first_token_time,
             token_times,
             token_count,
-            usage,
             is_stream=request.is_stream,
+            usage=usage,
         )
 
         response = {
@@ -444,7 +444,7 @@ class ProviderCore(Provider):
         else:
             yield ChatCompletionLLMstudio(**response)
 
-    def handle_response(
+    def _handle_response(
         self, request: ChatRequest, response: Generator, start_time: float
     ) -> Generator:
         """
@@ -535,9 +535,9 @@ class ProviderCore(Provider):
         chunks = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in chunks]
         model = next(chunk["model"] for chunk in chunks if chunk.get("model"))
 
-        response, output_string = self.join_chunks(chunks)
+        response, output_string = self._join_chunks(chunks)
 
-        metrics = self.calculate_metrics(
+        metrics = self._calculate_metrics(
             request.chat_input,
             response,
             request.model,
@@ -546,8 +546,8 @@ class ProviderCore(Provider):
             first_token_time,
             token_times,
             token_count,
-            usage,
             is_stream=request.is_stream,
+            usage=usage,
         )
 
         response = {
@@ -586,7 +586,7 @@ class ProviderCore(Provider):
         else:
             yield ChatCompletionLLMstudio(**response)
 
-    def join_chunks(self, chunks):
+    def _join_chunks(self, chunks):
         """
         Combine multiple response chunks from the model into a single, structured response.
         Handles tool calls, function calls, and standard text completion based on the
@@ -758,7 +758,7 @@ class ProviderCore(Provider):
                 stop_content,
             )
 
-    def calculate_metrics(
+    def _calculate_metrics(
         self,
         input: Any,
         output: Any,
@@ -768,8 +768,8 @@ class ProviderCore(Provider):
         first_token_time: float,
         token_times: Tuple[float, ...],
         token_count: int,
-        usage: Dict,
         is_stream: bool,
+        usage: Dict = {},
     ) -> Metrics:
         """
         Calculates performance and cost metrics for a model response based on timing
@@ -804,19 +804,21 @@ class ProviderCore(Provider):
         # Token counts
         cached_tokens = 0
         reasoning_tokens = 0
-        input_tokens = len(self.tokenizer.encode(self.input_to_string(input)))
-        output_tokens = len(self.tokenizer.encode(self.output_to_string(output)))
+        input_tokens = len(self.tokenizer.encode(self._input_to_string(input)))
+        output_tokens = len(self.tokenizer.encode(self._output_to_string(output)))
         total_tokens = input_tokens + output_tokens
 
         # Cost calculations
-        input_cost = self.calculate_cost(input_tokens, model_config.input_token_cost)
-        output_cost = self.calculate_cost(output_tokens, model_config.output_token_cost)
+        input_cost = self._calculate_cost(input_tokens, model_config.input_token_cost)
+        output_cost = self._calculate_cost(
+            output_tokens, model_config.output_token_cost
+        )
         total_cost_usd = input_cost + output_cost
 
         if usage:
             if getattr(model_config, "cached_token_cost", None):
                 cached_tokens = usage["prompt_tokens_details"]["cached_tokens"]
-                cached_savings = self.calculate_cost(
+                cached_savings = self._calculate_cost(
                     cached_tokens, model_config.cached_token_cost
                 )
                 total_cost_usd -= cached_savings
@@ -826,7 +828,7 @@ class ProviderCore(Provider):
             )
             if reasoning_tokens:
                 total_tokens += reasoning_tokens
-                reasoning_cost = self.calculate_cost(
+                reasoning_cost = self._calculate_cost(
                     reasoning_tokens, model_config.output_token_cost
                 )  # billed as output tokens
                 print(f"Reasoning Cost: {reasoning_cost}")
@@ -865,7 +867,7 @@ class ProviderCore(Provider):
                 latency_s=total_time,
             )
 
-    def calculate_cost(
+    def _calculate_cost(
         self, token_count: int, token_cost: Union[float, List[Dict[str, Any]]]
     ) -> float:
         """
@@ -908,7 +910,7 @@ class ProviderCore(Provider):
             return {}
         return dict(chunk["usage"])
 
-    def input_to_string(self, input):
+    def _input_to_string(self, input):
         """
         Converts an input, which can be a string or a structured list of messages, into a single concatenated string.
 
@@ -946,7 +948,7 @@ class ProviderCore(Provider):
                                 result.append(url)
             return "".join(result)
 
-    def output_to_string(self, output):
+    def _output_to_string(self, output):
         """
         Extracts and returns the content or arguments from the output based on
         the `finish_reason` of the first choice in `output`.
