@@ -33,10 +33,16 @@ def get_prompt(
     model: str = None,
     provider: str = None,
 ):
-    if prompt_id:
-        return get_prompt_by_id(db, prompt_id)
-    else:
-        return get_prompt_by_name_model_provider(db, name, model, provider)
+    prompt = (
+        get_prompt_by_id(db, prompt_id)
+        if prompt_id
+        else get_prompt_by_name_model_provider(db, name, model, provider)
+    )
+
+    if not prompt:
+        return schemas.PromptDefault()
+
+    return prompt
 
 
 def add_prompt(db: Session, prompt: schemas.PromptDefault):
