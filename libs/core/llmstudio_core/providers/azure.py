@@ -110,7 +110,6 @@ class AzureProvider(ProviderCore):
                 "model": request.model,
                 "messages": messages,
                 "stream": True,
-                #"stream_options": {"include_usage": True} TODO
             }
 
             combined_args = {
