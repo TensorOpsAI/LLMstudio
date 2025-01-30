@@ -27,7 +27,7 @@ class CostRange(BaseModel):
     cost: float
 
 
-class ModelConfig(BaseModel):    
+class ModelConfig(BaseModel):
     mode: str
     max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")
     max_completion_tokens: Optional[int] = None
