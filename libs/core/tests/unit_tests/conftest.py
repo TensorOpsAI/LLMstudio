@@ -12,7 +12,7 @@ class MockProvider(ProviderCore):
     def parse_response(self, response, **kwargs):
         return response
 
-    def output_to_string(self, output):
+    def _output_to_string(self, output):
         # Handle string inputs
         if isinstance(output, str):
             return output

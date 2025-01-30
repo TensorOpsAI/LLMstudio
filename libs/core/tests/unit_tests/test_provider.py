@@ -10,7 +10,7 @@ def test_chat_response_non_stream(mock_provider):
     mock_provider.validate_request = MagicMock()
     mock_provider.validate_model = MagicMock()
     mock_provider.generate_client = MagicMock(return_value="mock_response")
-    mock_provider.handle_response = MagicMock(return_value="final_response")
+    mock_provider._handle_response = MagicMock(return_value="final_response")
 
     response = mock_provider.chat(chat_input="Hello", model="test_model")
 
@@ -23,7 +23,7 @@ def test_chat_streaming_response(mock_provider):
     mock_provider.validate_request = MagicMock()
     mock_provider.validate_model = MagicMock()
     mock_provider.generate_client = MagicMock(return_value="mock_response_stream")
-    mock_provider.handle_response = MagicMock(
+    mock_provider._handle_response = MagicMock(
         return_value=iter(["streamed_response_1", "streamed_response_2"])
     )
 
@@ -73,7 +73,7 @@ def test_join_chunks_finish_reason_stop(mock_provider):
             ],
         },
     ]
-    response, output_string = mock_provider.join_chunks(chunks)
+    response, output_string = mock_provider._join_chunks(chunks)
 
     assert output_string == "Hello, world!"
     assert response.choices[0].message.content == "Hello, world!"
@@ -121,7 +121,7 @@ def test_join_chunks_finish_reason_function_call(mock_provider):
             ],
         },
     ]
-    response, output_string = mock_provider.join_chunks(chunks)
+    response, output_string = mock_provider._join_chunks(chunks)
 
     assert output_string == "arg1arg2"
     assert response.choices[0].message.function_call.arguments == "arg1arg2"
@@ -181,7 +181,7 @@ def test_join_chunks_tool_calls(mock_provider):
         },
     ]
 
-    response, output_string = mock_provider.join_chunks(chunks)
+    response, output_string = mock_provider._join_chunks(chunks)
 
     assert output_string == "['search_tool', '{\"query\": \"weather details\"}']"
 
@@ -197,7 +197,7 @@ def test_join_chunks_tool_calls(mock_provider):
 
 def test_input_to_string_with_string(mock_provider):
     input_data = "Hello, world!"
-    assert mock_provider.input_to_string(input_data) == "Hello, world!"
+    assert mock_provider._input_to_string(input_data) == "Hello, world!"
 
 
 def test_input_to_string_with_list_of_text_messages(mock_provider):
@@ -205,7 +205,7 @@ def test_input_to_string_with_list_of_text_messages(mock_provider):
         {"content": "Hello"},
         {"content": " world!"},
     ]
-    assert mock_provider.input_to_string(input_data) == "Hello world!"
+    assert mock_provider._input_to_string(input_data) == "Hello world!"
 
 
 def test_input_to_string_with_list_of_text_and_url(mock_provider):
@@ -223,7 +223,7 @@ def test_input_to_string_with_list_of_text_and_url(mock_provider):
         {"role": "user", "content": [{"type": "text", "text": " world!"}]},
     ]
     expected_output = "Hello http://example.com/image.jpg world!"
-    assert mock_provider.input_to_string(input_data) == expected_output
+    assert mock_provider._input_to_string(input_data) == expected_output
 
 
 def test_input_to_string_with_mixed_roles_and_missing_content(mock_provider):
@@ -241,7 +241,7 @@ def test_input_to_string_with_mixed_roles_and_missing_content(mock_provider):
         },
     ]
     expected_output = "Admin text;User texthttp://example.com/another.jpg"
-    assert mock_provider.input_to_string(input_data) == expected_output
+    assert mock_provider._input_to_string(input_data) == expected_output
 
 
 def test_input_to_string_with_missing_content_key(mock_provider):
@@ -250,9 +250,9 @@ def test_input_to_string_with_missing_content_key(mock_provider):
         {"role": "user", "content": [{"type": "text", "text": "Hello again"}]},
     ]
     expected_output = "Hello again"
-    assert mock_provider.input_to_string(input_data) == expected_output
+    assert mock_provider._input_to_string(input_data) == expected_output
 
 
 def test_input_to_string_with_empty_list(mock_provider):
     input_data = []
-    assert mock_provider.input_to_string(input_data) == ""
+    assert mock_provider._input_to_string(input_data) == ""
