@@ -46,8 +46,14 @@ class ProviderConfig(BaseModel):
     parameters: Optional[Dict[str, Any]] = None
 
 
+class AgentConfig(BaseModel):
+    id: str
+    name: str
+
+
 class EngineConfig(BaseModel):
     providers: Dict[str, ProviderConfig]
+    agents: Dict[str, AgentConfig]
 
 
 def _load_config() -> EngineConfig:

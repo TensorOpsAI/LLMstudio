@@ -27,7 +27,7 @@ class BedrockAgentManager(AgentManager):
         )
 
     @staticmethod
-    def _provider_config_name():
+    def _agent_config_name():
         return "bedrock"
 
     def _validate_create_request(self, request):

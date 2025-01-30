@@ -1,10 +1,10 @@
-from typing import Dict, Enum, List, Optional
+from enum import Enum
+from typing import Dict, List, Optional
 
 from llmstudio_core.agents.data_models import (
     AgentBase,
     CreateAgentRequest,
     ResultBase,
-    RetrieveResultRequest,
     RunAgentRequest,
     RunBase,
 )
@@ -57,7 +57,3 @@ class OpenAICreateAgentRequest(CreateAgentRequest):
 
 class OpenAIRunAgentRequest(RunAgentRequest):
     thread_id: Optional[str]
-
-
-class OpenAIRetrieveResultRequest(RetrieveResultRequest):
-    thread_id: str

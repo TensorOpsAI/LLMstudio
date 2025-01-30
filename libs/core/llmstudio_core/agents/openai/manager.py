@@ -17,7 +17,7 @@ class OpenAIAgentManager(AgentManager):
         self._client = OpenAI(api_key=self.API_KEY)
 
     @staticmethod
-    def _provider_config_name():
+    def _agent_config_name():
         return "openai"
 
     def create_agent(self, **kwargs) -> OpenAIAgent:

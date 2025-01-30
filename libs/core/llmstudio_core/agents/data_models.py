@@ -45,5 +45,4 @@ class RunAgentRequest(BaseModel):
 
 
 class RetrieveResultRequest(BaseModel):
-    thread_id: Optional[str]
-    response: Optional[str]
+    run: RunBase

@@ -7,7 +7,7 @@ agent_registry = {}
 
 
 def agent_manager(cls):
-    """Decorator to register a new agent."""
+    """Decorator to register a new agent manager"""
     agent_registry[cls._agent_config_name()] = cls
 
     return cls
