@@ -8,6 +8,7 @@ from llmstudio_core.agents.data_models import (
     RunAgentRequest,
     RunBase,
 )
+from openai.types.beta.thread import Thread
 from pydantic import BaseModel
 
 
@@ -34,7 +35,8 @@ class ResponseFormat(BaseModel):
 
 
 class OpenAIAgent(AgentBase):
-    tool_resources: ToolResources
+    thread_id: Optional[Thread]
+    tool_resources: Optional[ToolResources]
     temperature: Optional[float]
     top_p: Optional[float]
     response_format: Optional[ResponseFormat]
@@ -42,6 +44,7 @@ class OpenAIAgent(AgentBase):
 
 class OpenAIRun(RunBase):
     thread_id: str
+    run_id: str
 
 
 class OpenAIResult(ResultBase):

@@ -16,16 +16,16 @@ class Message(BaseModel):
 class AgentBase(BaseModel):
     id: str
     created_at: int
-    name: str
-    description: str
+    name: Optional[str]
+    description: Optional[str]
     model: str
     instructions: str
-    tools: list[Tool]
+    tools: list[dict]
 
 
 class RunBase(BaseModel):
-    agent_id: str
-    status: str
+    agent_id: Optional[str]
+    status: Optional[str]
 
 
 class ResultBase(BaseModel):
