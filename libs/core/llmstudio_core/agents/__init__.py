@@ -1,5 +1,8 @@
 from typing import Optional
 
+from llmstudio_core.agents.openai.manager import OpenAIAgentManager
+from llmstudio_core.agents.bedrock.manager import BedrockAgentManager
+
 from llmstudio_core.agents.manager import AgentManager, agent_registry
 from llmstudio_core.utils import _load_config
 
