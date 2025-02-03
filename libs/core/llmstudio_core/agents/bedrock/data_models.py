@@ -8,10 +8,10 @@ from llmstudio_core.agents.data_models import (
 
 
 class BedrockAgent(AgentBase):
-    agentResourceRoleArn: str
-    agentStatus: str
-    agentVersion: str
-    agentArn: str
+    agent_resource_role_arn: str
+    agent_status: str
+    agent_arn: str
+    agent_alias: str
 
 
 class BedrockRun(RunBase):
@@ -24,8 +24,9 @@ class BedrockResult(ResultBase):
 
 
 class BedrockCreateAgentRequest(CreateAgentRequest):
-    agent_resourcerole_arn: str
+    agent_resource_role_arn: str
     agent_alias: str
+    name: str
 
 
 class BedrockRunAgentRequest(RunAgentRequest):

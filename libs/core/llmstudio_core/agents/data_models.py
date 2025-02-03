@@ -17,10 +17,10 @@ class AgentBase(BaseModel):
     id: str
     created_at: int
     name: str
-    description: str
+    description: Optional[str] = None
     model: str
-    instructions: str
-    tools: list[Tool]
+    instructions: Optional[str] = None
+    tools: Optional[list[Tool]] = None
 
 
 class RunBase(BaseModel):
@@ -35,8 +35,8 @@ class ResultBase(BaseModel):
 class CreateAgentRequest(BaseModel):
     model: str
     instructions: Optional[str]
-    description: Optional[str]
-    tools: Optional[list[Tool]]
+    description: Optional[str] = None
+    tools: Optional[list[Tool]] = None
 
 
 class RunAgentRequest(BaseModel):
