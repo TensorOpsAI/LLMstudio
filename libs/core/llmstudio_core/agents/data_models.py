@@ -8,7 +8,7 @@ class Tool(BaseModel):
 
 
 class Message(BaseModel):
-    created_at: Optional[str]
+    created_at: Optional[str] = None
     role: Literal["user", "assistant"]
     content: Union[str, list]
 
@@ -20,7 +20,7 @@ class AgentBase(BaseModel):
     description: Optional[str] = None
     model: str
     instructions: Optional[str] = None
-    tools: Optional[list[Tool]] = None
+    tools: Optional[list[Tool]] = []
 
 
 class RunBase(BaseModel):
@@ -36,11 +36,11 @@ class CreateAgentRequest(BaseModel):
     model: str
     instructions: Optional[str]
     description: Optional[str] = None
-    tools: Optional[list[Tool]] = None
+    tools: Optional[list[Tool]] = []
 
 
 class RunAgentRequest(BaseModel):
-    assistant_id: str
+    agent_id: str
     message: Message
 
 

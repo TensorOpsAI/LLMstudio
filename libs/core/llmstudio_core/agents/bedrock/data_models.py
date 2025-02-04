@@ -11,7 +11,7 @@ class BedrockAgent(AgentBase):
     agent_resource_role_arn: str
     agent_status: str
     agent_arn: str
-    agent_alias: str
+    agent_alias_id: str
 
 
 class BedrockRun(RunBase):
@@ -31,3 +31,4 @@ class BedrockCreateAgentRequest(CreateAgentRequest):
 
 class BedrockRunAgentRequest(RunAgentRequest):
     session_id: str
+    agent_alias_id: str
