@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal, Optional, Union
 
 from pydantic import BaseModel
@@ -15,21 +16,21 @@ class Message(BaseModel):
 
 class AgentBase(BaseModel):
     id: str
-    created_at: int
-    name: Optional[str]
-    description: Optional[str]
-    model: str
-    instructions: str
-    tools: list[dict]
+    created_at: int = int(datetime.now().timestamp())
+    name: Optional[str] = None
+    description: Optional[str] = None
+    # model: str
+    # instructions: str
+    # tools: list[dict]
 
 
 class RunBase(BaseModel):
-    agent_id: Optional[str]
-    status: Optional[str]
+    agent_id: Optional[str] = None
+    status: Optional[str] = None
 
 
 class ResultBase(BaseModel):
-    messages: list[Message]
+    messages: list
 
 
 class CreateAgentRequest(BaseModel):
