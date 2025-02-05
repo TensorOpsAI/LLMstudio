@@ -124,7 +124,7 @@ def build_chat_request(
 
 # Fixture for provider-model pairs
 @pytest.fixture(
-    scope="module", params=[("openai", "gpt-4o-mini"), ("openai", "o3-mini")]
+    scope="module", params=[("openai", "gpt-4o-mini"), ("openai", "o1-mini")]
 )
 def provider_model(request):
     return request.param
@@ -176,7 +176,7 @@ def usage_when_max_tokens_reached():
     """
     Usefull to test handling of Usage in other finish_reason scenarios
     """
-    provider, model = ("openai", "o3-mini")
+    provider, model = ("openai", "o1-mini")
     api_key = os.environ["OPENAI_API_KEY"]
 
     llm = LLMCore(provider=provider, api_key=api_key)

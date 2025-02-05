@@ -97,7 +97,7 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
     return latencies
 
 def build_chat_request(model: str, chat_input: str, is_stream: bool, max_tokens: int=1000):
-    if model == "o1-preview" or model == "o1-mini":
+    if model.startswith(('o1', 'o3')):
         chat_request = {
             "chat_input": chat_input,
             "model": model,
@@ -132,7 +132,7 @@ def multiple_provider_runs(provider:str, model:str, num_runs:int, api_key:str, *
 
 # OpenAI
 multiple_provider_runs(provider="openai", model="gpt-4o-mini", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
-multiple_provider_runs(provider="openai", model="o1-mini", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
+multiple_provider_runs(provider="openai", model="o3-mini", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
 #multiple_provider_runs(provider="openai", model="o1-preview", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
 
 
