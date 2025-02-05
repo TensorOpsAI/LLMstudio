@@ -1,7 +1,6 @@
 from llmstudio_core.agents.data_models import (
     AgentBase,
     CreateAgentRequest,
-    ResultBase,
     RunAgentRequest,
     RunBase,
 )
@@ -17,10 +16,6 @@ class BedrockAgent(AgentBase):
 class BedrockRun(RunBase):
     session_id: str
     response: dict
-
-
-class BedrockResult(ResultBase):
-    session_id: str
 
 
 class BedrockCreateAgentRequest(CreateAgentRequest):

@@ -7,10 +7,42 @@ class Tool(BaseModel):
     type: str
 
 
+class TextContent(BaseModel):
+    type: Literal["text"] = "text"
+    text: str
+
+
+class ImageFile(BaseModel):
+    file_id: Optional[str] = None
+    detail: Optional[Literal["low", "high", "auto"]] = "auto"
+    file_name: Optional[str] = None  # need this for bedrock
+    file_content: Optional[bytes] = None  # need this for bedrock
+
+
+class ImageFileContent(BaseModel):
+    type: Literal["image_file"] = "image_file"
+    image_file: ImageFile
+
+
+class Attachment(BaseModel):
+    file_id: Optional[str] = None
+    file_name: Optional[str] = None  # need this for bedrock
+    file_content: Optional[bytes] = None  # need this for bedrock
+    file_type: Optional[str] = None
+    tools: list[Tool] = []
+
+
 class Message(BaseModel):
-    created_at: Optional[str] = None
+    id: Optional[str] = None
+    object: Optional[str] = "thread.message"
+    created_at: Optional[int] = None
+    thread_id: Optional[str] = None  # in bedrock represents session_id
     role: Literal["user", "assistant"]
-    content: Union[str, list]
+    content: Union[str, list[Union[ImageFileContent, TextContent]]]
+    assistant_id: Optional[str] = None
+    run_id: Optional[str] = None
+    attachments: list[Attachment] = []
+    metadata: Optional[dict] = {}
 
 
 class AgentBase(BaseModel):
@@ -29,7 +61,7 @@ class RunBase(BaseModel):
 
 
 class ResultBase(BaseModel):
-    messages: list[Message]
+    message: Message
 
 
 class CreateAgentRequest(BaseModel):

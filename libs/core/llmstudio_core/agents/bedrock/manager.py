@@ -4,9 +4,17 @@ import boto3
 from llmstudio_core.agents.bedrock.data_models import (
     BedrockAgent,
     BedrockCreateAgentRequest,
-    BedrockResult,
     BedrockRun,
     BedrockRunAgentRequest,
+)
+from llmstudio_core.agents.data_models import (
+    Attachment,
+    ImageFile,
+    ImageFileContent,
+    Message,
+    ResultBase,
+    RetrieveResultRequest,
+    TextContent,
 )
 from llmstudio_core.agents.manager import AgentManager, agent_manager
 from llmstudio_core.exceptions import AgentError
@@ -52,7 +60,7 @@ class BedrockAgentManager(AgentManager):
         return BedrockRunAgentRequest(**request)
 
     def _validate_result_request(self, request):
-        raise NotImplementedError("Agents need to implement the method")
+        return RetrieveResultRequest(**request)
 
     def create_agent(self, **kwargs) -> BedrockAgent:
         """
@@ -161,8 +169,18 @@ class BedrockAgentManager(AgentManager):
 
     def run_agent(self, **kwargs) -> BedrockRun:
         """
-        Runs the agent
+        Runs the agent with the provided keyword arguments.
+
+        This method validates the run request and invokes the agent using the runtime client.
+        If the validation fails, an AgentError is raised.
+
+        Returns:
+            BedrockRun: An object containing the agent ID, status, session ID, and response of the run.
+
+        Raises:
+            AgentError: If the run request validation fails.
         """
+
         try:
             run_request = self._validate_run_request(
                 dict(
@@ -186,8 +204,65 @@ class BedrockAgentManager(AgentManager):
             response=invoke_request,
         )
 
-    def retrieve_result(self, **kwargs) -> BedrockResult:
+    def retrieve_result(self, **kwargs) -> ResultBase:
         """
-        Retrieves an existing agent.
+        Retrieve the result based on the provided keyword arguments.
+        This method validates the result request and processes the event stream to
+        extract content and attachments. It constructs a message with the extracted
+        content and attachments and returns it wrapped in a ResultBase object.
+
+        Returns:
+            ResultBase: An object containing the constructed message with content and attachments.
+        Raises:
+            AgentError: If the result request validation fails.
         """
-        raise NotImplementedError("Agents need to implement the 'retrieve' method.")
+
+        try:
+            result_request = self._validate_result_request(
+                dict(
+                    **kwargs,
+                )
+            )
+
+        except ValidationError as e:
+            raise AgentError(str(e))
+
+        content = []
+        attachments = []
+        event_stream = result_request.run.response.get("completion")
+        for event in event_stream:
+            if "chunk" in event:
+                chunk = event["chunk"]
+                if "bytes" in chunk:
+                    content.append(TextContent(text=chunk["bytes"].decode("utf-8")))
+
+            if "files" in event:
+                files = event["files"]["files"]
+                for file in files:
+                    if type == "image/png":
+                        content.append(
+                            ImageFileContent(
+                                image_file=ImageFile(
+                                    file_name=file["name"],
+                                    file_content=file["bytes"],
+                                    file_type=file["type"],
+                                )
+                            )
+                        )
+                    else:
+                        attachments.append(
+                            Attachment(
+                                file_name=file["name"],
+                                file_content=file["bytes"],
+                                file_type=file["type"],
+                            )
+                        )
+
+        message = Message(
+            thread_id=result_request.run.session_id,
+            role="assistant",
+            content=content,
+            attachments=attachments,
+        )
+
+        return ResultBase(message=message)
