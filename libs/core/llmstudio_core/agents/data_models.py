@@ -28,7 +28,7 @@ class Attachment(BaseModel):
     file_id: Optional[str] = None
     file_name: Optional[str] = None  # need this for bedrock
     file_content: Optional[bytes] = None  # need this for bedrock
-    file_type: Optional[str] = None
+    file_type: Optional[str] = None  # need this for bedrock
     tools: list[Tool] = []
 
 

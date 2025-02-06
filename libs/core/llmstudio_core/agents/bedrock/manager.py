@@ -190,11 +190,41 @@ class BedrockAgentManager(AgentManager):
         except ValidationError as e:
             raise AgentError(str(e))
 
+        sessionState = {"files": []}
+
+        for attachment in run_request.message.attachments:
+            if any(tool.type == "code_interpreter" for tool in attachment.tools):
+                sessionState["files"].append(
+                    {
+                        "name": attachment.file_name,
+                        "source": {
+                            "byteContent": {
+                                "data": attachment.file_content,
+                                "mediaType": attachment.file_type,
+                            },
+                            "sourceType": "BYTE_CONTENT",
+                        },
+                        "useCase": "CODE_INTERPRETER",
+                    }
+                )
+
+        if isinstance(run_request.message.content, str):
+            input_text = run_request.message.content  # Use it directly if it's a string
+        elif isinstance(run_request.message.content, list):
+            input_text = " ".join(
+                item.text
+                for item in run_request.message.content
+                if isinstance(item, TextContent)
+            )
+        else:
+            input_text = ""  # Default to an empty string if content is not valid
+
         invoke_request = self._runtime_client.invoke_agent(
             agentId=run_request.agent_id,
             agentAliasId=run_request.agent_alias_id,
             sessionId=run_request.session_id,
-            inputText=run_request.message.content,
+            inputText=input_text,
+            sessionState=sessionState,
         )
 
         return BedrockRun(
@@ -239,7 +269,7 @@ class BedrockAgentManager(AgentManager):
             if "files" in event:
                 files = event["files"]["files"]
                 for file in files:
-                    if type == "image/png":
+                    if file["type"] == "image/png":
                         content.append(
                             ImageFileContent(
                                 image_file=ImageFile(
