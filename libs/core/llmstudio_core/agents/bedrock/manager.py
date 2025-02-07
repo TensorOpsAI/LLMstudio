@@ -13,7 +13,6 @@ from llmstudio_core.agents.data_models import (
     ImageFileContent,
     Message,
     ResultBase,
-    RetrieveResultRequest,
     TextContent,
 )
 from llmstudio_core.agents.manager import AgentManager, agent_manager

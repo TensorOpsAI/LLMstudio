@@ -9,7 +9,6 @@ class Tool(BaseModel):
 
 
 class FileCitation(BaseModel):
-    file_id: str
     start_index: int
     end_index: int
     text: str
@@ -32,6 +31,21 @@ class TextObject(BaseModel):
     annotations: List[Annotation] = []
 
 
+class ImageUrlObject(BaseModel):
+    url: Literal["jpeg", "jpg", "png", "gif", "webp"]
+    detail: Optional[Literal["low", "high", "auto"]] = "auto"
+
+
+class ImageUrlContent(BaseModel):
+    type: str
+    image_url: ImageUrlObject
+
+
+class RefusalContent(BaseModel):
+    type: Literal["refusal"]
+    refusal: str
+
+
 class TextContent(BaseModel):
     type: Literal["text"] = "text"
     text: TextObject
@@ -40,8 +54,8 @@ class TextContent(BaseModel):
 class ImageFile(BaseModel):
     file_id: Optional[str] = None
     detail: Optional[Literal["low", "high", "auto"]] = "auto"
-    file_name: Optional[str] = None  # need this for bedrock
-    file_content: Optional[bytes] = None  # need this for bedrock
+    file_name: Optional[str] = None
+    file_content: Optional[bytes] = None
 
 
 class ImageFileContent(BaseModel):
@@ -51,10 +65,15 @@ class ImageFileContent(BaseModel):
 
 class Attachment(BaseModel):
     file_id: Optional[str] = None
-    file_name: Optional[str] = None  # need this for bedrock
-    file_content: Optional[bytes] = None  # need this for bedrock
-    file_type: Optional[str] = None  # need this for bedrock
-    tools: list[Tool] = []
+    file_name: Optional[str] = None
+    file_content: Optional[bytes] = None
+    file_type: Optional[str] = None
+    tools: list[Tool] = None
+
+
+class InputMessageBase(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
 
 
 class Message(BaseModel):
@@ -64,7 +83,9 @@ class Message(BaseModel):
     thread_id: Optional[str] = None
     session_id: Optional[str] = None
     role: Literal["user", "assistant"]
-    content: Union[str, list[Union[ImageFileContent, TextContent]]]
+    content: Union[
+        str, list[Union[ImageFileContent, TextContent, RefusalContent, ImageUrlContent]]
+    ]
     assistant_id: Optional[str] = None
     run_id: Optional[str] = None
     attachments: list[Attachment] = []
@@ -93,7 +114,7 @@ class CreateAgentRequest(BaseModel):
     model: str
     instructions: Optional[str]
     description: Optional[str] = None
-    tools: Optional[list[Tool]] = []
+    tools: Optional[list[Tool]]
 
 
 class RunAgentRequest(BaseModel):

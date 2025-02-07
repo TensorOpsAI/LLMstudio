@@ -1,13 +1,34 @@
 import os
+from typing import List, Union
 
 import openai
+from llmstudio_core.agents.data_models import (
+    Annotation,
+    Attachment,
+    File,
+    FileCitation,
+    ImageFile,
+    ImageFileContent,
+    ImageUrlContent,
+    ImageUrlObject,
+    Message,
+    RefusalContent,
+    ResultBase,
+    TextContent,
+    TextObject,
+    Tool,
+)
 from llmstudio_core.agents.manager import AgentManager, agent_manager
 from llmstudio_core.agents.openai.data_models import (
     OpenAIAgent,
-    OpenAIFiles,
+    OpenAICreateAgentRequest,
+    OpenAIInputMessage,
     OpenAIResult,
     OpenAIRun,
+    OpenAIRunAgentRequest,
 )
+from llmstudio_core.exceptions import AgentError
+from pydantic import ValidationError
 
 
 @agent_manager
@@ -27,60 +48,83 @@ class OpenAIAgentManager(AgentManager):
     def _agent_config_name():
         return "openai"
 
-    def create_agent(self, params: dict = None) -> OpenAIAgent:
+    def create_agent(self, params: dict) -> OpenAIAgent:
         """
         Creates a new instance of the agent.
         """
+        try:
+            agent_request = self._validate_create_request(params)
+        except ValidationError as e:
+            raise AgentError(str(e))
+
         assistant = openai.beta.assistants.create(
-            name=params.get("name"),
-            instructions=params.get("instructions"),
-            model=params.get("model"),
-            tools=params.get("tools"),
-            tool_resources=params.get("tool_resources"),
+            name=agent_request.name,
+            instructions=agent_request.instructions,
+            model=agent_request.model,
+            tools=agent_request.tools,
+            tool_resources=agent_request.tool_resources,
         )
 
-        openai_agent = OpenAIAgent(id=assistant.id, assistant_id=assistant.id)
+        return OpenAIAgent(
+            agent_id=assistant.id,
+            name=agent_request.name,
+            description=agent_request.description,
+            instructions=agent_request.instructions,
+            tools=agent_request.tools,
+            tool_resources=agent_request.tool_resources,
+        )
 
-        return openai_agent
-
-    def _validate_create_request(self, request):
-        raise NotImplementedError("Agents need to implement the method")
+    def _validate_create_request(self, request: dict):
+        return OpenAICreateAgentRequest(
+            model=request.get("model"),
+            instructions=request.get("instructions"),
+            description=request.get("description"),
+            tools=request.get("tools"),
+            tool_resources=request.get("tool_resources"),
+            name=request.get("name"),
+        )
 
     def _validate_run_request(self, request):
-        raise NotImplementedError("Agents need to implement the method")
+        return OpenAIRunAgentRequest(**request.__dict__)
 
-    def _validate_create_request(self, request):
-        raise NotImplementedError("Agents need to implement the method")
+    def _validate_input_messages(self, messages):
+        return [OpenAIInputMessage(**msg) for msg in messages]
 
     def run_agent(
         self,
         openai_agent: OpenAIAgent,
-        messages: list[dict],
-        params: dict = None,
-        **kwargs
+        messages: Union[list, dict],
     ) -> OpenAIRun:
         """ """
+        if isinstance(messages, dict):
+            messages = [messages]
+
+        try:
+            input_messages = self._validate_input_messages(messages)
+        except ValidationError as e:
+            raise AgentError(str(e))
 
         if not openai_agent.thread_id:
             openai_agent.thread_id = self.create_new_thread()
 
-        for msg in messages:
+        for msg in input_messages:
             self._add_messages_to_thread(msg, openai_agent.thread_id)
 
-        run_id = self.create_run(openai_agent.thread_id, openai_agent.assistant_id)
+        run_id = self.create_run(openai_agent.thread_id, openai_agent.agent_id)
 
         openai_run = OpenAIRun(
             thread_id=openai_agent.thread_id,
-            assistant_id=openai_agent.assistant_id,
+            assistant_id=openai_agent.agent_id,
             run_id=run_id,
         )
 
         return openai_run
 
-    def retrieve_result(self, openai_run: OpenAIRun, **kwargs) -> OpenAIResult:
+    def retrieve_result(self, openai_run: OpenAIRun) -> OpenAIResult:
         """
         Retrieves an existing agent.
         """
+
         return self._process_result_without_streaming(openai_run=openai_run)
 
     def _process_result_without_streaming(self, openai_run: OpenAIRun) -> OpenAIResult:
@@ -92,48 +136,91 @@ class OpenAIAgentManager(AgentManager):
                 thread_id=openai_run.thread_id, run_id=openai_run.run_id
             )
         messages = openai.beta.threads.messages.list(thread_id=openai_run.thread_id)
-        print(messages)
         processed_messages = self._process_messages_without_streaming(messages)
-        return OpenAIResult(messages=processed_messages, thread_id=openai_run.thread_id)
+        return ResultBase(messages=processed_messages)
 
     def _process_messages_without_streaming(self, messages: list):
-        messages_content = []
-        files = []
-        messages_file = []
+        procecced_messages = []
+        for msg in messages:
+            content = []
+            attachments = self._process_message_attachments(msg.attachments)
+            content = self._process_message_content(msg.content)
+            procecced_messages.append(
+                Message(
+                    id=msg.id,
+                    object=msg.object,
+                    created_at=msg.created_at,
+                    thread_id=msg.thread_id,
+                    role=msg.role,
+                    content=content,
+                    attachments=attachments,
+                )
+            )
 
-        for message in messages.data:
-            if message.role == "user":
-                break
+        return procecced_messages
 
-            for content_block in message.content:
-                if content_block.type == "image_file":
-                    files.append(
-                        OpenAIFiles(
-                            type="image_file", file_id=content_block.image_file.file_id
+    def _process_message_attachments(self, attachments: List) -> List[Attachment]:
+        processed_attachments = []
+
+        for attachment in attachments:
+            tools = []
+            for tool in attachment.tools:
+                tools.append(Tool(**tool.__dict__))
+
+            processed_attachments.append(
+                Attachment(file_id=attachment.file_id, tools=tools)
+            )
+        return processed_attachments
+
+    def _process_message_content(
+        self, content: List
+    ) -> list[Union[ImageFileContent, TextContent, RefusalContent, ImageUrlContent]]:
+        processed_content = []
+
+        for block in content:
+            if getattr(block, "type", "") == "text":
+                annotations = []
+                for annotation in block.text.annotations:
+                    file = File(file_id=annotation.file_path.file_id)
+                    file_citation = FileCitation(
+                        start_index=annotation.start_index,
+                        end_index=annotation.end_index,
+                        text=annotation.text,
+                    )
+                    annotations.append(
+                        Annotation(file_citation=file_citation, file=file)
+                    )
+
+                processed_content.append(
+                    TextContent(
+                        text=TextObject(value=block.text.value, annotations=annotations)
+                    )
+                )
+
+            elif getattr(block, "type", "") == "image_file":
+                processed_content.append(
+                    ImageFileContent(
+                        image_file=ImageFile(
+                            file_id=block.image_file.file_id,
+                            detail=block.image_file.detail,
                         )
                     )
-                    continue
+                )
 
-                if content_block.type == "text" and not len(
-                    content_block.text.annotations
-                ):
-                    messages_content.append(content_block.text.value)
+            elif getattr(block, "type", "") == "refusal":
+                processed_content.append(RefusalContent(refusal=block.refusal))
 
-                if len(content_block.text.annotations):
-                    for annotation in content_block.text.annotations:
-                        files.append(
-                            OpenAIFiles(
-                                type="file_path",
-                                file_id=annotation.file_path.file_id,
-                                file_path=annotation.text,
-                            )
-                        )
+            else:
+                processed_content.append(
+                    ImageUrlContent(
+                        type=block.type,
+                        image_url=ImageUrlObject(
+                            url=block.image_url.url, detail=block.image_url.detail
+                        ),
+                    )
+                )
 
-                    messages_file.append(content_block.text.value)
-
-        print(messages_file)
-        print(messages_content)
-        print(files)
+        return processed_content
 
     def upload_file(self, file_path: str) -> str:
         file = openai.files.create(file=open(file_path, "rb"), purpose="assistants")
@@ -145,9 +232,9 @@ class OpenAIAgentManager(AgentManager):
     def _add_messages_to_thread(self, message: dict, thread_id):
         openai.beta.threads.messages.create(
             thread_id=thread_id,
-            role=message.get("role"),
-            content=message.get("content"),
-            attachments=message.get("attachments"),
+            role=message.role,
+            content=message.content,
+            attachments=message.attachments,
         )
 
     def create_run(self, thread_id: str, assistant_id: str) -> str:

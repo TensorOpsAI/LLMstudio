@@ -3,7 +3,9 @@ from typing import Dict, List, Optional
 
 from llmstudio_core.agents.data_models import (
     AgentBase,
+    Attachment,
     CreateAgentRequest,
+    InputMessageBase,
     ResultBase,
     RunAgentRequest,
     RunBase,
@@ -12,8 +14,6 @@ from pydantic import BaseModel
 
 
 class ToolResources(BaseModel):
-    """Resources required by tools e.g. code_interpreter and file_search."""
-
     file_ids: Optional[List[str]] = None  # For code_interpreter
     vector_store_ids: Optional[List[str]] = None  # For file_search
 
@@ -50,8 +50,13 @@ class OpenAIResult(ResultBase):
     thread_id: str
 
 
+class OpenAIInputMessage(InputMessageBase):
+    attachments: Optional[List[Attachment]] = []
+
+
 class OpenAICreateAgentRequest(CreateAgentRequest):
     tool_resources: Optional[ToolResources] = None
+    name: Optional[str] = None
 
 
 class OpenAIRunAgentRequest(RunAgentRequest):
