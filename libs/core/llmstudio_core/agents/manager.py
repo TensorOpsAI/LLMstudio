@@ -40,7 +40,7 @@ class AgentManager(ABC):
         raise NotImplementedError("Agents need to implement the method")
 
     @abstractmethod
-    def create_agent(self, **kargs) -> AgentBase:
+    def create_agent(self, **kwargs) -> AgentBase:
         """
         Creates a new instance of the agent.
         """

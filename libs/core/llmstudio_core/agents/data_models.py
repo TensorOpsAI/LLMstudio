@@ -56,8 +56,8 @@ class AgentBase(BaseModel):
 
 
 class RunBase(BaseModel):
-    agent_id: str
-    status: str
+    agent_id: Optional[str] = None
+    status: Optional[str] = None
 
 
 class ResultBase(BaseModel):
