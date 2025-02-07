@@ -8,9 +8,33 @@ class Tool(BaseModel):
     type: str
 
 
+class FileCitation(BaseModel):
+    file_id: str
+    start_index: int
+    end_index: int
+    text: str
+
+
+class File(BaseModel):
+    type: str = "file_path"
+    file_id: Optional[str] = None
+    file_content: Optional[bytes] = None
+    file_name: Optional[str] = None
+
+
+class Annotation(BaseModel):
+    file_citation: Optional[FileCitation] = None
+    file_path: Optional[File] = None
+
+
+class TextObject(BaseModel):
+    value: str
+    annotations: List[Annotation] = []
+
+
 class TextContent(BaseModel):
     type: Literal["text"] = "text"
-    text: str
+    text: TextObject
 
 
 class ImageFile(BaseModel):
