@@ -4,6 +4,7 @@ import openai
 from llmstudio_core.agents.manager import AgentManager, agent_manager
 from llmstudio_core.agents.openai.data_models import (
     OpenAIAgent,
+    OpenAIFiles,
     OpenAIResult,
     OpenAIRun,
 )
@@ -91,23 +92,48 @@ class OpenAIAgentManager(AgentManager):
                 thread_id=openai_run.thread_id, run_id=openai_run.run_id
             )
         messages = openai.beta.threads.messages.list(thread_id=openai_run.thread_id)
+        print(messages)
         processed_messages = self._process_messages_without_streaming(messages)
         return OpenAIResult(messages=processed_messages, thread_id=openai_run.thread_id)
 
     def _process_messages_without_streaming(self, messages: list):
-        processed_messages = []
-        for message in messages.data:
-            if message.role in ["user", "assistant"]:
-                text_parts = []
-                for block in message.content:
-                    if block.type == "text":
-                        text_parts.append(block.text.value)
+        messages_content = []
+        files = []
+        messages_file = []
 
-                combined_text = "\n".join(text_parts)
-                processed_messages.append(
-                    {"role": message.role, "content": combined_text}
-                )
-        return processed_messages[::-1]
+        for message in messages.data:
+            if message.role == "user":
+                break
+
+            for content_block in message.content:
+                if content_block.type == "image_file":
+                    files.append(
+                        OpenAIFiles(
+                            type="image_file", file_id=content_block.image_file.file_id
+                        )
+                    )
+                    continue
+
+                if content_block.type == "text" and not len(
+                    content_block.text.annotations
+                ):
+                    messages_content.append(content_block.text.value)
+
+                if len(content_block.text.annotations):
+                    for annotation in content_block.text.annotations:
+                        files.append(
+                            OpenAIFiles(
+                                type="file_path",
+                                file_id=annotation.file_path.file_id,
+                                file_path=annotation.text,
+                            )
+                        )
+
+                    messages_file.append(content_block.text.value)
+
+        print(messages_file)
+        print(messages_content)
+        print(files)
 
     def upload_file(self, file_path: str) -> str:
         file = openai.files.create(file=open(file_path, "rb"), purpose="assistants")
@@ -115,18 +141,6 @@ class OpenAIAgentManager(AgentManager):
 
     def create_new_thread(self) -> str:
         return openai.beta.threads.create().id
-
-    def create_vector_store(self, db_name: str) -> str:
-        vector_db = openai.beta.vector_stores.create(name=db_name)
-        return vector_db.id
-
-    def upload_files_stream_in_vector_db(
-        self, vector_store_id: str, file_streams: list = None, file_ids: list = None
-    ):
-        file_batch = openai.beta.vector_stores.file_batches.upload_and_poll(
-            vector_store_id=vector_store_id, files=file_streams
-        )
-        return file_batch
 
     def _add_messages_to_thread(self, message: dict, thread_id):
         openai.beta.threads.messages.create(
