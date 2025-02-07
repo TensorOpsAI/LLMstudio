@@ -1,4 +1,5 @@
-from typing import Literal, Optional, Union
+from datetime import datetime
+from typing import List, Literal, Optional, Union
 
 from pydantic import BaseModel
 
@@ -36,7 +37,8 @@ class Message(BaseModel):
     id: Optional[str] = None
     object: Optional[str] = "thread.message"
     created_at: Optional[int] = None
-    thread_id: Optional[str] = None  # in bedrock represents session_id
+    thread_id: Optional[str] = None
+    session_id: Optional[str] = None
     role: Literal["user", "assistant"]
     content: Union[str, list[Union[ImageFileContent, TextContent]]]
     assistant_id: Optional[str] = None
@@ -46,22 +48,21 @@ class Message(BaseModel):
 
 
 class AgentBase(BaseModel):
-    id: str
-    created_at: int
-    name: str
+    agent_id: str
+    created_at: Optional[int] = int(datetime.now().timestamp())
+    name: Optional[str] = None
     description: Optional[str] = None
-    model: str
+    model: Optional[str] = None
     instructions: Optional[str] = None
     tools: Optional[list[Tool]] = []
 
 
 class RunBase(BaseModel):
     agent_id: Optional[str] = None
-    status: Optional[str] = None
 
 
 class ResultBase(BaseModel):
-    message: Message
+    messages: List[Message]
 
 
 class CreateAgentRequest(BaseModel):
@@ -73,8 +74,4 @@ class CreateAgentRequest(BaseModel):
 
 class RunAgentRequest(BaseModel):
     agent_id: str
-    message: Message
-
-
-class RetrieveResultRequest(BaseModel):
-    run: RunBase
+    message: Union[Message, List[Message]]
