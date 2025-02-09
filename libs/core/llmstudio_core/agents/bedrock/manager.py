@@ -62,7 +62,7 @@ class BedrockAgentManager(AgentManager):
     def _validate_result_request(self, request):
         return RetrieveResultRequest(**request)
 
-    def create_agent(self, **kwargs) -> BedrockAgent:
+    def create_agent(self, params: dict = None) -> BedrockAgent:
         """
         This method validates the input parameters, creates a new agent using the client,
         waits for the agent to reach the 'NOT_PREPARED' status, adds tools to the agent,
@@ -70,7 +70,7 @@ class BedrockAgentManager(AgentManager):
         to be prepared.
 
         Args:
-            **kwargs: Agent creation parameters.
+           params: Agent creation parameters.
 
         Returns:
             BedrockAgent: An instance of the created BedrockAgent.
@@ -81,11 +81,7 @@ class BedrockAgentManager(AgentManager):
         """
 
         try:
-            agent_request = self._validate_create_request(
-                dict(
-                    **kwargs,
-                )
-            )
+            agent_request = self._validate_create_request(params)
 
         except ValidationError as e:
             raise AgentError(str(e))
@@ -167,7 +163,7 @@ class BedrockAgentManager(AgentManager):
             agent_alias_id=agentAliasId,
         )
 
-    def run_agent(self, **kwargs) -> BedrockRun:
+    def run_agent(self, params: dict = None) -> BedrockRun:
         """
         Runs the agent with the provided keyword arguments.
 
@@ -182,11 +178,7 @@ class BedrockAgentManager(AgentManager):
         """
 
         try:
-            run_request = self._validate_run_request(
-                dict(
-                    **kwargs,
-                )
-            )
+            run_request = self._validate_run_request(params)
         except ValidationError as e:
             raise AgentError(str(e))
 
@@ -234,7 +226,7 @@ class BedrockAgentManager(AgentManager):
             response=invoke_request,
         )
 
-    def retrieve_result(self, **kwargs) -> ResultBase:
+    def retrieve_result(self, params: dict = None) -> ResultBase:
         """
         Retrieve the result based on the provided keyword arguments.
         This method validates the result request and processes the event stream to
@@ -248,11 +240,7 @@ class BedrockAgentManager(AgentManager):
         """
 
         try:
-            result_request = self._validate_result_request(
-                dict(
-                    **kwargs,
-                )
-            )
+            result_request = self._validate_result_request(params)
 
         except ValidationError as e:
             raise AgentError(str(e))
