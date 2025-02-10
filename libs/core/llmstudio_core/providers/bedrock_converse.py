@@ -31,7 +31,7 @@ SERVICE = "bedrock-runtime"
 
 
 @provider
-class BedrockNovaProvider(ProviderCore):
+class BedrockConverseProvider(ProviderCore):
     def __init__(self, config, **kwargs):
         super().__init__(config, **kwargs)
         self._client = boto3.client(
@@ -47,17 +47,17 @@ class BedrockNovaProvider(ProviderCore):
 
     @staticmethod
     def _provider_config_name():
-        return "bedrock-nova"
+        return "bedrock-converse"
 
     def validate_request(self, request: ChatRequest):
         return ChatRequest(**request)
 
     async def agenerate_client(self, request: ChatRequest) -> Coroutine[Any, Any, Any]:
-        """Generate an AWS Bedrock client"""
+        """Generate an AWS Bedrock Converse client"""
         return self.generate_client(request=request)
 
     def generate_client(self, request: ChatRequest) -> Coroutine[Any, Any, Generator]:
-        """Generate an AWS Bedrock client"""
+        """Generate an AWS Bedrock Converse client"""
         try:
             messages, system_prompt = self._process_messages(request.chat_input)
             tools = self._process_tools(request.parameters)
@@ -84,7 +84,9 @@ class BedrockNovaProvider(ProviderCore):
     async def aparse_response(
         self, response: Any, **kwargs
     ) -> AsyncGenerator[Any, None]:
-        return self.parse_response(response=response, **kwargs)
+        result = self.parse_response(response=response, **kwargs)
+        for chunk in result:
+            yield chunk
 
     def parse_response(self, response: AsyncGenerator[Any, None], **kwargs) -> Any:
         tool_name = None
