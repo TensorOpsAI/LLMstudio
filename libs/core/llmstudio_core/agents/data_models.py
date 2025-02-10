@@ -97,5 +97,5 @@ class CreateAgentRequest(BaseModel):
 
 
 class RunAgentRequest(BaseModel):
-    agent_id: str
+    agent: AgentBase
     message: Union[Message, List[Message]]

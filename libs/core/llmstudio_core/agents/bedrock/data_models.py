@@ -26,4 +26,3 @@ class BedrockCreateAgentRequest(CreateAgentRequest):
 
 class BedrockRunAgentRequest(RunAgentRequest):
     session_id: str
-    agent_alias_id: str

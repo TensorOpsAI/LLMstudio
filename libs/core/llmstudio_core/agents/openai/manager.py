@@ -4,7 +4,6 @@ import openai
 from llmstudio_core.agents.manager import AgentManager, agent_manager
 from llmstudio_core.agents.openai.data_models import (
     OpenAIAgent,
-    OpenAIFiles,
     OpenAIResult,
     OpenAIRun,
 )

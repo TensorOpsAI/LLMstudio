@@ -13,7 +13,6 @@ from llmstudio_core.agents.data_models import (
     ImageFileContent,
     Message,
     ResultBase,
-    RetrieveResultRequest,
     TextContent,
 )
 from llmstudio_core.agents.manager import AgentManager, agent_manager
@@ -60,7 +59,7 @@ class BedrockAgentManager(AgentManager):
         return BedrockRunAgentRequest(**request)
 
     def _validate_result_request(self, request):
-        return RetrieveResultRequest(**request)
+        return BedrockRun(**request)
 
     def create_agent(self, params: dict = None) -> BedrockAgent:
         """
@@ -150,7 +149,7 @@ class BedrockAgentManager(AgentManager):
             agentAliasStatus = response["agentAlias"]["agentAliasStatus"]
 
         return BedrockAgent(
-            id=agentId,
+            agent_id=agentId,
             created_at=int(bedrock_create["agent"]["createdAt"].timestamp()),
             name=bedrock_create["agent"]["agentName"],
             description=bedrock_create.get("agent", {}).get("description", None),
@@ -212,15 +211,15 @@ class BedrockAgentManager(AgentManager):
             input_text = ""  # Default to an empty string if content is not valid
 
         invoke_request = self._runtime_client.invoke_agent(
-            agentId=run_request.agent_id,
-            agentAliasId=run_request.agent_alias_id,
+            agentId=run_request.agent.agent_id,
+            agentAliasId=run_request.agent.agent_alias_id,
             sessionId=run_request.session_id,
             inputText=input_text,
             sessionState=sessionState,
         )
 
         return BedrockRun(
-            agent_id=run_request.agent_id,
+            agent_id=run_request.agent.agent_id,
             status="completed",
             session_id=run_request.session_id,
             response=invoke_request,
