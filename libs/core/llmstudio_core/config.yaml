@@ -71,9 +71,9 @@ providers:
         min: 0
         max: 500
         step: 1
-  bedrock-converse:
-    id: bedrock-converse
-    name: Bedrock Converse
+  bedrock:
+    id: bedrock
+    name: Bedrock ConverseAPI
     chat: true
     embed: true
     keys:

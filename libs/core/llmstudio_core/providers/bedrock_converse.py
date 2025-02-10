@@ -47,7 +47,7 @@ class BedrockConverseProvider(ProviderCore):
 
     @staticmethod
     def _provider_config_name():
-        return "bedrock-converse"
+        return "bedrock"
 
     def validate_request(self, request: ChatRequest):
         return ChatRequest(**request)
