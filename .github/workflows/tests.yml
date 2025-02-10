@@ -68,20 +68,14 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
 
-      # Install llmstudio-core dependencies
-      - name: Install llmstudio-core
-        working-directory: ./libs/core
-        run: |
-          poetry install
-          INTEGRATION_ENV=$(poetry env info --path)
-          echo $INTEGRATION_ENV
-          echo "INTEGRATION_ENV=$INTEGRATION_ENV" >> $GITHUB_ENV
-
       # Install llmstudio
       - name: Install llmstudio
         working-directory: ./libs/llmstudio
         run: |
           poetry install
+          INTEGRATION_ENV=$(poetry env info --path)
+          echo $INTEGRATION_ENV
+          echo "INTEGRATION_ENV=$INTEGRATION_ENV" >> $GITHUB_ENV
 
       # Run Integration Tests
       - name: Run Integration Tests
