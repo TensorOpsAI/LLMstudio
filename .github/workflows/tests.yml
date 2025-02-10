@@ -68,7 +68,16 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
 
-      # Cache Poetry Dependencies - leverages cached dependencies from Unit Tests job when available
+      # Inject Secrets as Environment Variables
+      - name: Set up environment variables
+        run: |
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $GITHUB_ENV
+          echo "GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}" >> $GITHUB_ENV
+          echo "BEDROCK_ACCESS_KEY=${{ secrets.BEDROCK_ACCESS_KEY }}" >> $GITHUB_ENV
+          echo "BEDROCK_SECRET_KEY=${{ secrets.BEDROCK_SECRET_KEY }}" >> $GITHUB_ENV
+          echo "BEDROCK_REGION=${{ secrets.BEDROCK_REGION }}" >> $GITHUB_ENV
+
+      # Cache Poetry Dependencies
       - name: Cache Poetry dependencies (Integration Tests)
         uses: actions/cache@v3
         with:
@@ -76,7 +85,6 @@ jobs:
           key: poetry-integration-${{ runner.os }}-${{ hashFiles('libs/llmstudio/poetry.lock') }}
           restore-keys: |
             poetry-integration-${{ runner.os }}-
-            poetry-unit-${{ runner.os }}-
 
       # Install llmstudio
       - name: Install llmstudio
