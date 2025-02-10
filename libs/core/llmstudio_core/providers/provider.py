@@ -823,9 +823,12 @@ class ProviderCore(Provider):
                 )
                 total_cost_usd -= cached_savings
 
-            reasoning_tokens = usage.get("completion_tokens_details", {}).get(
-                "reasoning_tokens", None
-            )
+            completion_tokens_details = usage.get("completion_tokens_details")
+            if completion_tokens_details:
+                reasoning_tokens = completion_tokens_details.get(
+                    "reasoning_tokens", None
+                )
+
             if reasoning_tokens:
                 total_tokens += reasoning_tokens
                 reasoning_cost = self._calculate_cost(

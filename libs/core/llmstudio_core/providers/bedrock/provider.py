@@ -1,6 +1,7 @@
 from typing import Any, AsyncGenerator, Coroutine, Generator
 
 from llmstudio_core.providers.bedrock.anthropic import BedrockAnthropicProvider
+from llmstudio_core.providers.bedrock.nova import BedrockNovaProvider
 from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
 
 
@@ -14,6 +15,8 @@ class BedrockProvider(ProviderCore):
     def _get_provider(self, model):
         if "anthropic." in model:
             return BedrockAnthropicProvider(config=self.config, **self.kwargs)
+        if "amazon.nova" in model:
+            return BedrockNovaProvider(config=self.config, **self.kwargs)
 
         raise ValueError(f" provider is not yet supported.")
 
