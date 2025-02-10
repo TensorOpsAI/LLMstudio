@@ -808,6 +808,11 @@ class ProviderCore(Provider):
         output_tokens = len(self.tokenizer.encode(self._output_to_string(output)))
         total_tokens = input_tokens + output_tokens
 
+        if usage:
+            input_tokens = usage.get("prompt_tokens", input_tokens)
+            output_tokens = usage.get("completion_tokens", output_tokens)
+            total_tokens = usage.get("total_tokens", total_tokens)
+
         # Cost calculations
         input_cost = self._calculate_cost(input_tokens, model_config.input_token_cost)
         output_cost = self._calculate_cost(
