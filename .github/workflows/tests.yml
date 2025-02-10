@@ -41,14 +41,14 @@ jobs:
         working-directory: ./libs/core
         run: |
           poetry install
-          POETRY_ENV=$(poetry env info --path)
-          echo $POETRY_ENV
-          echo "POETRY_ENV=$POETRY_ENV" >> $GITHUB_ENV
+          UNIT_ENV=$(poetry env info --path)
+          echo $UNIT_ENV
+          echo "UNIT_ENV=$UNIT_ENV" >> $GITHUB_ENV
           
       - name: Run unit tests
         run: |
-          echo ${{ env.POETRY_ENV }}
-          source ${{ env.POETRY_ENV }}/bin/activate
+          echo ${{ env.UNIT_ENV }}
+          source ${{ env.UNIT_ENV }}/bin/activate
           poetry run pytest libs/core
 
   integration-tests:
@@ -68,6 +68,15 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
 
+      # Install llmstudio-core dependencies
+      - name: Install llmstudio-core
+        working-directory: ./libs/core
+        run: |
+          poetry install
+          INTEGRATION_ENV=$(poetry env info --path)
+          echo $INTEGRATION_ENV
+          echo "INTEGRATION_ENV=$INTEGRATION_ENV" >> $GITHUB_ENV
+
       # Install llmstudio
       - name: Install llmstudio
         working-directory: ./libs/llmstudio
@@ -77,5 +86,5 @@ jobs:
       # Run Integration Tests
       - name: Run Integration Tests
         run: |
-          source ${{ env.POETRY_ENV }}/bin/activate
+          source ${{ env.INTEGRATION_ENV }}/bin/activate
           poetry run pytest libs/llmstudio/tests/integration_tests
