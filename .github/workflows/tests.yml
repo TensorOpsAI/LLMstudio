@@ -68,6 +68,16 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
 
+      # Cache Poetry Dependencies - leverages cached dependencies from Unit Tests job when available
+      - name: Cache Poetry dependencies (Integration Tests)
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-integration-${{ runner.os }}-${{ hashFiles('libs/llmstudio/poetry.lock') }}
+          restore-keys: |
+            poetry-integration-${{ runner.os }}-
+            poetry-unit-${{ runner.os }}-
+
       # Install llmstudio
       - name: Install llmstudio
         working-directory: ./libs/llmstudio
