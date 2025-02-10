@@ -10,7 +10,7 @@ on:
       - reopened
 
 jobs:
-  tests:
+  unit-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -25,6 +25,16 @@ jobs:
       - name: Install Poetry
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
+
+      # Cache Poetry Dependencies
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            poetry-${{ runner.os }}-
+
       # Install lib and dev dependencies
       - name: Install llmstudio-core
         working-directory: ./libs/core
@@ -39,3 +49,51 @@ jobs:
           echo ${{ env.POETRY_ENV }}
           source ${{ env.POETRY_ENV }}/bin/activate
           poetry run pytest libs/core
+
+  integration-tests:
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ">=3.9 <3.13"
+
+      # Install Poetry
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+
+      # Cache Poetry Dependencies - allows reusing the unit test cache if possible
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-integration-${{ runner.os }}-${{ hashFiles('libs/llmstudio/poetry.lock') }}
+          restore-keys: |
+            poetry-integration-${{ runner.os }}-
+            poetry-unit-${{ runner.os }}-
+
+      # Install llmstudio-core dependencies
+      - name: Install llmstudio-core
+        working-directory: ./libs/core
+        run: |
+          poetry install
+          POETRY_ENV=$(poetry env info --path)
+          echo $POETRY_ENV
+          echo "POETRY_ENV=$POETRY_ENV" >> $GITHUB_ENV
+
+      # Install llmstudio
+      - name: Install llmstudio
+        working-directory: ./libs/llmstudio
+        run: |
+          poetry install
+
+      # Run Integration Tests
+      - name: Run Integration Tests
+        run: |
+          source ${{ env.POETRY_ENV }}/bin/activate
+          poetry run pytest libs/llmstudio/tests/integration_tests
