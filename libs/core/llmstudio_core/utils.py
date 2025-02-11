@@ -47,11 +47,17 @@ class ProviderConfig(BaseModel):
     parameters: Optional[Dict[str, Any]] = None
 
 
+class AgentConfig(BaseModel):
+    id: str
+    name: str
+
+
 class EngineConfig(BaseModel):
     providers: Dict[str, ProviderConfig]
+    agents: Dict[str, AgentConfig]
 
 
-def _load_providers_config() -> EngineConfig:
+def _load_config() -> EngineConfig:
     # TODO read from github
     default_config_path = Path(os.path.join(os.path.dirname(__file__), "config.yaml"))
     local_config_path = Path(os.getcwd(), "config.yaml")

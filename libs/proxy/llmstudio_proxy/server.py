@@ -7,7 +7,7 @@ import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from llmstudio_core.providers import _load_providers_config
+from llmstudio_core.providers import _load_config
 from llmstudio_core.providers.provider import provider_registry
 from llmstudio_core.utils import ProviderConfig
 from llmstudio_proxy.config import ENGINE_HOST, ENGINE_PORT
@@ -28,7 +28,7 @@ class ProxyConfig(BaseModel):
 
 
 def create_proxy_app(
-    started_event: Event, config: ProxyConfig = _load_providers_config()
+    started_event: Event, config: ProxyConfig = _load_config()
 ) -> FastAPI:
     app = FastAPI(
         title=ENGINE_TITLE,
