@@ -118,5 +118,5 @@ class CreateAgentRequest(BaseModel):
 
 
 class RunAgentRequest(BaseModel):
-    agent_id: str
-    message: Union[Message, List[Message]]
+    agent: AgentBase
+    messages: Union[Message, List[Message]]

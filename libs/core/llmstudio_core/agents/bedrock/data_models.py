@@ -1,9 +1,13 @@
+import uuid
+from typing import Optional
+
 from llmstudio_core.agents.data_models import (
     AgentBase,
     CreateAgentRequest,
     RunAgentRequest,
     RunBase,
 )
+from pydantic import Field
 
 
 class BedrockAgent(AgentBase):
@@ -25,5 +29,4 @@ class BedrockCreateAgentRequest(CreateAgentRequest):
 
 
 class BedrockRunAgentRequest(RunAgentRequest):
-    session_id: str
-    agent_alias_id: str
+    session_id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
