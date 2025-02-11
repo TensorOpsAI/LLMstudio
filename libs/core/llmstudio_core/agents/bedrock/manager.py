@@ -14,6 +14,7 @@ from llmstudio_core.agents.data_models import (
     Message,
     ResultBase,
     TextContent,
+    TextObject,
 )
 from llmstudio_core.agents.manager import AgentManager, agent_manager
 from llmstudio_core.exceptions import AgentError
@@ -59,6 +60,8 @@ class BedrockAgentManager(AgentManager):
         return BedrockRunAgentRequest(**request)
 
     def _validate_result_request(self, request):
+        if isinstance(request, BedrockRun):
+            return request
         return BedrockRun(**request)
 
     def create_agent(self, params: dict = None) -> BedrockAgent:
@@ -181,9 +184,30 @@ class BedrockAgentManager(AgentManager):
         except ValidationError as e:
             raise AgentError(str(e))
 
-        sessionState = {"files": []}
+        sessionState = {"files": [], "conversationHistory": {"messages": []}}
 
-        for attachment in run_request.message.attachments:
+        if isinstance(run_request.messages, Message):
+            last_message = run_request.messages
+        elif isinstance(run_request.messages, list) and run_request.messages:
+            last_message = run_request.messages.pop()
+
+            for message in run_request.messages:
+                bedrock_message = {"role": message.role, "content": []}
+
+                # Extract text content
+                if isinstance(message.content, str):
+                    bedrock_message["content"].append({"text": message.content})
+
+                elif isinstance(message.content, list):
+                    for item in message.content:
+                        if isinstance(item, TextContent):
+                            bedrock_message["content"].append({"text": item.text.value})
+
+                sessionState["conversationHistory"]["messages"].append(bedrock_message)
+        else:
+            raise AgentError("No valid messages found in the run request")
+
+        for attachment in last_message.attachments:
             if any(tool.type == "code_interpreter" for tool in attachment.tools):
                 sessionState["files"].append(
                     {
@@ -199,12 +223,12 @@ class BedrockAgentManager(AgentManager):
                     }
                 )
 
-        if isinstance(run_request.message.content, str):
-            input_text = run_request.message.content  # Use it directly if it's a string
-        elif isinstance(run_request.message.content, list):
+        if isinstance(last_message.content, str):
+            input_text = last_message.content  # Use it directly if it's a string
+        elif isinstance(last_message.content, list):
             input_text = " ".join(
                 item.text
-                for item in run_request.message.content
+                for item in last_message.content
                 if isinstance(item, TextContent)
             )
         else:
@@ -225,7 +249,7 @@ class BedrockAgentManager(AgentManager):
             response=invoke_request,
         )
 
-    def retrieve_result(self, params: dict = None) -> ResultBase:
+    def retrieve_result(self, run: BedrockRun) -> ResultBase:
         """
         Retrieve the result based on the provided keyword arguments.
         This method validates the result request and processes the event stream to
@@ -239,19 +263,23 @@ class BedrockAgentManager(AgentManager):
         """
 
         try:
-            result_request = self._validate_result_request(params)
+            run = self._validate_result_request(run)
 
         except ValidationError as e:
             raise AgentError(str(e))
 
         content = []
         attachments = []
-        event_stream = result_request.run.response.get("completion")
+        event_stream = run.response.get("completion")
         for event in event_stream:
             if "chunk" in event:
                 chunk = event["chunk"]
                 if "bytes" in chunk:
-                    content.append(TextContent(text=chunk["bytes"].decode("utf-8")))
+                    content.append(
+                        TextContent(
+                            text=TextObject(value=chunk["bytes"].decode("utf-8"))
+                        )
+                    )
 
             if "files" in event:
                 files = event["files"]["files"]
@@ -275,11 +303,13 @@ class BedrockAgentManager(AgentManager):
                             )
                         )
 
-        message = Message(
-            thread_id=result_request.run.session_id,
-            role="assistant",
-            content=content,
-            attachments=attachments,
-        )
+        messages = [
+            Message(
+                thread_id=run.session_id,
+                role="assistant",
+                content=content,
+                attachments=attachments,
+            )
+        ]
 
-        return ResultBase(message=message)
+        return ResultBase(messages=messages)
