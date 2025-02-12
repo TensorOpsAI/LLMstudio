@@ -1,6 +1,6 @@
 import json
 from threading import Event, Thread
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, Optional
 
 import requests
 import uvicorn
@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from llmstudio_core.providers import _load_providers_config
 from llmstudio_core.providers.provider import provider_registry
+from llmstudio_core.utils import ProviderConfig
 from llmstudio_proxy.config import ENGINE_HOST, ENGINE_PORT
 from llmstudio_proxy.utils import get_current_version
 from pydantic import BaseModel
@@ -20,28 +21,6 @@ ENGINE_VERSION = get_current_version()
 ENGINE_BASE_ENDPOINT = "/api/engine"
 
 _proxy_server_started = False
-
-
-class CostRange(BaseModel):
-    range: List[Optional[int]]
-    cost: float
-
-
-class ModelConfig(BaseModel):
-    mode: str
-    max_tokens: int
-    input_token_cost: Union[float, List[CostRange]]
-    output_token_cost: Union[float, List[CostRange]]
-
-
-class ProviderConfig(BaseModel):
-    id: str
-    name: str
-    chat: bool
-    embed: bool
-    keys: Optional[List[str]] = None
-    models: Optional[Dict[str, ModelConfig]] = None
-    parameters: Optional[Dict[str, Any]] = None
 
 
 class ProxyConfig(BaseModel):

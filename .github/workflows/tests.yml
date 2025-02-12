@@ -1,0 +1,102 @@
+name: Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ">=3.9 <3.13"
+
+      # Install Poetry
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+
+      # Cache Poetry Dependencies
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            poetry-${{ runner.os }}-
+
+      # Install lib and dev dependencies
+      - name: Install llmstudio-core
+        working-directory: ./libs/core
+        run: |
+          poetry install
+          UNIT_ENV=$(poetry env info --path)
+          echo $UNIT_ENV
+          echo "UNIT_ENV=$UNIT_ENV" >> $GITHUB_ENV
+          
+      - name: Run unit tests
+        run: |
+          echo ${{ env.UNIT_ENV }}
+          source ${{ env.UNIT_ENV }}/bin/activate
+          poetry run pytest libs/core
+
+  integration-tests:
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ">=3.9 <3.13"
+
+      # Install Poetry
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+
+      # Inject Secrets as Environment Variables
+      - name: Set up environment variables
+        run: |
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $GITHUB_ENV
+          echo "GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}" >> $GITHUB_ENV
+          echo "BEDROCK_ACCESS_KEY=${{ secrets.BEDROCK_ACCESS_KEY }}" >> $GITHUB_ENV
+          echo "BEDROCK_SECRET_KEY=${{ secrets.BEDROCK_SECRET_KEY }}" >> $GITHUB_ENV
+          echo "BEDROCK_REGION=${{ secrets.BEDROCK_REGION }}" >> $GITHUB_ENV
+
+      # Cache Poetry Dependencies
+      - name: Cache Poetry dependencies (Integration Tests)
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-integration-${{ runner.os }}-${{ hashFiles('libs/llmstudio/poetry.lock') }}
+          restore-keys: |
+            poetry-integration-${{ runner.os }}-
+
+      # Install llmstudio
+      - name: Install llmstudio
+        working-directory: ./libs/llmstudio
+        run: |
+          poetry install
+          INTEGRATION_ENV=$(poetry env info --path)
+          echo $INTEGRATION_ENV
+          echo "INTEGRATION_ENV=$INTEGRATION_ENV" >> $GITHUB_ENV
+
+      # Run Integration Tests
+      - name: Run Integration Tests
+        run: |
+          source ${{ env.INTEGRATION_ENV }}/bin/activate
+          poetry run pytest libs/llmstudio/tests/integration_tests

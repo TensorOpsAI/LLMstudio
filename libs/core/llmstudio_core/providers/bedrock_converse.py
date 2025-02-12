@@ -23,6 +23,7 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDelta,
     ChoiceDeltaToolCall,
     ChoiceDeltaToolCallFunction,
+    CompletionUsage,
 )
 from pydantic import ValidationError
 
@@ -30,7 +31,7 @@ SERVICE = "bedrock-runtime"
 
 
 @provider
-class BedrockAnthropicProvider(ProviderCore):
+class BedrockConverseProvider(ProviderCore):
     def __init__(self, config, **kwargs):
         super().__init__(config, **kwargs)
         self._client = boto3.client(
@@ -46,17 +47,17 @@ class BedrockAnthropicProvider(ProviderCore):
 
     @staticmethod
     def _provider_config_name():
-        return "bedrock-antropic"
+        return "bedrock"
 
     def validate_request(self, request: ChatRequest):
         return ChatRequest(**request)
 
     async def agenerate_client(self, request: ChatRequest) -> Coroutine[Any, Any, Any]:
-        """Generate an AWS Bedrock client"""
+        """Generate an AWS Bedrock Converse client"""
         return self.generate_client(request=request)
 
     def generate_client(self, request: ChatRequest) -> Coroutine[Any, Any, Generator]:
-        """Generate an AWS Bedrock client"""
+        """Generate an AWS Bedrock Converse client"""
         try:
             messages, system_prompt = self._process_messages(request.chat_input)
             tools = self._process_tools(request.parameters)
@@ -83,7 +84,9 @@ class BedrockAnthropicProvider(ProviderCore):
     async def aparse_response(
         self, response: Any, **kwargs
     ) -> AsyncGenerator[Any, None]:
-        return self.parse_response(response=response, **kwargs)
+        result = self.parse_response(response=response, **kwargs)
+        for chunk in result:
+            yield chunk
 
     def parse_response(self, response: AsyncGenerator[Any, None], **kwargs) -> Any:
         tool_name = None
@@ -221,6 +224,22 @@ class BedrockAnthropicProvider(ProviderCore):
                     object="chat.completion.chunk",
                 )
                 yield final_chunk.model_dump()
+
+            elif chunk.get("metadata"):
+                usage = chunk["metadata"].get("usage")
+                final_stream_chunk = ChatCompletionChunk(
+                    id=str(uuid.uuid4()),
+                    choices=[],
+                    created=int(time.time()),
+                    model=kwargs.get("request").model,
+                    object="chat.completion.chunk",
+                    usage=CompletionUsage(
+                        completion_tokens=usage["outputTokens"],
+                        prompt_tokens=usage["inputTokens"],
+                        total_tokens=usage["totalTokens"],
+                    ),
+                )
+                yield final_stream_chunk.model_dump()
 
     @staticmethod
     def _process_messages(
