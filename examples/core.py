@@ -8,7 +8,7 @@ import asyncio
 from dotenv import load_dotenv
 load_dotenv()
 
-def run_provider(provider, model, api_key, **kwargs):
+def run_provider(provider, model, api_key=None, **kwargs):
     print(f"\n\n###RUNNING for <{provider}>, <{model}> ###")
     llm = LLMCore(provider=provider, api_key=api_key, **kwargs)
 
@@ -107,6 +107,16 @@ def build_chat_request(model: str, chat_input: str, is_stream: bool, max_tokens:
                 "max_completion_tokens": max_tokens
             }
         }
+    elif 'amazon.nova' in model or 'anthropic.claude' in model:
+        chat_request = {
+            "chat_input": chat_input,
+            "model": model,
+            "is_stream": is_stream,
+            "retries": 0,
+            "parameters": {
+                "maxTokens": max_tokens
+            }
+        }
     else:
         chat_request = {
             "chat_input": chat_input,
@@ -150,10 +160,7 @@ multiple_provider_runs(provider="azure", model="gpt-4o-mini", num_runs=1, api_ke
 
 
 multiple_provider_runs(provider="vertexai", model="gemini-1.5-flash", num_runs=1, api_key=os.environ["GOOGLE_API_KEY"])
-# provider = "vertexai"
-# model = "gemini-1.5-pro-latest"
-# for _ in range(1):
-#     latencies = run_provider(provider=provider, model=model, 
-#                             api_key=os.environ["GOOGLE_API_KEY"], 
-#                             )
-#     pprint(latencies)
+
+# Bedrock
+multiple_provider_runs(provider="bedrock", model="us.amazon.nova-lite-v1:0", num_runs=1, api_key=None, region=os.environ["BEDROCK_REGION"], secret_key=os.environ["BEDROCK_SECRET_KEY"], access_key=os.environ["BEDROCK_ACCESS_KEY"])
+#multiple_provider_runs(provider="bedrock", model="anthropic.claude-3-5-sonnet-20241022-v2:0", num_runs=1, api_key=None, region=os.environ["BEDROCK_REGION"], secret_key=os.environ["BEDROCK_SECRET_KEY"], access_key=os.environ["BEDROCK_ACCESS_KEY"])

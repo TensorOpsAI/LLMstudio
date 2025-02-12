@@ -808,6 +808,11 @@ class ProviderCore(Provider):
         output_tokens = len(self.tokenizer.encode(self._output_to_string(output)))
         total_tokens = input_tokens + output_tokens
 
+        if usage:
+            input_tokens = usage.get("prompt_tokens", input_tokens)
+            output_tokens = usage.get("completion_tokens", output_tokens)
+            total_tokens = usage.get("total_tokens", total_tokens)
+
         # Cost calculations
         input_cost = self._calculate_cost(input_tokens, model_config.input_token_cost)
         output_cost = self._calculate_cost(
@@ -823,9 +828,12 @@ class ProviderCore(Provider):
                 )
                 total_cost_usd -= cached_savings
 
-            reasoning_tokens = usage.get("completion_tokens_details", {}).get(
-                "reasoning_tokens", None
-            )
+            completion_tokens_details = usage.get("completion_tokens_details")
+            if completion_tokens_details:
+                reasoning_tokens = completion_tokens_details.get(
+                    "reasoning_tokens", None
+                )
+
             if reasoning_tokens:
                 total_tokens += reasoning_tokens
                 reasoning_cost = self._calculate_cost(

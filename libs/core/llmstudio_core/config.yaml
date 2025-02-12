@@ -73,7 +73,7 @@ providers:
         step: 1
   bedrock:
     id: bedrock
-    name: Bedrock
+    name: Bedrock ConverseAPI
     chat: true
     embed: true
     keys:
@@ -126,6 +126,22 @@ providers:
         max_tokens: 100000
         input_token_cost: 0.000008
         output_token_cost: 0.000024
+      us.amazon.nova-pro-v1:0:
+        mode: chat
+        max_tokens: 300000
+        input_token_cost: 0.0000008
+        output_token_cost: 0.0000016
+      us.amazon.nova-lite-v1:0:
+        mode: chat
+        max_tokens: 300000
+        input_token_cost: 0.00000006
+        output_token_cost: 0.00000012
+      us.amazon.nova-micro-v1:0:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0.000000035
+        output_token_cost: 0.00000007
+
     parameters:
       temperature:
         name: "Temperature"
