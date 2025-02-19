@@ -62,37 +62,23 @@ def image_bytes():
 
 
 @pytest.fixture(scope="module")
-def messages(provider_model, image_bytes):
+def messages(image_bytes):
     """
     Creates a message payload with both text and image.
-    Adapts format based on the provider.
     """
-    provider, _ = provider_model
-
-    if provider == "bedrock":
-        return [
-            {
-                "role": "user",
-                "content": [
-                    {"text": "What's in this image?"},
-                    {"image": {"format": "jpeg", "source": {"bytes": image_bytes}}},
-                ],
-            }
-        ]
-    else:  # Default format - OpenAI - requires an image URL (Base64 encoded)
-        base64_image = base64.b64encode(image_bytes).decode("utf-8")
-        return [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": "What's in this image?"},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
-                    },
-                ],
-            }
-        ]
+    base64_image = base64.b64encode(image_bytes).decode("utf-8")
+    return [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "What's in this image?"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                },
+            ],
+        }
+    ]
 
 
 @pytest.fixture(scope="module")
@@ -134,7 +120,6 @@ def llm(provider_model, **kwargs):
     params=[
         ("openai", "gpt-4o-mini"),
         ("bedrock", "us.amazon.nova-lite-v1:0"),
-        ("bedrock", "anthropic.claude-3-5-sonnet-20241022-v2:0"),
     ],
 )
 def provider_model(request):

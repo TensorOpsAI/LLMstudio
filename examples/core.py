@@ -164,49 +164,43 @@ def run_chat_all_providers():
     multiple_provider_runs(provider="bedrock", model="us.amazon.nova-lite-v1:0", num_runs=1, api_key=None, region=os.environ["BEDROCK_REGION"], secret_key=os.environ["BEDROCK_SECRET_KEY"], access_key=os.environ["BEDROCK_ACCESS_KEY"])
     #multiple_provider_runs(provider="bedrock", model="anthropic.claude-3-5-sonnet-20241022-v2:0", num_runs=1, api_key=None, region=os.environ["BEDROCK_REGION"], secret_key=os.environ["BEDROCK_SECRET_KEY"], access_key=os.environ["BEDROCK_ACCESS_KEY"])
 
-run_chat_all_providers()
+#run_chat_all_providers()
 
 
 import base64
 
-def messages(provider, img_path):
+def messages(img_path):
     """
     Creates a message payload with both text and image.
     Adapts format based on the provider.
     """
-    
     with open(img_path, "rb") as f:
         image_bytes = f.read()
-
-    if provider == "bedrock":
-        return [
-            {
-                "role": "user",
-                "content": [
-                    {"text": "What's in this image?"},
-                    {"image": {"format": "jpeg", "source": {"bytes": image_bytes}}},
-                ],
-            }
-        ]
-    else:  # Default format - OpenAI - requires an image URL (Base64 encoded)
-        base64_image = base64.b64encode(image_bytes).decode("utf-8")
-        return [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": "What's in this image?"},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
-                    }, #TODO pass all to using this format and also allow data:image/bytes
-                ],
-            }
-        ]
+        
+    base64_image = base64.b64encode(image_bytes).decode("utf-8")
+    return [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "What's in this image?"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                    #"image_url": {"url": "https://d7umqicpi7263.cloudfront.net/img/product/0b77c3a2-e006-4740-816f-7654faee73a7.com/c79d819a22b2f6810f787adb851798ab"},
+                },
+                {
+                    "type": "image_url",
+                    #"image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                    "image_url": {"url": "https://awsmp-logos.s3.amazonaws.com/seller-zx4pk43qpmxoa/53d235806f343cec94aac3c577d81c13.png"},
+                },
+            ],
+        }
+    ]
 
 def run_send_imgs():
     provider="bedrock"
     model="us.amazon.nova-lite-v1:0"
-    chat_input=messages(provider=provider, img_path="./libs/llmstudio/tests/integration_tests/test_data/llmstudio-logo.jpeg")
+    chat_input=messages(img_path="./libs/llmstudio/tests/integration_tests/test_data/llmstudio-logo.jpeg")
     chat_request = build_chat_request(model=model, chat_input=chat_input, is_stream=False)
     llm = LLMCore(provider=provider, api_key=None, region=os.environ["BEDROCK_REGION"], secret_key=os.environ["BEDROCK_SECRET_KEY"], access_key=os.environ["BEDROCK_ACCESS_KEY"])
     response_sync = llm.chat(**chat_request)
