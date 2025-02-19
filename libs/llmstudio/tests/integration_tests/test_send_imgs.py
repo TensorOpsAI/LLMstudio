@@ -1,3 +1,4 @@
+import base64
 import os
 from pprint import pprint
 
@@ -44,7 +45,6 @@ def build_chat_request(
             "parameters": {
                 "temperature": 0,
                 "max_tokens": max_tokens,
-                "response_format": {"type": "json_object"},
                 "functions": None,
             },
         }
@@ -61,38 +61,77 @@ def image_bytes():
 
 
 @pytest.fixture(scope="module")
-def messages(image_bytes):
+def messages(provider_model, image_bytes):
     """
     Creates a message payload with both text and image.
+    Adapts format based on the provider.
     """
-    return [
-        {
-            "role": "user",
-            "content": [
-                {"text": "What's in this image?"},
-                {"image": {"format": "jpeg", "source": {"bytes": image_bytes}}},
-            ],
-        }
-    ]
+    provider, _ = provider_model
+
+    if provider == "bedrock":
+        return [
+            {
+                "role": "user",
+                "content": [
+                    {"text": "What's in this image?"},
+                    {"image": {"format": "jpeg", "source": {"bytes": image_bytes}}},
+                ],
+            }
+        ]
+    else:  # Default format - OpenAI - requires an image URL (Base64 encoded)
+        base64_image = base64.b64encode(image_bytes).decode("utf-8")
+        return [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "What's in this image?"},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                    },
+                ],
+            }
+        ]
 
 
 @pytest.fixture(scope="module")
-def llm():
+def llm(provider_model, **kwargs):
     """
     Initializes the LLMCore instance for Bedrock.
     """
-    return LLMCore(
-        provider="bedrock",
-        api_key=None,
-        region=os.environ["BEDROCK_REGION"],
-        secret_key=os.environ["BEDROCK_SECRET_KEY"],
-        access_key=os.environ["BEDROCK_ACCESS_KEY"],
-    )
+
+    """
+    Initializes LLMCore dynamically based on the provider.
+    Uses **kwargs to handle provider-specific parameters.
+    """
+    provider, _ = provider_model
+    provider_args = {"provider": provider}
+
+    if provider == "bedrock":
+        provider_args.update(
+            {
+                "region": os.getenv("BEDROCK_REGION"),
+                "secret_key": os.getenv("BEDROCK_SECRET_KEY"),
+                "access_key": os.getenv("BEDROCK_ACCESS_KEY"),
+            }
+        )
+
+    else:  # Default is OpenAI support
+        provider_args.update(
+            {
+                "api_key": os.getenv("OPENAI_API_KEY"),
+            }
+        )
+
+    provider_args.update(kwargs)
+
+    return LLMCore(**provider_args)
 
 
 @pytest.fixture(
     scope="module",
     params=[
+        ("openai", "gpt-4o-mini"),
         ("bedrock", "us.amazon.nova-lite-v1:0"),
         ("bedrock", "anthropic.claude-3-5-sonnet-20241022-v2:0"),
     ],
