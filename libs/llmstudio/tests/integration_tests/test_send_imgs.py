@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import os
 from pprint import pprint
@@ -150,6 +151,30 @@ def run_provider(llm, provider, model, messages):
     print(f"\n### RUNNING <{provider}> - <{model}> ###\n")
 
     metrics = {}
+
+    # Async Non-Streaming Request
+    print("\nAsync Non-Stream")
+    chat_request = build_chat_request(
+        model, chat_input=messages, max_tokens=100, is_stream=False
+    )
+    response_sync = asyncio.run(llm.achat(**chat_request))
+    pprint(response_sync)
+    metrics["async non-stream"] = response_sync.metrics
+
+    # Async Streaming Request
+    print("\nAsync Stream")
+    chat_request = build_chat_request(
+        model, chat_input=messages, max_tokens=100, is_stream=True
+    )
+
+    async def async_stream():
+        response_async = await llm.achat(**chat_request)
+        async for p in response_async:
+            if p.metrics:
+                pprint(p)
+                metrics["async stream"] = p.metrics
+
+    asyncio.run(async_stream())
 
     # Non-Streaming Request
     print("\nSync Non-Stream")
