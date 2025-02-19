@@ -1,3 +1,4 @@
+import json
 from typing import Any, List, Optional, Union
 
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
@@ -117,6 +118,42 @@ class ChatCompletionLLMstudio(ChatCompletion):
 
     metrics: Optional[Metrics]
     """Performance and usage metrics calculated for the response."""
+
+    def __repr__(self):
+        """
+        Custom representation of the class to prevent large fields from bloating the output.
+        """
+        data = self.model_dump()
+
+        def clean_large_fields(d):
+            for key, value in d.items():
+                if isinstance(value, list):
+                    for item in value:
+                        if isinstance(item, dict) and "content" in item:
+                            for content_item in item["content"]:
+                                if (
+                                    isinstance(content_item, dict)
+                                    and "image_url" in content_item
+                                ):
+                                    if "url" in content_item["image_url"]:
+                                        content_item["image_url"][
+                                            "url"
+                                        ] = "<large image base64 data hidden>"
+
+                        if isinstance(item, dict) and "image_url" in item:
+                            if "url" in item["image_url"]:
+                                item["image_url"][
+                                    "url"
+                                ] = "<large image base64 data hidden>"
+
+            return d
+
+        cleaned_data = clean_large_fields(data)
+
+        return json.dumps(cleaned_data, indent=2)
+
+    def __str__(self):
+        return self.__repr__()
 
 
 class ChatCompletionChunkLLMstudio(ChatCompletionChunk):

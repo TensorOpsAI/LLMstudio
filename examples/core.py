@@ -15,9 +15,9 @@ def run_provider(provider, model, api_key=None, **kwargs):
     latencies = {}
     
     print("\nAsync Non-Stream")
-    chat_request = build_chat_request(model, chat_input="Hello, my name is Jason Json", is_stream=False)
+    chat_request = build_chat_request(model, chat_input="Hello, my name is Jason", is_stream=False)
     string = """
-What is Lorem Ipsum? json
+What is Lorem Ipsum? 
 Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
 
 Why do we use it?
@@ -27,7 +27,7 @@ It is a long established fact that a reader will be distracted by the readable c
 Where does it come from?
 Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32.
 
-What is Lorem Ipsum? json
+What is Lorem Ipsum? 
 Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
 
 Why do we use it?
@@ -37,7 +37,7 @@ It is a long established fact that a reader will be distracted by the readable c
 Where does it come from?
 Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32.
 
-What is Lorem Ipsum? json
+What is Lorem Ipsum? 
 Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
 
 Why do we use it?
@@ -58,7 +58,7 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
     
     print("\nAsync Stream")
     async def async_stream():
-        chat_request = build_chat_request(model, chat_input="Hello, my name is Tom Json", is_stream=True)
+        chat_request = build_chat_request(model, chat_input="Hello, my name is Tom", is_stream=True)
         
         response_async = await llm.achat(**chat_request)
         async for p in response_async:
@@ -74,7 +74,7 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
     
     
     print("\nSync Non-Stream")
-    chat_request = build_chat_request(model, chat_input="Hello, my name is Alice Json", is_stream=False)
+    chat_request = build_chat_request(model, chat_input="Hello, my name is Alice", is_stream=False)
     
     response_sync = llm.chat(**chat_request)
     pprint(response_sync)
@@ -82,7 +82,7 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
     
 
     print("\nSync Stream")
-    chat_request = build_chat_request(model, chat_input="Hello, my name is Mary Json", is_stream=True)
+    chat_request = build_chat_request(model, chat_input="Hello, my name is Mary", is_stream=True)
     
     response_sync_stream = llm.chat(**chat_request)
     for p in response_sync_stream:
@@ -126,7 +126,6 @@ def build_chat_request(model: str, chat_input: str, is_stream: bool, max_tokens:
             "parameters": {
                 "temperature": 0,
                 "max_tokens": max_tokens,
-                "response_format": {"type": "json_object"},
                 "functions": None,
             }
         }
@@ -186,11 +185,9 @@ def messages(img_path):
                 {
                     "type": "image_url",
                     "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
-                    #"image_url": {"url": "https://d7umqicpi7263.cloudfront.net/img/product/0b77c3a2-e006-4740-816f-7654faee73a7.com/c79d819a22b2f6810f787adb851798ab"},
                 },
                 {
                     "type": "image_url",
-                    #"image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
                     "image_url": {"url": "https://awsmp-logos.s3.amazonaws.com/seller-zx4pk43qpmxoa/53d235806f343cec94aac3c577d81c13.png"},
                 },
             ],
@@ -202,8 +199,8 @@ def run_send_imgs():
     model="us.amazon.nova-lite-v1:0"
     chat_input=messages(img_path="./libs/llmstudio/tests/integration_tests/test_data/llmstudio-logo.jpeg")
     chat_request = build_chat_request(model=model, chat_input=chat_input, is_stream=False)
-    llm = LLMCore(provider=provider, api_key=None, region=os.environ["BEDROCK_REGION"], secret_key=os.environ["BEDROCK_SECRET_KEY"], access_key=os.environ["BEDROCK_ACCESS_KEY"])
+    llm = LLMCore(provider=provider, api_key=os.environ["OPENAI_API_KEY"], region=os.environ["BEDROCK_REGION"], secret_key=os.environ["BEDROCK_SECRET_KEY"], access_key=os.environ["BEDROCK_ACCESS_KEY"])
     response_sync = llm.chat(**chat_request)
-    print(response_sync.chat_output)
+    print(response_sync)
     
 run_send_imgs()

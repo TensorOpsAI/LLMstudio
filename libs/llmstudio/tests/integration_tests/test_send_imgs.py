@@ -76,6 +76,12 @@ def messages(image_bytes):
                     "type": "image_url",
                     "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
                 },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": "https://awsmp-logos.s3.amazonaws.com/seller-zx4pk43qpmxoa/53d235806f343cec94aac3c577d81c13.png"
+                    },
+                },
             ],
         }
     ]
