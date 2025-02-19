@@ -1,4 +1,4 @@
-import json
+import copy
 from typing import Any, List, Optional, Union
 
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
@@ -122,35 +122,57 @@ class ChatCompletionLLMstudio(ChatCompletion):
     def __repr__(self):
         """
         Custom representation of the class to prevent large fields from bloating the output.
+        Ensures missing fields are handled gracefully without errors.
         """
-        data = self.model_dump()
+        data = copy.deepcopy(self.model_dump())
 
         def clean_large_fields(d):
+            """
+            Recursively traverses the dictionary to replace large image Base64 data
+            with a placeholder while ensuring missing fields do not cause errors.
+            """
             for key, value in d.items():
                 if isinstance(value, list):
                     for item in value:
-                        if isinstance(item, dict) and "content" in item:
-                            for content_item in item["content"]:
-                                if (
-                                    isinstance(content_item, dict)
-                                    and "image_url" in content_item
+                        if isinstance(item, dict):
+                            # Handle image_url directly under chat_input or context
+                            if "image_url" in item and isinstance(
+                                item["image_url"], dict
+                            ):
+                                if "url" in item["image_url"] and isinstance(
+                                    item["image_url"]["url"], str
                                 ):
-                                    if "url" in content_item["image_url"]:
-                                        content_item["image_url"][
+                                    if item["image_url"]["url"].startswith(
+                                        "data:image/"
+                                    ):
+                                        item["image_url"][
                                             "url"
                                         ] = "<large image base64 data hidden>"
 
-                        if isinstance(item, dict) and "image_url" in item:
-                            if "url" in item["image_url"]:
-                                item["image_url"][
-                                    "url"
-                                ] = "<large image base64 data hidden>"
+                            # Handle nested content inside context
+                            if "content" in item and isinstance(item["content"], list):
+                                for content_item in item["content"]:
+                                    if (
+                                        isinstance(content_item, dict)
+                                        and "image_url" in content_item
+                                    ):
+                                        if "url" in content_item[
+                                            "image_url"
+                                        ] and isinstance(
+                                            content_item["image_url"]["url"], str
+                                        ):
+                                            if content_item["image_url"][
+                                                "url"
+                                            ].startswith("data:image/"):
+                                                content_item["image_url"][
+                                                    "url"
+                                                ] = "<large image base64 data hidden>"
 
             return d
 
         cleaned_data = clean_large_fields(data)
 
-        return json.dumps(cleaned_data, indent=2)
+        return str(cleaned_data)
 
     def __str__(self):
         return self.__repr__()

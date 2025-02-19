@@ -203,4 +203,8 @@ def run_send_imgs():
     response_sync = llm.chat(**chat_request)
     print(response_sync)
     
+    #for p in response_sync:
+    #    if p.metrics:
+    #        pprint(p)
+    
 run_send_imgs()
