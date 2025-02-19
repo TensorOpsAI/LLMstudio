@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from pydantic import BaseModel
@@ -91,7 +91,7 @@ class Metrics(BaseModel):
 
 
 class ChatCompletionLLMstudio(ChatCompletion):
-    chat_input: str
+    chat_input: Union[str, List[dict]]
     """The input prompt for the chat completion."""
 
     chat_output: str
@@ -120,7 +120,7 @@ class ChatCompletionLLMstudio(ChatCompletion):
 
 
 class ChatCompletionChunkLLMstudio(ChatCompletionChunk):
-    chat_input: str
+    chat_input: Union[str, List[dict]]
     """The input prompt for the chat completion."""
 
     chat_output: Optional[str]

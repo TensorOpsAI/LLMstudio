@@ -276,6 +276,13 @@ class BedrockConverseProvider(ProviderCore):
                                 }
                             )
                         messages.append(tool_use)
+                    elif isinstance(message.get("content"), list):
+                        messages.append(
+                            {
+                                "role": message.get("role"),
+                                "content": message.get("content"),
+                            }
+                        )
                     else:
                         messages.append(
                             {
