@@ -163,7 +163,7 @@ def run_chat_all_providers():
     multiple_provider_runs(provider="bedrock", model="us.amazon.nova-lite-v1:0", num_runs=1, api_key=None, region=os.environ["BEDROCK_REGION"], secret_key=os.environ["BEDROCK_SECRET_KEY"], access_key=os.environ["BEDROCK_ACCESS_KEY"])
     #multiple_provider_runs(provider="bedrock", model="anthropic.claude-3-5-sonnet-20241022-v2:0", num_runs=1, api_key=None, region=os.environ["BEDROCK_REGION"], secret_key=os.environ["BEDROCK_SECRET_KEY"], access_key=os.environ["BEDROCK_ACCESS_KEY"])
 
-#run_chat_all_providers()
+run_chat_all_providers()
 
 
 import base64
