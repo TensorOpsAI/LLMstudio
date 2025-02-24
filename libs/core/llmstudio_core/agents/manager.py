@@ -62,3 +62,12 @@ class AgentManager(ABC):
         Retrieves an existing agent.
         """
         raise NotImplementedError("Agents need to implement the 'retrieve' method.")
+
+    @abstractmethod
+    def submit_tool_outputs(self, **kwargs) -> ResultBase:
+        """
+        Retrieves an existing agent.
+        """
+        raise NotImplementedError(
+            "Agents need to implement the 'submit_tool_outputs' method."
+        )

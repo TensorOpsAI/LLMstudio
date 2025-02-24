@@ -174,6 +174,7 @@ class OpenAIAgentManager(AgentManager):
             procecced_messages.append(
                 Message(
                     id=msg.id,
+                    assistant_id=msg.assistant_id,
                     object=msg.object,
                     created_at=msg.created_at,
                     thread_id=msg.thread_id,
@@ -268,3 +269,18 @@ class OpenAIAgentManager(AgentManager):
             thread_id=thread_id, assistant_id=assistant_id
         )
         return run.id
+
+    def submit_tool_outputs(self, openai_run: OpenAIRun) -> OpenAIResult:
+        """
+        Retrieves an existing agent.
+        """
+        tools_outputs = [tool.model_dump() for tool in openai_run.tool_outputs]
+        run = openai.beta.threads.runs.submit_tool_outputs_and_poll(
+            thread_id=openai_run.thread_id,
+            run_id=openai_run.run_id,
+            tool_outputs=tools_outputs,
+        )
+
+        messages = openai.beta.threads.messages.list(thread_id=run.thread_id)
+
+        return self._process_messages_without_streaming(messages)

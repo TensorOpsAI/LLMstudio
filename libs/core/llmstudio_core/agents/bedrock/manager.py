@@ -313,3 +313,8 @@ class BedrockAgentManager(AgentManager):
         ]
 
         return ResultBase(messages=messages)
+
+    def submit_tool_outputs(self, **kwargs) -> ResultBase:
+        """
+        Retrieves an existing agent.
+        """

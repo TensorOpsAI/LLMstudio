@@ -9,6 +9,7 @@ from llmstudio_core.agents.data_models import (
     ResultBase,
     RunAgentRequest,
     RunBase,
+    ToolOuput,
 )
 from pydantic import BaseModel
 
@@ -44,6 +45,7 @@ class OpenAIAgent(AgentBase):
 class OpenAIRun(RunBase):
     thread_id: str
     run_id: str
+    tool_outputs: Optional[List[ToolOuput]] = []
 
 
 class OpenAIResult(ResultBase):
