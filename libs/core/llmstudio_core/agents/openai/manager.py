@@ -13,10 +13,13 @@ from llmstudio_core.agents.data_models import (
     ImageUrlObject,
     Message,
     RefusalContent,
+    RequiredAction,
     ResultBase,
     TextContent,
     TextObject,
     Tool,
+    ToolCall,
+    ToolCallFunction,
 )
 from llmstudio_core.agents.manager import AgentManager, agent_manager
 from llmstudio_core.agents.openai.data_models import (
@@ -127,6 +130,23 @@ class OpenAIAgentManager(AgentManager):
 
         return self._process_result_without_streaming(openai_run=openai_run)
 
+    def _process_required_action_without_streaming(self, run):
+        tool_calls = []
+        for tool in run.required_action.submit_tool_outputs.tool_calls:
+            function = ToolCallFunction(
+                arguments=tool.function.arguments, name=tool.function.name
+            )
+            tool_calls.append(ToolCall(id=tool.id, function=function, type=tool.type))
+        required_action = RequiredAction(submit_tools_outputs=tool_calls)
+
+        return Message(
+            run_id=run.id,
+            assistant_id=run.assistant_id,
+            thread_id=run.thread_id,
+            created_at=run.created_at,
+            required_action=required_action,
+        )
+
     def _process_result_without_streaming(self, openai_run: OpenAIRun) -> OpenAIResult:
         run = openai.beta.threads.runs.retrieve(
             thread_id=openai_run.thread_id, run_id=openai_run.run_id
@@ -135,12 +155,18 @@ class OpenAIAgentManager(AgentManager):
             run = openai.beta.threads.runs.retrieve(
                 thread_id=openai_run.thread_id, run_id=openai_run.run_id
             )
+
+        if run.status == "requires_action":
+            print(run)
+            return self._process_required_action_without_streaming(run)
+
         messages = openai.beta.threads.messages.list(thread_id=openai_run.thread_id)
         processed_messages = self._process_messages_without_streaming(messages)
         return ResultBase(messages=processed_messages)
 
     def _process_messages_without_streaming(self, messages: list):
         procecced_messages = []
+        print(messages)
         for msg in messages:
             content = []
             attachments = self._process_message_attachments(msg.attachments)

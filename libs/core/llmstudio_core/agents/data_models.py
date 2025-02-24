@@ -1,11 +1,24 @@
 from datetime import datetime
-from typing import List, Literal, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel
 
 
+class Parameters(BaseModel):
+    type: str
+    properties: Dict
+    required: List[str]
+
+
+class Function(BaseModel):
+    name: str
+    description: str
+    parameters: Parameters
+
+
 class Tool(BaseModel):
     type: str
+    function: Optional[Function] = None
 
 
 class FileCitation(BaseModel):
@@ -76,20 +89,45 @@ class InputMessageBase(BaseModel):
     content: str
 
 
+class ToolCallFunction(BaseModel):
+    arguments: str
+    name: str
+
+
+class ToolCall(BaseModel):
+    id: str
+    function: ToolCallFunction
+    type: str
+
+
+class RequiredAction(BaseModel):
+    submit_tools_outputs: List[ToolCall]
+    type: Literal["submit_tool_outputs"] = "submit_tool_outputs"
+
+
+class ToolOuput(BaseModel):
+    tool_call_id: str
+    output: str
+
+
 class Message(BaseModel):
     id: Optional[str] = None
     object: Optional[str] = "thread.message"
     created_at: Optional[int] = None
     thread_id: Optional[str] = None
     session_id: Optional[str] = None
-    role: Literal["user", "assistant"]
-    content: Union[
-        str, list[Union[ImageFileContent, TextContent, RefusalContent, ImageUrlContent]]
-    ]
+    role: Optional[Literal["user", "assistant"]] = None
+    content: Optional[
+        Union[
+            str,
+            list[Union[ImageFileContent, TextContent, RefusalContent, ImageUrlContent]],
+        ]
+    ] = []
     assistant_id: Optional[str] = None
     run_id: Optional[str] = None
     attachments: list[Attachment] = []
     metadata: Optional[dict] = {}
+    required_action: RequiredAction = {}
 
 
 class AgentBase(BaseModel):
