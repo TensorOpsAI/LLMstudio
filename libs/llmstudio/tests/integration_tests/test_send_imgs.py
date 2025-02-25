@@ -103,16 +103,16 @@ def llm(provider_model, **kwargs):
     if provider == "bedrock":
         provider_args.update(
             {
-                "region": os.environ("BEDROCK_REGION"),
-                "secret_key": os.environ("BEDROCK_SECRET_KEY"),
-                "access_key": os.environ("BEDROCK_ACCESS_KEY"),
+                "region": os.environ["BEDROCK_REGION"],
+                "secret_key": os.environ["BEDROCK_SECRET_KEY"],
+                "access_key": os.environ["BEDROCK_ACCESS_KEY"],
             }
         )
 
     else:  # Default is OpenAI support
         provider_args.update(
             {
-                "api_key": os.environ("OPENAI_API_KEY"),
+                "api_key": os.environ["OPENAI_API_KEY"],
             }
         )
 
