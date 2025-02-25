@@ -1,4 +1,4 @@
-import os
+import json
 
 import boto3
 from llmstudio_core.agents.bedrock.data_models import (
@@ -6,15 +6,19 @@ from llmstudio_core.agents.bedrock.data_models import (
     BedrockCreateAgentRequest,
     BedrockRun,
     BedrockRunAgentRequest,
+    BedrockTool,
 )
 from llmstudio_core.agents.data_models import (
     Attachment,
     ImageFile,
     ImageFileContent,
     Message,
+    RequiredAction,
     ResultBase,
     TextContent,
     TextObject,
+    ToolCall,
+    ToolCallFunction,
 )
 from llmstudio_core.agents.manager import AgentManager, agent_manager
 from llmstudio_core.exceptions import AgentError
@@ -28,26 +32,8 @@ RUNTIME_SERVICE = "bedrock-agent-runtime"
 class BedrockAgentManager(AgentManager):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._client = boto3.client(
-            service_name=AGENT_SERVICE,
-            region_name=self.region if self.region else os.getenv("BEDROCK_REGION"),
-            aws_access_key_id=self.access_key
-            if self.access_key
-            else os.getenv("BEDROCK_ACCESS_KEY"),
-            aws_secret_access_key=self.secret_key
-            if self.secret_key
-            else os.getenv("BEDROCK_SECRET_KEY"),
-        )
-        self._runtime_client = boto3.client(
-            service_name=RUNTIME_SERVICE,
-            region_name=self.region if self.region else os.getenv("BEDROCK_REGION"),
-            aws_access_key_id=self.access_key
-            if self.access_key
-            else os.getenv("BEDROCK_ACCESS_KEY"),
-            aws_secret_access_key=self.secret_key
-            if self.secret_key
-            else os.getenv("BEDROCK_SECRET_KEY"),
-        )
+        self._client = boto3.client(service_name=AGENT_SERVICE)
+        self._runtime_client = boto3.client(service_name=RUNTIME_SERVICE)
 
     @staticmethod
     def _agent_config_name():
@@ -63,6 +49,19 @@ class BedrockAgentManager(AgentManager):
         if isinstance(request, BedrockRun):
             return request
         return BedrockRun(**request)
+
+    def _create_action_group(self, params):
+        response = self._client.create_agent_action_group(**params)
+        actionGroupId = response["agentActionGroup"]["actionGroupId"]
+
+        actionGroupStatus = ""
+        while actionGroupStatus != "ENABLED":
+            response = self._client.get_agent_action_group(
+                agentId=params["agentId"],
+                actionGroupId=actionGroupId,
+                agentVersion="DRAFT",
+            )
+            actionGroupStatus = response["agentActionGroup"]["actionGroupState"]
 
     def create_agent(self, params: dict = None) -> BedrockAgent:
         """
@@ -103,29 +102,47 @@ class BedrockAgentManager(AgentManager):
             response = self._client.get_agent(agentId=agentId)
             agentStatus = response["agent"]["agentStatus"]
 
-        # Add tools to the agent
-        for tool in agent_request.tools:
-            if tool.type == "code_interpreter":
-                response = self._client.create_agent_action_group(
-                    actionGroupName="CodeInterpreterAction",
-                    actionGroupState="ENABLED",
-                    agentId=agentId,
-                    agentVersion="DRAFT",
-                    parentActionGroupSignature="AMAZON.CodeInterpreter",
-                )
+        bedrock_tools = [
+            BedrockTool.from_tool(tool)
+            for tool in agent_request.tools
+            if tool.type == "function"
+        ]
 
-                actionGroupId = response["agentActionGroup"]["actionGroupId"]
+        if any(tool.type == "code_interpreter" for tool in agent_request.tools):
+            action_group_code_interpreter_params = {
+                "actionGroupName": "CodeInterpreterAction",
+                "actionGroupState": "ENABLED",
+                "agentId": agentId,
+                "agentVersion": "DRAFT",
+                "parentActionGroupSignature": "AMAZON.CodeInterpreter",
+            }
+            self._create_action_group(action_group_code_interpreter_params)
 
-                actionGroupStatus = ""
-                while actionGroupStatus != "ENABLED":
-                    response = self._client.get_agent_action_group(
-                        agentId=agentId,
-                        actionGroupId=actionGroupId,
-                        agentVersion="DRAFT",
-                    )
-                    actionGroupStatus = response["agentActionGroup"]["actionGroupState"]
-            else:
-                raise AgentError(f"Tool {tool.get('type')} not supported")
+        action_group_tools_params = {
+            "actionGroupExecutor": {
+                "customControl": "RETURN_CONTROL",
+            },
+            "actionGroupName": "AgentActionGroup",
+            "actionGroupState": "ENABLED",
+            "agentId": agentId,
+            "agentVersion": "DRAFT",
+            "functionSchema": {
+                "functions": [tool.model_dump() for tool in bedrock_tools]
+            },
+        }
+
+        response = self._client.create_agent_action_group(**action_group_tools_params)
+
+        actionGroupId = response["agentActionGroup"]["actionGroupId"]
+
+        actionGroupStatus = ""
+        while actionGroupStatus != "ENABLED":
+            response = self._client.get_agent_action_group(
+                agentId=agentId,
+                actionGroupId=actionGroupId,
+                agentVersion="DRAFT",
+            )
+            actionGroupStatus = response["agentActionGroup"]["actionGroupState"]
 
         # Prepare the agent for use
         response = self._client.prepare_agent(agentId=agentId)
@@ -236,7 +253,7 @@ class BedrockAgentManager(AgentManager):
 
         invoke_request = self._runtime_client.invoke_agent(
             agentId=run_request.agent.agent_id,
-            agentAliasId=run_request.agent.agent_alias_id,
+            agentAliasId=run_request.alias_id,
             sessionId=run_request.session_id,
             inputText=input_text,
             sessionState=sessionState,
@@ -302,10 +319,45 @@ class BedrockAgentManager(AgentManager):
                                 file_type=file["type"],
                             )
                         )
+            if "returnControl" in event:
+                invocation = event["returnControl"]
+                invocation_id = invocation["invocationId"]
+                tool_invocations = invocation["invocationInputs"]
+
+                required_action = RequiredAction(submit_tools_outputs=[])
+
+                for tool_invocation in tool_invocations:
+                    invocation_input = tool_invocation["functionInvocationInput"]
+                    name = invocation_input["function"]
+                    parameters = invocation_input["parameters"]
+                    invocation_type = invocation_input["actionInvocationType"]
+                    arguments = json.dumps(
+                        {
+                            parameter["name"]: parameter["value"]
+                            for parameter in parameters
+                        }
+                    )
+
+                    tool_call_function = ToolCallFunction(
+                        arguments=arguments, name=name
+                    )
+
+                    tool_call = ToolCall(
+                        id=invocation_id,
+                        function=tool_call_function,
+                        type=invocation_type,
+                    )
+
+                    required_action.submit_tools_outputs.append(tool_call)
+
+                    return Message(
+                        session_id=run.session_id,
+                        required_action=required_action,
+                    )
 
         messages = [
             Message(
-                thread_id=run.session_id,
+                session_id=run.session_id,
                 role="assistant",
                 content=content,
                 attachments=attachments,
