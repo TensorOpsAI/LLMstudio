@@ -7,6 +7,8 @@ from llmstudio_core.agents.bedrock.data_models import (
     BedrockRun,
     BedrockRunAgentRequest,
     BedrockTool,
+    BedrockToolCall,
+    BedrockToolOutput,
 )
 from llmstudio_core.agents.data_models import (
     Attachment,
@@ -17,7 +19,6 @@ from llmstudio_core.agents.data_models import (
     ResultBase,
     TextContent,
     TextObject,
-    ToolCall,
     ToolCallFunction,
 )
 from llmstudio_core.agents.manager import AgentManager, agent_manager
@@ -254,7 +255,7 @@ class BedrockAgentManager(AgentManager):
         invoke_request = self._runtime_client.invoke_agent(
             agentId=run_request.agent.agent_id,
             agentAliasId=run_request.alias_id,
-            sessionId=run_request.session_id,
+            sessionId=run_request.thread_id,
             inputText=input_text,
             sessionState=sessionState,
         )
@@ -262,7 +263,7 @@ class BedrockAgentManager(AgentManager):
         return BedrockRun(
             agent_id=run_request.agent.agent_id,
             status="completed",
-            session_id=run_request.session_id,
+            thread_id=run_request.thread_id,
             response=invoke_request,
         )
 
@@ -331,6 +332,7 @@ class BedrockAgentManager(AgentManager):
                     name = invocation_input["function"]
                     parameters = invocation_input["parameters"]
                     invocation_type = invocation_input["actionInvocationType"]
+                    action_group = invocation_input["actionGroup"]
                     arguments = json.dumps(
                         {
                             parameter["name"]: parameter["value"]
@@ -342,22 +344,23 @@ class BedrockAgentManager(AgentManager):
                         arguments=arguments, name=name
                     )
 
-                    tool_call = ToolCall(
+                    tool_call = BedrockToolCall(
                         id=invocation_id,
                         function=tool_call_function,
                         type=invocation_type,
+                        action_group=action_group,
                     )
 
                     required_action.submit_tools_outputs.append(tool_call)
 
-                    return Message(
-                        session_id=run.session_id,
-                        required_action=required_action,
-                    )
+                return Message(
+                    thread_id=run.thread_id,
+                    required_action=required_action,
+                )
 
         messages = [
             Message(
-                session_id=run.session_id,
+                thread_id=run.thread_id,
                 role="assistant",
                 content=content,
                 attachments=attachments,
@@ -366,7 +369,43 @@ class BedrockAgentManager(AgentManager):
 
         return ResultBase(messages=messages)
 
-    def submit_tool_outputs(self, **kwargs) -> ResultBase:
-        """
-        Retrieves an existing agent.
-        """
+    def submit_tool_outputs(self, params: dict = None) -> ResultBase:
+        try:
+            run_request = self._validate_run_request(params)
+        except ValidationError as e:
+            raise AgentError(str(e))
+
+        if not run_request.tool_outputs:
+            raise AgentError("No tool outputs found")
+
+        tool_outputs: list[BedrockToolOutput] = run_request.tool_outputs
+
+        invocation_results = [
+            {
+                "functionResult": {
+                    "actionGroup": tool_output.action_group,
+                    "function": tool_output.function_name,
+                    "responseBody": {"TEXT": {"body": tool_output.output}},
+                }
+            }
+            for tool_output in tool_outputs
+        ]
+
+        sessionState = {
+            "returnControlInvocationResults": invocation_results,
+            "invocationId": tool_outputs[0].tool_call_id,
+        }
+
+        invoke_request = self._runtime_client.invoke_agent(
+            agentId=run_request.agent.agent_id,
+            agentAliasId=run_request.alias_id,
+            sessionId=run_request.thread_id,
+            sessionState=sessionState,
+        )
+
+        return BedrockRun(
+            agent_id=run_request.agent.agent_id,
+            status="completed",
+            thread_id=run_request.thread_id,
+            response=invoke_request,
+        )

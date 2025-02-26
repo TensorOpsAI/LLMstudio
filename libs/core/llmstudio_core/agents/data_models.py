@@ -105,7 +105,7 @@ class RequiredAction(BaseModel):
     type: Literal["submit_tool_outputs"] = "submit_tool_outputs"
 
 
-class ToolOuput(BaseModel):
+class ToolOutput(BaseModel, extra="allow"):
     tool_call_id: str
     output: str
 
@@ -115,7 +115,6 @@ class Message(BaseModel):
     object: Optional[str] = "thread.message"
     created_at: Optional[int] = None
     thread_id: Optional[str] = None
-    session_id: Optional[str] = None
     role: Optional[Literal["user", "assistant"]] = None
     content: Optional[
         Union[
@@ -141,6 +140,7 @@ class AgentBase(BaseModel):
 
 
 class RunBase(BaseModel):
+    thread_id: str
     agent_id: Optional[str] = None
 
 
@@ -156,5 +156,7 @@ class CreateAgentRequest(BaseModel):
 
 
 class RunAgentRequest(BaseModel):
+    thread_id: str
     agent: AgentBase
-    messages: Union[Message, List[Message]]
+    messages: Optional[Union[Message, List[Message]]] = None
+    tool_outputs: Optional[List[ToolOutput]] = None

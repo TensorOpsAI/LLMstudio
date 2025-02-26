@@ -1,5 +1,4 @@
-import uuid
-from typing import List, Literal, Optional
+from typing import List, Literal
 
 from llmstudio_core.agents.data_models import (
     AgentBase,
@@ -7,8 +6,10 @@ from llmstudio_core.agents.data_models import (
     RunAgentRequest,
     RunBase,
     Tool,
+    ToolCall,
+    ToolOutput,
 )
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class BedrockAgent(AgentBase):
@@ -19,7 +20,6 @@ class BedrockAgent(AgentBase):
 
 
 class BedrockRun(RunBase):
-    session_id: str
     response: dict
 
 
@@ -31,7 +31,6 @@ class BedrockCreateAgentRequest(CreateAgentRequest):
 
 
 class BedrockRunAgentRequest(RunAgentRequest):
-    session_id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
     alias_id: str
 
 
@@ -67,3 +66,12 @@ class BedrockTool(BaseModel):
             name=name,
             parameters=parameters,
         )
+
+
+class BedrockToolCall(ToolCall):
+    action_group: str
+
+
+class BedrockToolOutput(ToolOutput):
+    action_group: str
+    function_name: str
