@@ -17,6 +17,11 @@ providers:
         max_tokens: 200000
         input_token_cost: 0.000003
         output_token_cost: 0.000015
+      claude-3-sonnet:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.000003
+        output_token_cost: 0.000015
       claude-3-haiku-20240307:
         mode: chat
         max_tokens: 200000
@@ -66,16 +71,116 @@ providers:
         min: 0
         max: 500
         step: 1
-  ollama:
-    id: ollama
-    name: Ollama
+  bedrock:
+    id: bedrock
+    name: Bedrock ConverseAPI
+    chat: true
+    embed: true
+    keys:
+      - BEDROCK_SECRET_KEY
+      - BEDROCK_ACCESS_KEY
+      - BEDROCK_REGION
+    models:
+      anthropic.claude-3-sonnet-20240229-v1:0:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.000003
+        output_token_cost: 0.000015
+      anthropic.claude-3-5-sonnet-20240620-v1:0:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.000003
+        output_token_cost: 0.000015
+      anthropic.claude-3-5-sonnet-20241022-v2:0:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.000003
+        output_token_cost: 0.000015
+      anthropic.claude-3-haiku-20240307-v1:0:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.00000025
+        output_token_cost: 0.00000125
+      anthropic.claude-3-5-haiku-20241022-v1:0:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.000001
+        output_token_cost: 0.000005
+      anthropic.claude-3-opus-20240229-v1:0:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.000015
+        output_token_cost: 0.000075
+      anthropic.claude-instant-v1:
+        mode: chat
+        max_tokens: 100000
+        input_token_cost: 0.0000008
+        output_token_cost: 0.000024
+      anthropic.claude-v2:
+        mode: chat
+        max_tokens: 100000
+        input_token_cost: 0.000008
+        output_token_cost: 0.000024
+      anthropic.claude-v2:1:
+        mode: chat
+        max_tokens: 100000
+        input_token_cost: 0.000008
+        output_token_cost: 0.000024
+      us.amazon.nova-pro-v1:0:
+        mode: chat
+        max_tokens: 300000
+        input_token_cost: 0.0000008
+        output_token_cost: 0.0000016
+      us.amazon.nova-lite-v1:0:
+        mode: chat
+        max_tokens: 300000
+        input_token_cost: 0.00000006
+        output_token_cost: 0.00000012
+      us.amazon.nova-micro-v1:0:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0.000000035
+        output_token_cost: 0.00000007
+
+    parameters:
+      temperature:
+        name: "Temperature"
+        type: float
+        default: 1
+        min: 0
+        max: 1
+        step: 0.01
+      max_tokens:
+        name: "Maximum tokens"
+        type: float
+        default: 256
+        min: 1
+        max: 4096
+        step: 0.01
+      top_p:
+        name: "Top P"
+        type: float
+        default: 1
+        min: 0
+        max: 1
+        step: 0.01
+      top_k:
+        name: "Top K"
+        type: float
+        default: 5
+        min: 0
+        max: 500
+        step: 1
+  self-hosted:
+    id: self-hosted
+    name: Self Hosted
     chat: true
     embed: true
     keys:
     models:
-      llama2:
+      deepseek-r1:1.5b:
         mode: chat
-        max_tokens: 0
+        max_tokens: 200000
         input_token_cost: 0
         output_token_cost: 0
     parameters:
@@ -119,13 +224,20 @@ providers:
         mode: chat
         max_completion_tokens: 128000
         input_token_cost: 0.000015
+        cached_token_cost: 0.0000075
         output_token_cost: 0.000060
       o1-mini:
         mode: chat
         max_completion_tokens: 128000
-        input_token_cost: 0.000003
-        cached_token_cost: 0.0000015
-        output_token_cost: 0.000012
+        input_token_cost: 0.0000011
+        cached_token_cost: 0.00000055
+        output_token_cost: 0.0000044
+      o3-mini:
+        mode: chat
+        max_completion_tokens: 200000
+        input_token_cost: 0.0000011
+        cached_token_cost: 0.00000055
+        output_token_cost: 0.0000044
       gpt-4o-mini:
         mode: chat
         max_tokens: 128000
@@ -204,6 +316,18 @@ providers:
       - AZURE_API_ENDPOINT
       - AZURE_API_VERSION
     models:
+      o1-preview:
+        mode: chat
+        max_completion_tokens: 128000
+        input_token_cost: 0.0000165
+        cached_token_cost: 0.00000825
+        output_token_cost: 0.000066
+      o1-mini:
+        mode: chat
+        max_completion_tokens: 128000
+        input_token_cost: 0.0000033
+        cached_token_cost: 0.00000165
+        output_token_cost: 0.0000132
       gpt-4o-mini:
         mode: chat
         max_tokens: 128000
@@ -212,8 +336,9 @@ providers:
       gpt-4o:
         mode: chat
         max_tokens: 128000
-        input_token_cost: 0.000005
-        output_token_cost: 0.000015
+        input_token_cost: 0.0000025
+        cached_token_cost: 0.00000125
+        output_token_cost: 0.00001
       gpt-4-turbo:
         mode: chat
         max_tokens: 128000

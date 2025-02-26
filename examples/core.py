@@ -126,7 +126,7 @@ def build_chat_request(model: str, chat_input: str, is_stream: bool, max_tokens:
             "parameters": {
                 "temperature": 0,
                 "max_tokens": max_tokens,
-                "response_format": {"type": "json_object"},
+                # "response_format": {"type": "json_object"},
                 "functions": None,
             }
         }
@@ -139,15 +139,21 @@ def multiple_provider_runs(provider:str, model:str, num_runs:int, api_key:str, *
         pprint(latencies)
     
     
+# Self-Hosted
+multiple_provider_runs(provider="self-hosted", 
+                       model="deepseek-r1:1.5b", 
+                       api_key=os.environ["API_KEY"],
+                       base_url=os.environ["BASE_URL"],
+                       num_runs=1)
 
 # OpenAI
-multiple_provider_runs(provider="openai", model="gpt-4o-mini", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
-multiple_provider_runs(provider="openai", model="o3-mini", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
+# multiple_provider_runs(provider="openai", model="gpt-4o-mini", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
+# multiple_provider_runs(provider="openai", model="o3-mini", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
 #multiple_provider_runs(provider="openai", model="o1-preview", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
 
 
 # Azure
-multiple_provider_runs(provider="azure", model="gpt-4o-mini", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
+# multiple_provider_runs(provider="azure", model="gpt-4o-mini", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
 #multiple_provider_runs(provider="azure", model="gpt-4o", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
 #multiple_provider_runs(provider="azure", model="o1-mini", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
 #multiple_provider_runs(provider="azure", model="o1-preview", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
@@ -159,8 +165,8 @@ multiple_provider_runs(provider="azure", model="gpt-4o-mini", num_runs=1, api_ke
 #multiple_provider_runs(provider="azure", model="o1-mini", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
 
 
-multiple_provider_runs(provider="vertexai", model="gemini-1.5-flash", num_runs=1, api_key=os.environ["GOOGLE_API_KEY"])
+# multiple_provider_runs(provider="vertexai", model="gemini-1.5-flash", num_runs=1, api_key=os.environ["GOOGLE_API_KEY"])
 
 # Bedrock
-multiple_provider_runs(provider="bedrock", model="us.amazon.nova-lite-v1:0", num_runs=1, api_key=None, region=os.environ["BEDROCK_REGION"], secret_key=os.environ["BEDROCK_SECRET_KEY"], access_key=os.environ["BEDROCK_ACCESS_KEY"])
+# multiple_provider_runs(provider="bedrock", model="us.amazon.nova-lite-v1:0", num_runs=1, api_key=None, region=os.environ["BEDROCK_REGION"], secret_key=os.environ["BEDROCK_SECRET_KEY"], access_key=os.environ["BEDROCK_ACCESS_KEY"])
 #multiple_provider_runs(provider="bedrock", model="anthropic.claude-3-5-sonnet-20241022-v2:0", num_runs=1, api_key=None, region=os.environ["BEDROCK_REGION"], secret_key=os.environ["BEDROCK_SECRET_KEY"], access_key=os.environ["BEDROCK_ACCESS_KEY"])
