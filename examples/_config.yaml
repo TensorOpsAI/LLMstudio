@@ -188,6 +188,11 @@ providers:
         max_tokens: 200000
         input_token_cost: 0
         output_token_cost: 0
+      Llama-3-3-70B-Instruct-llmstudio:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.00000071
+        output_token_cost: 0.00000071
     parameters:
       temperature:
         name: "Temperature"
