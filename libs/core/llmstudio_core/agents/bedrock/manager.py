@@ -253,7 +253,7 @@ class BedrockAgentManager(AgentManager):
             input_text = ""  # Default to an empty string if content is not valid
 
         invoke_request = self._runtime_client.invoke_agent(
-            agentId=run_request.agent.agent_id,
+            agentId=run_request.agent_id,
             agentAliasId=run_request.alias_id,
             sessionId=run_request.thread_id,
             inputText=input_text,
@@ -261,7 +261,7 @@ class BedrockAgentManager(AgentManager):
         )
 
         return BedrockRun(
-            agent_id=run_request.agent.agent_id,
+            agent_id=run_request.agent_id,
             status="completed",
             thread_id=run_request.thread_id,
             response=invoke_request,
@@ -353,9 +353,14 @@ class BedrockAgentManager(AgentManager):
 
                     required_action.submit_tools_outputs.append(tool_call)
 
-                return Message(
+                return ResultBase(
+                    messages=[
+                        Message(
+                            thread_id=run.thread_id,
+                            required_action=required_action,
+                        )
+                    ],
                     thread_id=run.thread_id,
-                    required_action=required_action,
                 )
 
         messages = [
@@ -367,7 +372,7 @@ class BedrockAgentManager(AgentManager):
             )
         ]
 
-        return ResultBase(messages=messages)
+        return ResultBase(messages=messages, thread_id=run.thread_id)
 
     def submit_tool_outputs(self, params: dict = None) -> ResultBase:
         try:
@@ -397,14 +402,14 @@ class BedrockAgentManager(AgentManager):
         }
 
         invoke_request = self._runtime_client.invoke_agent(
-            agentId=run_request.agent.agent_id,
+            agentId=run_request.agent_id,
             agentAliasId=run_request.alias_id,
             sessionId=run_request.thread_id,
             sessionState=sessionState,
         )
 
         return BedrockRun(
-            agent_id=run_request.agent.agent_id,
+            agent_id=run_request.agent_id,
             status="completed",
             thread_id=run_request.thread_id,
             response=invoke_request,

@@ -48,7 +48,7 @@ class OpenAIRun(RunBase):
 
 
 class OpenAIResult(ResultBase):
-    thread_id: str
+    run_id: str
 
 
 class OpenAIInputMessage(InputMessageBase):
@@ -57,8 +57,7 @@ class OpenAIInputMessage(InputMessageBase):
 
 class OpenAICreateAgentRequest(CreateAgentRequest):
     tool_resources: Optional[ToolResources] = None
-    name: Optional[str] = None
 
 
 class OpenAIRunAgentRequest(RunAgentRequest):
-    pass
+    run_id: Optional[str] = None

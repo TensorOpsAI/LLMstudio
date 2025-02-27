@@ -1,4 +1,4 @@
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 from llmstudio_core.agents.data_models import (
     AgentBase,
@@ -26,12 +26,6 @@ class BedrockRun(RunBase):
 class BedrockCreateAgentRequest(CreateAgentRequest):
     agent_resource_role_arn: str
     agent_alias: str
-    name: str
-    tools: List[Tool]
-
-
-class BedrockRunAgentRequest(RunAgentRequest):
-    alias_id: str
 
 
 class BedrockToolProperty(BaseModel):
@@ -72,6 +66,11 @@ class BedrockToolCall(ToolCall):
     action_group: str
 
 
-class BedrockToolOutput(ToolOutput):
+class BedrockToolOutput(ToolOutput, extra="allow"):
     action_group: str
     function_name: str
+
+
+class BedrockRunAgentRequest(RunAgentRequest, extra="allow"):
+    alias_id: str
+    tool_outputs: Optional[List[BedrockToolOutput]] = None

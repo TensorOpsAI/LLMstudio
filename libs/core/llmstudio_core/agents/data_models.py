@@ -126,7 +126,7 @@ class Message(BaseModel):
     run_id: Optional[str] = None
     attachments: list[Attachment] = []
     metadata: Optional[dict] = {}
-    required_action: RequiredAction = {}
+    required_action: Optional[RequiredAction] = None
 
 
 class AgentBase(BaseModel):
@@ -145,6 +145,7 @@ class RunBase(BaseModel):
 
 
 class ResultBase(BaseModel):
+    thread_id: str
     messages: List[Message]
 
 
@@ -153,10 +154,11 @@ class CreateAgentRequest(BaseModel):
     instructions: Optional[str]
     description: Optional[str] = None
     tools: Optional[list[Tool]]
+    name: Optional[str] = None
 
 
-class RunAgentRequest(BaseModel):
-    thread_id: str
-    agent: AgentBase
-    messages: Optional[Union[Message, List[Message]]] = None
+class RunAgentRequest(BaseModel, extra="allow"):
+    thread_id: Optional[str] = None
+    agent_id: str
+    messages: Optional[List[Message]] = None
     tool_outputs: Optional[List[ToolOutput]] = None

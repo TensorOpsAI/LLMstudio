@@ -14,7 +14,6 @@ from llmstudio_core.agents.data_models import (
     Message,
     RefusalContent,
     RequiredAction,
-    ResultBase,
     TextContent,
     TextObject,
     Tool,
@@ -88,45 +87,47 @@ class OpenAIAgentManager(AgentManager):
         )
 
     def _validate_run_request(self, request):
-        return OpenAIRunAgentRequest(**request.__dict__)
+        return OpenAIRunAgentRequest(**request)
 
     def _validate_input_messages(self, messages):
         return [OpenAIInputMessage(**msg) for msg in messages]
 
-    def run_agent(
-        self,
-        openai_agent: OpenAIAgent,
-        messages: Union[list, dict],
-    ) -> OpenAIRun:
-        """ """
-        if isinstance(messages, dict):
-            messages = [messages]
+    def _validate_result_request(self, request):
+        if isinstance(request, OpenAIRun):
+            return request
+        return OpenAIRun(**request)
 
+    def run_agent(self, params: dict) -> OpenAIRun:
         try:
-            input_messages = self._validate_input_messages(messages)
+            run_request: OpenAIRunAgentRequest = self._validate_run_request(params)
         except ValidationError as e:
             raise AgentError(str(e))
 
-        if not openai_agent.thread_id:
-            openai_agent.thread_id = self.create_new_thread()
+        if not run_request.thread_id:
+            run_request.thread_id = self.create_new_thread()
 
-        for msg in input_messages:
-            self._add_messages_to_thread(msg, openai_agent.thread_id)
+        for msg in run_request.messages:
+            self._add_messages_to_thread(msg, run_request.thread_id)
 
-        run_id = self.create_run(openai_agent.thread_id, openai_agent.agent_id)
+        run_id = self.create_run(run_request.thread_id, run_request.agent_id)
 
         openai_run = OpenAIRun(
-            thread_id=openai_agent.thread_id,
-            assistant_id=openai_agent.agent_id,
+            thread_id=run_request.thread_id,
+            assistant_id=run_request.agent_id,
             run_id=run_id,
         )
 
         return openai_run
 
-    def retrieve_result(self, openai_run: OpenAIRun) -> OpenAIResult:
+    def retrieve_result(self, params) -> OpenAIResult:
         """
         Retrieves an existing agent.
         """
+
+        try:
+            openai_run = self._validate_result_request(params)
+        except ValidationError as e:
+            raise AgentError(str(e))
 
         return self._process_result_without_streaming(openai_run=openai_run)
 
@@ -139,13 +140,15 @@ class OpenAIAgentManager(AgentManager):
             tool_calls.append(ToolCall(id=tool.id, function=function, type=tool.type))
         required_action = RequiredAction(submit_tools_outputs=tool_calls)
 
-        return Message(
-            run_id=run.id,
-            assistant_id=run.assistant_id,
-            thread_id=run.thread_id,
-            created_at=run.created_at,
-            required_action=required_action,
-        )
+        return [
+            Message(
+                run_id=run.id,
+                assistant_id=run.assistant_id,
+                thread_id=run.thread_id,
+                created_at=run.created_at,
+                required_action=required_action,
+            )
+        ]
 
     def _process_result_without_streaming(self, openai_run: OpenAIRun) -> OpenAIResult:
         run = openai.beta.threads.runs.retrieve(
@@ -157,12 +160,17 @@ class OpenAIAgentManager(AgentManager):
             )
 
         if run.status == "requires_action":
-            print(run)
-            return self._process_required_action_without_streaming(run)
+            return OpenAIResult(
+                messages=self._process_required_action_without_streaming(run),
+                thread_id=openai_run.thread_id,
+                run_id=run.id,
+            )
 
         messages = openai.beta.threads.messages.list(thread_id=openai_run.thread_id)
         processed_messages = self._process_messages_without_streaming(messages)
-        return ResultBase(messages=processed_messages)
+        return OpenAIResult(
+            messages=processed_messages, thread_id=openai_run.thread_id, run_id=run.id
+        )
 
     def _process_messages_without_streaming(self, messages: list):
         procecced_messages = []
@@ -256,7 +264,7 @@ class OpenAIAgentManager(AgentManager):
     def create_new_thread(self) -> str:
         return openai.beta.threads.create().id
 
-    def _add_messages_to_thread(self, message: dict, thread_id):
+    def _add_messages_to_thread(self, message: Message, thread_id):
         openai.beta.threads.messages.create(
             thread_id=thread_id,
             role=message.role,
@@ -270,14 +278,19 @@ class OpenAIAgentManager(AgentManager):
         )
         return run.id
 
-    def submit_tool_outputs(self, openai_run: OpenAIRun) -> OpenAIResult:
+    def submit_tool_outputs(self, params: dict) -> OpenAIResult:
         """
         Retrieves an existing agent.
         """
-        tools_outputs = [tool.model_dump() for tool in openai_run.tool_outputs]
+        try:
+            run_request: OpenAIRunAgentRequest = self._validate_run_request(params)
+        except ValidationError as e:
+            raise AgentError(str(e))
+
+        tools_outputs = [tool.model_dump() for tool in run_request.tool_outputs]
         run = openai.beta.threads.runs.submit_tool_outputs_and_poll(
-            thread_id=openai_run.thread_id,
-            run_id=openai_run.run_id,
+            thread_id=run_request.thread_id,
+            run_id=run_request.run_id,
             tool_outputs=tools_outputs,
         )
 
