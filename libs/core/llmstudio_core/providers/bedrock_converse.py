@@ -1,5 +1,7 @@
+import base64
 import json
 import os
+import re
 import time
 import uuid
 from typing import (
@@ -14,6 +16,7 @@ from typing import (
 )
 
 import boto3
+import requests
 from llmstudio_core.exceptions import ProviderError
 from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
 from llmstudio_core.utils import OpenAIToolFunction
@@ -276,6 +279,34 @@ class BedrockConverseProvider(ProviderCore):
                                 }
                             )
                         messages.append(tool_use)
+                    elif isinstance(message.get("content"), list):
+                        converse_content_list = []
+                        for content in message.get("content"):
+                            converse_content = {}
+                            if content.get("type") == "text":
+                                converse_content["text"] = content.get("text")
+                            elif content.get("type") == "image_url":
+                                image_url = content.get("image_url")["url"]
+                                bytes_image = BedrockConverseProvider._get_image_bytes(
+                                    image_url
+                                )
+                                format = (
+                                    BedrockConverseProvider._get_img_format_from_bytes(
+                                        bytes_image
+                                    )
+                                )
+                                converse_content["image"] = {
+                                    "format": format,
+                                    "source": {"bytes": bytes_image},
+                                }
+                            converse_content_list.append(converse_content)
+
+                        messages.append(
+                            {
+                                "role": message.get("role"),
+                                "content": converse_content_list,
+                            }
+                        )
                     else:
                         messages.append(
                             {
@@ -302,6 +333,62 @@ class BedrockConverseProvider(ProviderCore):
                     system_prompt = [{"text": message.get("content")}]
 
             return messages, system_prompt
+
+    @staticmethod
+    def _base64_to_bytes(image_url: str) -> bytes:
+        """
+        Extracts and decodes Base64 image data from a 'data:image/...;base64,...' URL.
+        Returns the raw image bytes.
+        """
+        if not image_url.startswith("data:image/"):
+            raise ValueError("Invalid Base64 image URL")
+
+        base64_data = re.sub(r"^data:image/[^;]+;base64,", "", image_url)
+
+        return base64.b64decode(base64_data)
+
+    @staticmethod
+    def _get_img_format_from_bytes(image_bytes: bytes) -> str:
+        """
+        Determines the image format from raw image bytes using file signatures (magic numbers).
+        """
+        if image_bytes.startswith(b"\xFF\xD8\xFF"):
+            return "jpeg"
+        elif image_bytes.startswith(b"\x89PNG\r\n\x1A\n"):
+            return "png"
+        elif image_bytes.startswith(b"GIF87a") or image_bytes.startswith(b"GIF89a"):
+            return "gif"
+        elif (
+            image_bytes.startswith(b"\x52\x49\x46\x46") and image_bytes[8:12] == b"WEBP"
+        ):
+            return "webp"
+        elif image_bytes.startswith(b"\x49\x49\x2A\x00") or image_bytes.startswith(
+            b"\x4D\x4D\x00\x2A"
+        ):
+            return "tiff"
+        else:
+            raise ValueError("Unknown image format")
+
+    @staticmethod
+    def _get_image_bytes(image_url: str) -> bytes:
+        """
+        Converts an image URL to a Base64-encoded string.
+        - If already in 'data:image/...;base64,...' format, it returns as-is.
+        - If it's a normal URL, downloads and encodes the image in Base64.
+        """
+        if image_url.startswith("data:image/"):
+            return BedrockConverseProvider._base64_to_bytes(image_url)
+
+        elif image_url.startswith(("http://", "https://")):
+            response = requests.get(image_url)
+            if response.status_code != 200:
+                raise ValueError(f"Failed to download image: {response.status_code}")
+
+            image_bytes = response.content
+            return image_bytes
+
+        else:
+            raise ValueError("Invalid image URL format")
 
     @staticmethod
     def _process_tools(parameters: dict) -> Optional[Dict]:

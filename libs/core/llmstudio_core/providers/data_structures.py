@@ -1,4 +1,5 @@
-from typing import Any, List, Optional
+import copy
+from typing import Any, List, Optional, Union
 
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from pydantic import BaseModel
@@ -90,8 +91,68 @@ class Metrics(BaseModel):
         return self.model_dump().items()
 
 
-class ChatCompletionLLMstudio(ChatCompletion):
-    chat_input: str
+class ChatCompletionLLMstudioBase:
+    """
+    Base class to share the methods between different ChatCompletionLLMstudio classes.
+    """
+
+    def clean_print(self):
+        """
+        Custom representation of the class to prevent large fields from bloating the output.
+        Ensures missing fields are handled gracefully without errors.
+        """
+        data = copy.deepcopy(self.model_dump())
+
+        def clean_large_fields(d):
+            """
+            Recursively traverses the dictionary to replace large image Base64 data
+            with a placeholder while ensuring missing fields do not cause errors.
+            """
+            for key, value in d.items():
+                if isinstance(value, list):
+                    for item in value:
+                        if isinstance(item, dict):
+                            # Handle image_url directly under chat_input or context
+                            if "image_url" in item and isinstance(
+                                item["image_url"], dict
+                            ):
+                                if "url" in item["image_url"] and isinstance(
+                                    item["image_url"]["url"], str
+                                ):
+                                    if item["image_url"]["url"].startswith(
+                                        "data:image/"
+                                    ):
+                                        item["image_url"][
+                                            "url"
+                                        ] = "<large image base64 data hidden>"
+
+                            # Handle nested content inside context
+                            if "content" in item and isinstance(item["content"], list):
+                                for content_item in item["content"]:
+                                    if (
+                                        isinstance(content_item, dict)
+                                        and "image_url" in content_item
+                                    ):
+                                        if "url" in content_item[
+                                            "image_url"
+                                        ] and isinstance(
+                                            content_item["image_url"]["url"], str
+                                        ):
+                                            if content_item["image_url"][
+                                                "url"
+                                            ].startswith("data:image/"):
+                                                content_item["image_url"][
+                                                    "url"
+                                                ] = "<large image base64 data hidden>"
+
+            return d
+
+        cleaned_data = clean_large_fields(data)
+        print(cleaned_data)
+
+
+class ChatCompletionLLMstudio(ChatCompletion, ChatCompletionLLMstudioBase):
+    chat_input: Union[str, List[dict]]
     """The input prompt for the chat completion."""
 
     chat_output: str
@@ -119,8 +180,8 @@ class ChatCompletionLLMstudio(ChatCompletion):
     """Performance and usage metrics calculated for the response."""
 
 
-class ChatCompletionChunkLLMstudio(ChatCompletionChunk):
-    chat_input: str
+class ChatCompletionChunkLLMstudio(ChatCompletionChunk, ChatCompletionLLMstudioBase):
+    chat_input: Union[str, List[dict]]
     """The input prompt for the chat completion."""
 
     chat_output: Optional[str]
