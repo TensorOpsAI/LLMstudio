@@ -127,7 +127,7 @@ def build_chat_request(model: str, chat_input: str, is_stream: bool, max_tokens:
                 "temperature": 0,
                 "max_tokens": max_tokens,
                 # "response_format": {"type": "json_object"},
-                "functions": None,
+                # "functions": None,
             }
         }
     return chat_request
@@ -140,6 +140,12 @@ def multiple_provider_runs(provider:str, model:str, num_runs:int, api_key:str, *
     
     
 # Self-Hosted
+# multiple_provider_runs(provider="self-hosted", 
+#                        model="Llama-3-3-70B-Instruct-llmstudio", 
+#                        api_key=os.environ["API_KEY"],
+#                        base_url=os.environ["BASE_URL"],
+#                        num_runs=1)
+
 multiple_provider_runs(provider="self-hosted", 
                        model="deepseek-r1:1.5b", 
                        api_key=os.environ["API_KEY"],
