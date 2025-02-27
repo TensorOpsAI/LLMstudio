@@ -287,14 +287,11 @@ class BedrockConverseProvider(ProviderCore):
                                 converse_content["text"] = content.get("text")
                             elif content.get("type") == "image_url":
                                 image_url = content.get("image_url")["url"]
-                                b64_image = BedrockConverseProvider.get_base64_image(
+                                bytes_image = BedrockConverseProvider._get_image_bytes(
                                     image_url
                                 )
-                                bytes_image = BedrockConverseProvider.base64_to_bytes(
-                                    b64_image
-                                )
                                 format = (
-                                    BedrockConverseProvider.get_img_format_from_bytes(
+                                    BedrockConverseProvider._get_img_format_from_bytes(
                                         bytes_image
                                     )
                                 )
@@ -338,7 +335,7 @@ class BedrockConverseProvider(ProviderCore):
             return messages, system_prompt
 
     @staticmethod
-    def base64_to_bytes(image_url: str) -> bytes:
+    def _base64_to_bytes(image_url: str) -> bytes:
         """
         Extracts and decodes Base64 image data from a 'data:image/...;base64,...' URL.
         Returns the raw image bytes.
@@ -351,7 +348,7 @@ class BedrockConverseProvider(ProviderCore):
         return base64.b64decode(base64_data)
 
     @staticmethod
-    def get_img_format_from_bytes(image_bytes: bytes) -> str:
+    def _get_img_format_from_bytes(image_bytes: bytes) -> str:
         """
         Determines the image format from raw image bytes using file signatures (magic numbers).
         """
@@ -373,30 +370,23 @@ class BedrockConverseProvider(ProviderCore):
             raise ValueError("Unknown image format")
 
     @staticmethod
-    def get_base64_image(image_url: str) -> str:
+    def _get_image_bytes(image_url: str) -> bytes:
         """
         Converts an image URL to a Base64-encoded string.
         - If already in 'data:image/...;base64,...' format, it returns as-is.
         - If it's a normal URL, downloads and encodes the image in Base64.
         """
-        if image_url.startswith("data:image/"):  # already in base64
-            return image_url
+        if image_url.startswith("data:image/"):
+            return BedrockConverseProvider._base64_to_bytes(image_url)
 
         elif image_url.startswith(("http://", "https://")):
             response = requests.get(image_url)
             if response.status_code != 200:
                 raise ValueError(f"Failed to download image: {response.status_code}")
 
-            base64_image = base64.b64encode(response.content).decode("utf-8")
+            image_bytes = response.content
+            return image_bytes
 
-            content_type = response.headers.get("Content-Type", "image/jpeg")
-            image_format = (
-                content_type.split("/")[-1]
-                if content_type.startswith("image/")
-                else "jpeg"
-            )
-
-            return f"data:image/{image_format};base64,{base64_image}"
         else:
             raise ValueError("Invalid image URL format")
 

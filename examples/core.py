@@ -201,10 +201,11 @@ def run_send_imgs():
     chat_request = build_chat_request(model=model, chat_input=chat_input, is_stream=False)
     llm = LLMCore(provider=provider, api_key=os.environ["OPENAI_API_KEY"], region=os.environ["BEDROCK_REGION"], secret_key=os.environ["BEDROCK_SECRET_KEY"], access_key=os.environ["BEDROCK_ACCESS_KEY"])
     response_sync = llm.chat(**chat_request)
-    print(response_sync)
+    #print(response_sync)
+    response_sync.clean_print()
     
     #for p in response_sync:
     #    if p.metrics:
-    #        pprint(p)
+    #        p.clean_print()
     
 run_send_imgs()
