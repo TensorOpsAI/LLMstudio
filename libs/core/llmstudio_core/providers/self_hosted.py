@@ -19,6 +19,7 @@ class SelfHostedProvider(ProviderCore):
         super().__init__(config, **kwargs)
         self.API_KEY = api_key or os.getenv("API_KEY")
         self.BASE_URL = base_url or os.getenv("BASE_URL")
+        self.has_tools_functions = False
 
         self._client = OpenAI(
             api_key=self.API_KEY,
@@ -50,7 +51,6 @@ class SelfHostedProvider(ProviderCore):
                     else request.chat_input
                 ),
                 stream=True,
-                stream_options={"include_usage": True},
                 **request.parameters,
             )
         except openai._exceptions.APIError as e:
@@ -63,6 +63,8 @@ class SelfHostedProvider(ProviderCore):
         for chunk in result:
             yield chunk
 
-    def parse_response(self, response: Generator, **kwargs) -> Generator:
+    def parse_response(self, response: AsyncGenerator, **kwargs) -> Any:
         for chunk in response:
-            yield chunk.model_dump()
+            c = chunk.model_dump()
+            if c.get("choices"):
+                yield c

@@ -183,6 +183,12 @@ providers:
         max_tokens: 128000
         input_token_cost: 0
         output_token_cost: 0
+
+      deepseek-r1-tool-calling:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0
+        output_token_cost: 0
       llama3.2:
         mode: chat
         max_tokens: 200000
