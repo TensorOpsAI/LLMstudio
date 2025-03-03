@@ -105,9 +105,11 @@ class RequiredAction(BaseModel):
     type: Literal["submit_tool_outputs"] = "submit_tool_outputs"
 
 
-class ToolOutput(BaseModel, extra="allow"):
-    tool_call_id: str
-    output: str
+class ToolOutput(BaseModel):
+    tool_call_id: Optional[str]
+    output: Optional[str]
+    action_group: Optional[str]
+    function_name: Optional[str]
 
 
 class Message(BaseModel):
@@ -147,6 +149,7 @@ class RunBase(BaseModel):
 class ResultBase(BaseModel):
     thread_id: str
     messages: List[Message]
+    usage: Optional[dict] = None
 
 
 class CreateAgentRequest(BaseModel):
@@ -157,8 +160,9 @@ class CreateAgentRequest(BaseModel):
     name: Optional[str] = None
 
 
-class RunAgentRequest(BaseModel, extra="allow"):
-    thread_id: Optional[str] = None
+class RunAgentRequest(BaseModel):
     agent_id: str
+    alias_id: Optional[str]
+    thread_id: Optional[str] = None
     messages: Optional[List[Message]] = None
     tool_outputs: Optional[List[ToolOutput]] = None

@@ -1,13 +1,11 @@
-from typing import Awaitable, List, Literal, Optional
+from typing import Awaitable, Literal
 
 from llmstudio_core.agents.data_models import (
     AgentBase,
     CreateAgentRequest,
-    RunAgentRequest,
     RunBase,
     Tool,
     ToolCall,
-    ToolOutput,
 )
 from pydantic import BaseModel
 
@@ -67,13 +65,3 @@ class BedrockTool(BaseModel):
 
 class BedrockToolCall(ToolCall):
     action_group: str
-
-
-class BedrockToolOutput(ToolOutput, extra="allow"):
-    action_group: str
-    function_name: str
-
-
-class BedrockRunAgentRequest(RunAgentRequest, extra="allow"):
-    alias_id: str
-    tool_outputs: Optional[List[BedrockToolOutput]] = None

@@ -1,5 +1,6 @@
 import asyncio
 import json
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
@@ -8,10 +9,8 @@ from llmstudio_core.agents.bedrock.data_models import (
     BedrockAgent,
     BedrockCreateAgentRequest,
     BedrockRun,
-    BedrockRunAgentRequest,
     BedrockTool,
     BedrockToolCall,
-    BedrockToolOutput,
 )
 from llmstudio_core.agents.data_models import (
     Attachment,
@@ -20,9 +19,12 @@ from llmstudio_core.agents.data_models import (
     Message,
     RequiredAction,
     ResultBase,
+    RunAgentRequest,
     TextContent,
     TextObject,
+    ToolCall,
     ToolCallFunction,
+    ToolOutput,
 )
 from llmstudio_core.agents.manager import AgentManager, agent_manager
 from llmstudio_core.exceptions import AgentError
@@ -48,7 +50,7 @@ class BedrockAgentManager(AgentManager):
         return BedrockCreateAgentRequest(**request)
 
     def _validate_run_request(self, request):
-        return BedrockRunAgentRequest(**request)
+        return RunAgentRequest(**request)
 
     def _validate_result_request(self, request):
         if isinstance(request, BedrockRun):
@@ -206,6 +208,9 @@ class BedrockAgentManager(AgentManager):
         except ValidationError as e:
             raise AgentError(str(e))
 
+        if not run_request.thread_id:
+            run_request.thread_id = str(uuid.uuid4())
+
         sessionState = {"files": [], "conversationHistory": {"messages": []}}
 
         if isinstance(run_request.messages, Message):
@@ -266,6 +271,7 @@ class BedrockAgentManager(AgentManager):
                 sessionId=run_request.thread_id,
                 inputText=input_text,
                 sessionState=sessionState,
+                enableTrace=True,
             ),
         )
 
@@ -302,8 +308,59 @@ class BedrockAgentManager(AgentManager):
 
         content = []
         attachments = []
+        messages = []
+        usage = None
         event_stream = run.response.get("completion")
         for event in event_stream:
+            if "trace" in event:
+                trace = event["trace"]["trace"]["orchestrationTrace"]
+
+                if "modelInvocationInput" in trace:
+                    invocation_in = trace["modelInvocationInput"]
+                    text = json.loads(invocation_in["text"])
+                    new_messages = [
+                        Message(content=message["content"], role=message["role"])
+                        for message in text["messages"]
+                    ]
+                    messages += new_messages
+
+                if "modelInvocationOutput" in trace:
+                    invocation_out = trace["modelInvocationOutput"]["rawResponse"][
+                        "content"
+                    ]
+                    invocation_out = json.loads(invocation_out)
+                    if "metadata" in invocation_out:
+                        usage = invocation_out["metadata"]["usage"]
+                    elif "usage" in invocation_out:
+                        usage = invocation_out["usage"]
+
+                    messages = invocation_out["content"]
+                    new_messages = []
+                    for message in messages:
+                        if message["type"] == "text":
+                            new_messages.append(
+                                Message(content=message["text"], role="assistant")
+                            )
+
+                        elif message["type"] == "tool_use":
+                            tool_name = message["name"]
+                            tool_arguments = str(message["input"])
+                            tool_call_id = message["id"]
+
+                            tool_call_func = ToolCallFunction(
+                                arguments=tool_arguments, name=tool_name
+                            )
+                            tool_call = ToolCall(
+                                id=tool_call_id,
+                                function=tool_call_func,
+                                type=message["type"],
+                            )
+                            required_action = RequiredAction(
+                                submit_tools_outputs=[tool_call]
+                            )
+                            new_message = Message(required_action=required_action)
+                            new_messages.append(new_message)
+
             if "chunk" in event:
                 chunk = event["chunk"]
                 if "bytes" in chunk:
@@ -363,6 +420,7 @@ class BedrockAgentManager(AgentManager):
                         function=tool_call_function,
                         type=invocation_type,
                         action_group=action_group,
+                        usage=usage,
                     )
 
                     required_action.submit_tools_outputs.append(tool_call)
@@ -375,9 +433,10 @@ class BedrockAgentManager(AgentManager):
                         )
                     ],
                     thread_id=run.thread_id,
+                    usage=usage,
                 )
 
-        messages = [
+        messages = new_messages + [
             Message(
                 thread_id=run.thread_id,
                 role="assistant",
@@ -386,7 +445,7 @@ class BedrockAgentManager(AgentManager):
             )
         ]
 
-        return ResultBase(messages=messages, thread_id=run.thread_id)
+        return ResultBase(messages=messages, thread_id=run.thread_id, usage=usage)
 
     def submit_tool_outputs(self, params: dict = None) -> ResultBase:
         try:
@@ -397,7 +456,7 @@ class BedrockAgentManager(AgentManager):
         if not run_request.tool_outputs:
             raise AgentError("No tool outputs found")
 
-        tool_outputs: list[BedrockToolOutput] = run_request.tool_outputs
+        tool_outputs: list[ToolOutput] = run_request.tool_outputs
 
         invocation_results = [
             {
@@ -424,6 +483,7 @@ class BedrockAgentManager(AgentManager):
                 agentAliasId=run_request.alias_id,
                 sessionId=run_request.thread_id,
                 sessionState=sessionState,
+                enableTrace=True,
             ),
         )
 

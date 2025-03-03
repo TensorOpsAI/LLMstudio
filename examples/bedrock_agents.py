@@ -1,7 +1,7 @@
 import os
 from llmstudio_core.agents import AgentManagerCore
-from llmstudio_core.agents.bedrock.data_models import BedrockCreateAgentRequest, BedrockRunAgentRequest, BedrockToolOutput, BedrockToolCall
-from llmstudio_core.agents.data_models import ResultBase, ToolCall, ToolOutput
+from llmstudio_core.agents.bedrock.data_models import BedrockCreateAgentRequest, BedrockToolCall
+from llmstudio_core.agents.data_models import ResultBase, ToolCall, ToolOutput, RunAgentRequest
 import boto3
 import uuid
 
@@ -67,10 +67,9 @@ agent = bedrock_agent_manager.create_agent(agent_request.model_dump())
 
 runs = []
 
-for i in range(1,3):
-  run_agent_request = BedrockRunAgentRequest(
+for i in range(1,2):
+  run_agent_request = RunAgentRequest(
     agent_id = agent.agent_id,
-    thread_id=f"111{i}",#remove this
     alias_id=agent.agent_alias_id,#make this optional
     messages=[
         {"role": "user", "content": "What is the weather like in Lisbon, PT?"},
@@ -87,7 +86,7 @@ for result in results:
   else:        
       tool_calls : list[BedrockToolCall] = result.messages[-1].required_action.submit_tools_outputs
       
-      submit_outputs_request = BedrockRunAgentRequest(
+      submit_outputs_request = RunAgentRequest(
           agent_id=agent.agent_id,
           thread_id=result.thread_id,
           alias_id=agent.agent_alias_id,
@@ -95,7 +94,7 @@ for result in results:
       )
 
       for tool_call in tool_calls:
-          submit_outputs_request.tool_outputs.append(BedrockToolOutput(tool_call_id=tool_call.id, output="10", action_group=tool_call.action_group, function_name=tool_call.function.name))
+          submit_outputs_request.tool_outputs.append(ToolOutput(tool_call_id=tool_call.id, output="10", action_group=tool_call.action_group, function_name=tool_call.function.name))
 
       outputs_request = submit_outputs_request.model_dump()
       run = bedrock_agent_manager.submit_tool_outputs(submit_outputs_request.model_dump())
