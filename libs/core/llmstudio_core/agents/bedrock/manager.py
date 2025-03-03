@@ -7,13 +7,13 @@ from functools import partial
 import boto3
 from llmstudio_core.agents.bedrock.data_models import (
     BedrockAgent,
-    BedrockCreateAgentRequest,
     BedrockRun,
     BedrockTool,
     BedrockToolCall,
 )
 from llmstudio_core.agents.data_models import (
     Attachment,
+    CreateAgentRequest,
     ImageFile,
     ImageFileContent,
     Message,
@@ -32,6 +32,7 @@ from pydantic import ValidationError
 
 AGENT_SERVICE = "bedrock-agent"
 RUNTIME_SERVICE = "bedrock-agent-runtime"
+DEFAULT_LLMSTUDIO_ALIAS = "llmstudio-agent-alias"
 
 
 @agent_manager
@@ -47,7 +48,7 @@ class BedrockAgentManager(AgentManager):
         return "bedrock"
 
     def _validate_create_request(self, request):
-        return BedrockCreateAgentRequest(**request)
+        return CreateAgentRequest(**request)
 
     def _validate_run_request(self, request):
         return RunAgentRequest(**request)
@@ -159,6 +160,9 @@ class BedrockAgentManager(AgentManager):
         while agentStatus != "PREPARED":
             response = self._client.get_agent(agentId=agentId)
             agentStatus = response["agent"]["agentStatus"]
+
+        if not agent_request.agent_alias:
+            agent_request.agent_alias = DEFAULT_LLMSTUDIO_ALIAS
 
         # Create an alias for the agent
         response = self._client.create_agent_alias(
@@ -286,7 +290,7 @@ class BedrockAgentManager(AgentManager):
         loop = asyncio.get_event_loop()
         return loop.run_until_complete(self.aretrieve_result(run))
 
-    async def aretrieve_result(self, run: BedrockRun) -> ResultBase:
+    async def aretrieve_result(self, run) -> ResultBase:
         """
         Retrieve the result based on the provided keyword arguments.
         This method validates the result request and processes the event stream to
@@ -356,7 +360,7 @@ class BedrockAgentManager(AgentManager):
                                 type=message["type"],
                             )
                             required_action = RequiredAction(
-                                submit_tools_outputs=[tool_call]
+                                submit_tool_outputs=[tool_call]
                             )
                             new_message = Message(required_action=required_action)
                             new_messages.append(new_message)
@@ -396,7 +400,7 @@ class BedrockAgentManager(AgentManager):
                 invocation_id = invocation["invocationId"]
                 tool_invocations = invocation["invocationInputs"]
 
-                required_action = RequiredAction(submit_tools_outputs=[])
+                required_action = RequiredAction(submit_tool_outputs=[])
 
                 for tool_invocation in tool_invocations:
                     invocation_input = tool_invocation["functionInvocationInput"]
@@ -423,7 +427,7 @@ class BedrockAgentManager(AgentManager):
                         usage=usage,
                     )
 
-                    required_action.submit_tools_outputs.append(tool_call)
+                    required_action.submit_tool_outputs.append(tool_call)
 
                 return ResultBase(
                     messages=[
@@ -434,6 +438,8 @@ class BedrockAgentManager(AgentManager):
                     ],
                     thread_id=run.thread_id,
                     usage=usage,
+                    run_status="requires_action",
+                    required_action=required_action,
                 )
 
         messages = new_messages + [
@@ -445,7 +451,14 @@ class BedrockAgentManager(AgentManager):
             )
         ]
 
-        return ResultBase(messages=messages, thread_id=run.thread_id, usage=usage)
+        messages.reverse()
+
+        return ResultBase(
+            messages=messages,
+            thread_id=run.thread_id,
+            usage=usage,
+            run_status="completed",
+        )
 
     def submit_tool_outputs(self, params: dict = None) -> ResultBase:
         try:

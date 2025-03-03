@@ -4,6 +4,11 @@ from typing import Dict, List, Literal, Optional, Union
 from pydantic import BaseModel
 
 
+class ToolResources(BaseModel):
+    file_ids: Optional[List[str]] = None  # For code_interpreter
+    vector_store_ids: Optional[List[str]] = None  # For file_search
+
+
 class Parameters(BaseModel):
     type: str
     properties: Dict
@@ -101,7 +106,7 @@ class ToolCall(BaseModel):
 
 
 class RequiredAction(BaseModel):
-    submit_tools_outputs: List[ToolCall]
+    submit_tool_outputs: List[ToolCall]
     type: Literal["submit_tool_outputs"] = "submit_tool_outputs"
 
 
@@ -149,7 +154,10 @@ class RunBase(BaseModel):
 class ResultBase(BaseModel):
     thread_id: str
     messages: List[Message]
+    run_id: Optional[str] = None
     usage: Optional[dict] = None
+    run_status: Optional[str] = None
+    required_action: Optional[RequiredAction] = None
 
 
 class CreateAgentRequest(BaseModel):
@@ -158,6 +166,9 @@ class CreateAgentRequest(BaseModel):
     description: Optional[str] = None
     tools: Optional[list[Tool]]
     name: Optional[str] = None
+    tool_resources: Optional[ToolResources] = None
+    agent_resource_role_arn: Optional[str] = None
+    agent_alias: Optional[str] = None
 
 
 class RunAgentRequest(BaseModel):
@@ -166,3 +177,4 @@ class RunAgentRequest(BaseModel):
     thread_id: Optional[str] = None
     messages: Optional[List[Message]] = None
     tool_outputs: Optional[List[ToolOutput]] = None
+    run_id: Optional[str] = None

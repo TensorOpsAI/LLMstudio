@@ -1,7 +1,7 @@
 import os
 from llmstudio_core.agents import AgentManagerCore
-from llmstudio_core.agents.bedrock.data_models import BedrockCreateAgentRequest, BedrockToolCall
-from llmstudio_core.agents.data_models import ResultBase, ToolCall, ToolOutput, RunAgentRequest
+from llmstudio_core.agents.bedrock.data_models import BedrockToolCall
+from llmstudio_core.agents.data_models import ResultBase, ToolCall, ToolOutput, RunAgentRequest, CreateAgentRequest
 import boto3
 import uuid
 
@@ -54,7 +54,7 @@ tools = [
     }
     ]
 
-agent_request = BedrockCreateAgentRequest(
+agent_request = CreateAgentRequest(
     model="anthropic.claude-3-5-sonnet-20241022-v2:0",
     instructions=agent_prompt,
     tools=tools,

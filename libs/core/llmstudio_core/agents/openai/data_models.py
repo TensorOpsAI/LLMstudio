@@ -4,19 +4,12 @@ from typing import Dict, List, Optional
 from llmstudio_core.agents.data_models import (
     AgentBase,
     Attachment,
-    CreateAgentRequest,
     InputMessageBase,
-    ResultBase,
-    RunAgentRequest,
     RunBase,
     ToolOutput,
+    ToolResources,
 )
 from pydantic import BaseModel
-
-
-class ToolResources(BaseModel):
-    file_ids: Optional[List[str]] = None  # For code_interpreter
-    vector_store_ids: Optional[List[str]] = None  # For file_search
 
 
 class ResponseFormatType(str, Enum):
@@ -47,17 +40,5 @@ class OpenAIRun(RunBase):
     tool_outputs: Optional[List[ToolOutput]] = []
 
 
-class OpenAIResult(ResultBase):
-    run_id: str
-
-
 class OpenAIInputMessage(InputMessageBase):
     attachments: Optional[List[Attachment]] = []
-
-
-class OpenAICreateAgentRequest(CreateAgentRequest):
-    tool_resources: Optional[ToolResources] = None
-
-
-class OpenAIRunAgentRequest(RunAgentRequest):
-    run_id: Optional[str] = None

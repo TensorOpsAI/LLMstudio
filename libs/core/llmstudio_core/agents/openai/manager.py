@@ -5,6 +5,7 @@ import openai
 from llmstudio_core.agents.data_models import (
     Annotation,
     Attachment,
+    CreateAgentRequest,
     File,
     FileCitation,
     ImageFile,
@@ -14,6 +15,8 @@ from llmstudio_core.agents.data_models import (
     Message,
     RefusalContent,
     RequiredAction,
+    ResultBase,
+    RunAgentRequest,
     TextContent,
     TextObject,
     Tool,
@@ -23,11 +26,8 @@ from llmstudio_core.agents.data_models import (
 from llmstudio_core.agents.manager import AgentManager, agent_manager
 from llmstudio_core.agents.openai.data_models import (
     OpenAIAgent,
-    OpenAICreateAgentRequest,
     OpenAIInputMessage,
-    OpenAIResult,
     OpenAIRun,
-    OpenAIRunAgentRequest,
 )
 from llmstudio_core.exceptions import AgentError
 from pydantic import ValidationError
@@ -77,7 +77,7 @@ class OpenAIAgentManager(AgentManager):
         )
 
     def _validate_create_request(self, request: dict):
-        return OpenAICreateAgentRequest(
+        return CreateAgentRequest(
             model=request.get("model"),
             instructions=request.get("instructions"),
             description=request.get("description"),
@@ -87,7 +87,7 @@ class OpenAIAgentManager(AgentManager):
         )
 
     def _validate_run_request(self, request):
-        return OpenAIRunAgentRequest(**request)
+        return RunAgentRequest(**request)
 
     def _validate_input_messages(self, messages):
         return [OpenAIInputMessage(**msg) for msg in messages]
@@ -99,7 +99,7 @@ class OpenAIAgentManager(AgentManager):
 
     def run_agent(self, params: dict) -> OpenAIRun:
         try:
-            run_request: OpenAIRunAgentRequest = self._validate_run_request(params)
+            run_request: RunAgentRequest = self._validate_run_request(params)
         except ValidationError as e:
             raise AgentError(str(e))
 
@@ -119,7 +119,7 @@ class OpenAIAgentManager(AgentManager):
 
         return openai_run
 
-    def retrieve_result(self, params) -> OpenAIResult:
+    def retrieve_result(self, params) -> ResultBase:
         """
         Retrieves an existing agent.
         """
@@ -138,7 +138,7 @@ class OpenAIAgentManager(AgentManager):
                 arguments=tool.function.arguments, name=tool.function.name
             )
             tool_calls.append(ToolCall(id=tool.id, function=function, type=tool.type))
-        required_action = RequiredAction(submit_tools_outputs=tool_calls)
+        required_action = RequiredAction(submit_tool_outputs=tool_calls)
 
         return [
             Message(
@@ -150,7 +150,7 @@ class OpenAIAgentManager(AgentManager):
             )
         ]
 
-    def _process_result_without_streaming(self, openai_run: OpenAIRun) -> OpenAIResult:
+    def _process_result_without_streaming(self, openai_run: OpenAIRun) -> ResultBase:
         run = openai.beta.threads.runs.retrieve(
             thread_id=openai_run.thread_id, run_id=openai_run.run_id
         )
@@ -160,10 +160,13 @@ class OpenAIAgentManager(AgentManager):
             )
 
         if run.status == "requires_action":
-            return OpenAIResult(
-                messages=self._process_required_action_without_streaming(run),
+            messages = self._process_required_action_without_streaming(run)
+            return ResultBase(
+                messages=messages,
                 thread_id=openai_run.thread_id,
                 run_id=run.id,
+                run_status=run.status,
+                required_action=messages[0].required_action,
             )
 
         messages = openai.beta.threads.messages.list(thread_id=openai_run.thread_id)
@@ -172,16 +175,16 @@ class OpenAIAgentManager(AgentManager):
             "input_tokens": run.usage.prompt_tokens,
             "output_tokens": run.usage.completion_tokens,
         }
-        return OpenAIResult(
+        return ResultBase(
             messages=processed_messages,
             thread_id=openai_run.thread_id,
             run_id=run.id,
             usage=usage,
+            run_status=run.status,
         )
 
     def _process_messages_without_streaming(self, messages: list):
         processed_messages = []
-        print(messages)
         for msg in messages:
             content = []
             attachments = self._process_message_attachments(msg.attachments)
@@ -285,7 +288,7 @@ class OpenAIAgentManager(AgentManager):
         )
         return run.id
 
-    def submit_tool_outputs(self, params: dict) -> OpenAIResult:
+    def submit_tool_outputs(self, params: dict) -> ResultBase:
         """
         Retrieves an existing agent.
         """

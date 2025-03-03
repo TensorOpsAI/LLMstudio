@@ -1,12 +1,6 @@
 from typing import Awaitable, Literal
 
-from llmstudio_core.agents.data_models import (
-    AgentBase,
-    CreateAgentRequest,
-    RunBase,
-    Tool,
-    ToolCall,
-)
+from llmstudio_core.agents.data_models import AgentBase, RunBase, Tool, ToolCall
 from pydantic import BaseModel
 
 
@@ -22,11 +16,6 @@ class BedrockRun(RunBase):
 
     class Config:
         arbitrary_types_allowed = True
-
-
-class BedrockCreateAgentRequest(CreateAgentRequest):
-    agent_resource_role_arn: str
-    agent_alias: str
 
 
 class BedrockToolProperty(BaseModel):

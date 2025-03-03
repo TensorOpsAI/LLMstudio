@@ -1,7 +1,6 @@
 import os
 from llmstudio_core.agents import AgentManagerCore
-from llmstudio_core.agents.openai.data_models import OpenAIResult, OpenAICreateAgentRequest, OpenAIRunAgentRequest
-from llmstudio_core.agents.data_models import ToolCall, ToolOutput
+from llmstudio_core.agents.data_models import ToolCall, ToolOutput, ResultBase, CreateAgentRequest, RunAgentRequest
 import boto3
 
 os.environ["OPENAI_API_TYPE"] = "openai"
@@ -54,7 +53,7 @@ tools = [
     }
 ]
 
-agent_request = OpenAICreateAgentRequest(
+agent_request = CreateAgentRequest(
     model="gpt-4o",
     instructions=agent_prompt,
     tools=tools,
@@ -63,7 +62,7 @@ agent_request = OpenAICreateAgentRequest(
 
 agent = openai_agent_manager.create_agent(agent_request.model_dump())
 
-run_agent_request = OpenAIRunAgentRequest(
+run_agent_request = RunAgentRequest(
   agent_id=agent.agent_id,
   messages=[
       {"role": "user", "content": "What is the weather like in Lisbon, PT?"},
@@ -72,14 +71,14 @@ run_agent_request = OpenAIRunAgentRequest(
 
 run = openai_agent_manager.run_agent(run_agent_request.model_dump())
 
-result : OpenAIResult = openai_agent_manager.retrieve_result(run)
+result : ResultBase = openai_agent_manager.retrieve_result(run)
 
 if not result.messages[-1].required_action:
     print(result.messages[-1].content)
 else:        
     tool_calls : list[ToolCall] = result.messages[-1].required_action.submit_tools_outputs
     
-    submit_outputs_request = OpenAIRunAgentRequest(
+    submit_outputs_request = RunAgentRequest(
         agent_id=agent.agent_id,
         thread_id=result.thread_id,
         tool_outputs=[],
