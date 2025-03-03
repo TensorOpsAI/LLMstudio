@@ -293,12 +293,13 @@ class OpenAIAgentManager(AgentManager):
         Retrieves an existing agent.
         """
         try:
-            run_request: OpenAIRunAgentRequest = self._validate_run_request(params)
+            run_request: RunAgentRequest = self._validate_run_request(params)
         except ValidationError as e:
             raise AgentError(str(e))
 
         tools_outputs = [
-            tool.model_dump(exclude_none=True) for tool in run_request.tool_outputs
+            tool.model_dump(exclude="function_name")
+            for tool in run_request.tool_outputs
         ]
         run = openai.beta.threads.runs.submit_tool_outputs_and_poll(
             thread_id=run_request.thread_id,

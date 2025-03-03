@@ -4,6 +4,13 @@ from typing import Dict, List, Literal, Optional, Union
 from pydantic import BaseModel
 
 
+class ExcludeNoneBaseModel(BaseModel):
+    def model_dump(self, **kwargs):
+        # Ensure exclude_none is set to True by default
+        kwargs.setdefault("exclude_none", True)
+        return super().model_dump(**kwargs)
+
+
 class ToolResources(BaseModel):
     file_ids: Optional[List[str]] = None  # For code_interpreter
     vector_store_ids: Optional[List[str]] = None  # For file_search
@@ -99,10 +106,11 @@ class ToolCallFunction(BaseModel):
     name: str
 
 
-class ToolCall(BaseModel):
+class ToolCall(ExcludeNoneBaseModel):
     id: str
     function: ToolCallFunction
     type: str
+    action_group: Optional[str] = None
 
 
 class RequiredAction(BaseModel):
@@ -110,11 +118,20 @@ class RequiredAction(BaseModel):
     type: Literal["submit_tool_outputs"] = "submit_tool_outputs"
 
 
-class ToolOutput(BaseModel):
+class ToolOutput(ExcludeNoneBaseModel):
     tool_call_id: Optional[str] = None
     output: Optional[str] = None
     action_group: Optional[str] = None
     function_name: Optional[str] = None
+
+    @classmethod
+    def from_tool_call(cls, tool_call: ToolCall, tool_output: str) -> "ToolOutput":
+        return cls(
+            output=tool_output,
+            tool_call_id=tool_call.id,
+            function_name=tool_call.function.name,
+            action_group=tool_call.action_group,
+        )
 
 
 class Message(BaseModel):
@@ -144,6 +161,7 @@ class AgentBase(BaseModel):
     model: Optional[str] = None
     instructions: Optional[str] = None
     tools: Optional[list[Tool]] = []
+    agent_alias_id: Optional[str] = None
 
 
 class RunBase(BaseModel):
@@ -160,7 +178,7 @@ class ResultBase(BaseModel):
     required_action: Optional[RequiredAction] = None
 
 
-class CreateAgentRequest(BaseModel):
+class CreateAgentRequest(ExcludeNoneBaseModel):
     model: str
     instructions: Optional[str]
     description: Optional[str] = None
@@ -171,10 +189,28 @@ class CreateAgentRequest(BaseModel):
     agent_alias: Optional[str] = None
 
 
-class RunAgentRequest(BaseModel):
+class RunAgentRequest(ExcludeNoneBaseModel):
     agent_id: str
     alias_id: Optional[str] = None
     thread_id: Optional[str] = None
     messages: Optional[List[Message]] = None
     tool_outputs: Optional[List[ToolOutput]] = None
     run_id: Optional[str] = None
+
+    @classmethod
+    def from_agent(
+        cls,
+        agent: AgentBase,
+        thread_id: Optional[str] = None,
+        messages: Optional[List[Message]] = None,
+        tool_outputs: Optional[List[ToolOutput]] = None,
+        run_id: Optional[str] = None,
+    ):
+        return cls(
+            agent_id=agent.agent_id,
+            alias_id=agent.agent_alias_id,
+            thread_id=thread_id,
+            messages=messages,
+            tool_outputs=tool_outputs,
+            run_id=run_id,
+        )

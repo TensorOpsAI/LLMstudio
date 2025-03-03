@@ -1,6 +1,6 @@
 from typing import Awaitable, Literal
 
-from llmstudio_core.agents.data_models import AgentBase, RunBase, Tool, ToolCall
+from llmstudio_core.agents.data_models import AgentBase, RunBase, Tool
 from pydantic import BaseModel
 
 
@@ -8,7 +8,6 @@ class BedrockAgent(AgentBase):
     agent_resource_role_arn: str
     agent_status: str
     agent_arn: str
-    agent_alias_id: str
 
 
 class BedrockRun(RunBase):
@@ -50,7 +49,3 @@ class BedrockTool(BaseModel):
             name=name,
             parameters=parameters,
         )
-
-
-class BedrockToolCall(ToolCall):
-    action_group: str

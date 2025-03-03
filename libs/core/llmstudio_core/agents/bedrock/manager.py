@@ -9,7 +9,6 @@ from llmstudio_core.agents.bedrock.data_models import (
     BedrockAgent,
     BedrockRun,
     BedrockTool,
-    BedrockToolCall,
 )
 from llmstudio_core.agents.data_models import (
     Attachment,
@@ -419,7 +418,7 @@ class BedrockAgentManager(AgentManager):
                         arguments=arguments, name=name
                     )
 
-                    tool_call = BedrockToolCall(
+                    tool_call = ToolCall(
                         id=invocation_id,
                         function=tool_call_function,
                         type=invocation_type,
