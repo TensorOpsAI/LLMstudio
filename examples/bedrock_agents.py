@@ -58,43 +58,46 @@ agent_request = BedrockCreateAgentRequest(
     model="anthropic.claude-3-5-sonnet-20241022-v2:0",
     instructions=agent_prompt,
     tools=tools,
-    name=f"test-agent-{uuid.uuid4()}", #BEDROCK EXCLUSIVE
+    name=f"test-agent-{uuid.uuid4()}",
     agent_alias="test-alias", # BEDROCK EXCLUSIVE
     agent_resource_role_arn="arn:aws:iam::563576320055:role/test-agent-ICNQP" # BEDROCK EXCLUSIVE
 )
 
 agent = bedrock_agent_manager.create_agent(agent_request.model_dump())
 
+runs = []
 
-run_agent_request = BedrockRunAgentRequest(
-  agent_id = agent.agent_id,
-  thread_id="9999",
-  alias_id=agent.agent_alias_id,
-  messages=[
-      {"role": "user", "content": "What is the weather like in Lisbon, PT?"},
-  ]
-)
+for i in range(1,3):
+  run_agent_request = BedrockRunAgentRequest(
+    agent_id = agent.agent_id,
+    thread_id=f"111{i}",#remove this
+    alias_id=agent.agent_alias_id,#make this optional
+    messages=[
+        {"role": "user", "content": "What is the weather like in Lisbon, PT?"},
+    ]
+  )
+  run = bedrock_agent_manager.run_agent(run_agent_request.model_dump())
+  runs.append(run)
 
-run = bedrock_agent_manager.run_agent(run_agent_request.model_dump())
+results = [bedrock_agent_manager.retrieve_result(run) for run in runs]
 
-result : ResultBase = bedrock_agent_manager.retrieve_result(run)
+for result in results:
+  if not result.messages[-1].required_action:
+      print(result.messages[-1].content)
+  else:        
+      tool_calls : list[BedrockToolCall] = result.messages[-1].required_action.submit_tools_outputs
+      
+      submit_outputs_request = BedrockRunAgentRequest(
+          agent_id=agent.agent_id,
+          thread_id=result.thread_id,
+          alias_id=agent.agent_alias_id,
+          tool_outputs=[]
+      )
 
-if not result.messages[-1].required_action:
-    print(result.messages[-1].content)
-else:        
-    tool_calls : list[BedrockToolCall] = result.messages[-1].required_action.submit_tools_outputs
-    
-    submit_outputs_request = BedrockRunAgentRequest(
-        agent_id=agent.agent_id,
-        thread_id=result.thread_id,
-        alias_id=agent.agent_alias_id,
-        tool_outputs=[]
-    )
+      for tool_call in tool_calls:
+          submit_outputs_request.tool_outputs.append(BedrockToolOutput(tool_call_id=tool_call.id, output="10", action_group=tool_call.action_group, function_name=tool_call.function.name))
 
-    for tool_call in tool_calls:
-        submit_outputs_request.tool_outputs.append(BedrockToolOutput(tool_call_id=tool_call.id, output="10", action_group=tool_call.action_group, function_name=tool_call.function.name))
-
-    outputs_request = submit_outputs_request.model_dump()
-    run = bedrock_agent_manager.submit_tool_outputs(submit_outputs_request.model_dump())
-    result : ResultBase = bedrock_agent_manager.retrieve_result(run)
-    print(result.messages[-1].content)
+      outputs_request = submit_outputs_request.model_dump()
+      run = bedrock_agent_manager.submit_tool_outputs(submit_outputs_request.model_dump())
+      result : ResultBase = bedrock_agent_manager.retrieve_result(run)
+      print(result.messages[-1].content)

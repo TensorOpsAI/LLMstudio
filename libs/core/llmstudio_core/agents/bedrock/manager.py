@@ -1,4 +1,7 @@
+import asyncio
 import json
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
 import boto3
 from llmstudio_core.agents.bedrock.data_models import (
@@ -35,6 +38,7 @@ class BedrockAgentManager(AgentManager):
         super().__init__(**kwargs)
         self._client = boto3.client(service_name=AGENT_SERVICE)
         self._runtime_client = boto3.client(service_name=RUNTIME_SERVICE)
+        self._executor = ThreadPoolExecutor(max_workers=10)
 
     @staticmethod
     def _agent_config_name():
@@ -252,12 +256,17 @@ class BedrockAgentManager(AgentManager):
         else:
             input_text = ""  # Default to an empty string if content is not valid
 
-        invoke_request = self._runtime_client.invoke_agent(
-            agentId=run_request.agent_id,
-            agentAliasId=run_request.alias_id,
-            sessionId=run_request.thread_id,
-            inputText=input_text,
-            sessionState=sessionState,
+        loop = asyncio.get_event_loop()
+        invoke_request = loop.run_in_executor(
+            self._executor,
+            partial(
+                self._runtime_client.invoke_agent,
+                agentId=run_request.agent_id,
+                agentAliasId=run_request.alias_id,
+                sessionId=run_request.thread_id,
+                inputText=input_text,
+                sessionState=sessionState,
+            ),
         )
 
         return BedrockRun(
@@ -267,7 +276,11 @@ class BedrockAgentManager(AgentManager):
             response=invoke_request,
         )
 
-    def retrieve_result(self, run: BedrockRun) -> ResultBase:
+    def retrieve_result(self, run):
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(self.aretrieve_result(run))
+
+    async def aretrieve_result(self, run: BedrockRun) -> ResultBase:
         """
         Retrieve the result based on the provided keyword arguments.
         This method validates the result request and processes the event stream to
@@ -281,6 +294,7 @@ class BedrockAgentManager(AgentManager):
         """
 
         try:
+            run.response = await run.response
             run = self._validate_result_request(run)
 
         except ValidationError as e:
@@ -401,11 +415,16 @@ class BedrockAgentManager(AgentManager):
             "invocationId": tool_outputs[0].tool_call_id,
         }
 
-        invoke_request = self._runtime_client.invoke_agent(
-            agentId=run_request.agent_id,
-            agentAliasId=run_request.alias_id,
-            sessionId=run_request.thread_id,
-            sessionState=sessionState,
+        loop = asyncio.get_event_loop()
+        invoke_request = loop.run_in_executor(
+            self._executor,
+            partial(
+                self._runtime_client.invoke_agent,
+                agentId=run_request.agent_id,
+                agentAliasId=run_request.alias_id,
+                sessionId=run_request.thread_id,
+                sessionState=sessionState,
+            ),
         )
 
         return BedrockRun(

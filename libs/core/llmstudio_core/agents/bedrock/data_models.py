@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional
+from typing import Awaitable, List, Literal, Optional
 
 from llmstudio_core.agents.data_models import (
     AgentBase,
@@ -20,7 +20,10 @@ class BedrockAgent(AgentBase):
 
 
 class BedrockRun(RunBase):
-    response: dict
+    response: Awaitable
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
 class BedrockCreateAgentRequest(CreateAgentRequest):
