@@ -106,10 +106,10 @@ class RequiredAction(BaseModel):
 
 
 class ToolOutput(BaseModel):
-    tool_call_id: Optional[str]
-    output: Optional[str]
-    action_group: Optional[str]
-    function_name: Optional[str]
+    tool_call_id: Optional[str] = None
+    output: Optional[str] = None
+    action_group: Optional[str] = None
+    function_name: Optional[str] = None
 
 
 class Message(BaseModel):
@@ -162,7 +162,7 @@ class CreateAgentRequest(BaseModel):
 
 class RunAgentRequest(BaseModel):
     agent_id: str
-    alias_id: Optional[str]
+    alias_id: Optional[str] = None
     thread_id: Optional[str] = None
     messages: Optional[List[Message]] = None
     tool_outputs: Optional[List[ToolOutput]] = None

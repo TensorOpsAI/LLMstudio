@@ -168,18 +168,25 @@ class OpenAIAgentManager(AgentManager):
 
         messages = openai.beta.threads.messages.list(thread_id=openai_run.thread_id)
         processed_messages = self._process_messages_without_streaming(messages)
+        usage = {
+            "input_tokens": run.usage.prompt_tokens,
+            "output_tokens": run.usage.completion_tokens,
+        }
         return OpenAIResult(
-            messages=processed_messages, thread_id=openai_run.thread_id, run_id=run.id
+            messages=processed_messages,
+            thread_id=openai_run.thread_id,
+            run_id=run.id,
+            usage=usage,
         )
 
     def _process_messages_without_streaming(self, messages: list):
-        procecced_messages = []
+        processed_messages = []
         print(messages)
         for msg in messages:
             content = []
             attachments = self._process_message_attachments(msg.attachments)
             content = self._process_message_content(msg.content)
-            procecced_messages.append(
+            processed_messages.append(
                 Message(
                     id=msg.id,
                     assistant_id=msg.assistant_id,
@@ -192,7 +199,7 @@ class OpenAIAgentManager(AgentManager):
                 )
             )
 
-        return procecced_messages
+        return processed_messages
 
     def _process_message_attachments(self, attachments: List) -> List[Attachment]:
         processed_attachments = []
@@ -287,13 +294,19 @@ class OpenAIAgentManager(AgentManager):
         except ValidationError as e:
             raise AgentError(str(e))
 
-        tools_outputs = [tool.model_dump() for tool in run_request.tool_outputs]
+        tools_outputs = [
+            tool.model_dump(exclude_none=True) for tool in run_request.tool_outputs
+        ]
         run = openai.beta.threads.runs.submit_tool_outputs_and_poll(
             thread_id=run_request.thread_id,
             run_id=run_request.run_id,
             tool_outputs=tools_outputs,
         )
 
-        messages = openai.beta.threads.messages.list(thread_id=run.thread_id)
+        openai_run = OpenAIRun(
+            thread_id=run_request.thread_id,
+            assistant_id=run_request.agent_id,
+            run_id=run_request.run_id,
+        )
 
-        return self._process_messages_without_streaming(messages)
+        return openai_run

@@ -89,7 +89,8 @@ else:
     for tool_call in tool_calls:
         submit_outputs_request.tool_outputs.append(ToolOutput(tool_call_id=tool_call.id, output="10"))
 
-    result = openai_agent_manager.submit_tool_outputs(submit_outputs_request.model_dump())
+    run = openai_agent_manager.submit_tool_outputs(submit_outputs_request.model_dump())
+    result = openai_agent_manager.retrieve_result(run)
     print(result)
 
 
