@@ -99,7 +99,8 @@ def run_conversation():
                             ToolOutput.from_tool_call(
                                 tool_call = tool_call,
                                 tool_output = json.dumps(temp_result),
-                        ))
+                            )
+                        )
                 # Submit the outputs back to the assistant
                 submit_outputs_request = RunAgentRequest(
                     agent_id=assistant.agent_id,
