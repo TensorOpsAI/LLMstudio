@@ -97,8 +97,8 @@ def run_conversation():
                         temp_result = get_temperature(location)
                         tool_outputs.append(
                             ToolOutput.from_tool_call(
-                                tool_call = tool_call,
-                                tool_output = json.dumps(temp_result),
+                                tool_call=tool_call,
+                                tool_output = json.dumps(temp_result)
                             )
                         )
                 # Submit the outputs back to the assistant
