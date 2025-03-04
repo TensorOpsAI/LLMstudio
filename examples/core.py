@@ -5,10 +5,12 @@ from llmstudio_core.providers import LLMCore
 from pprint import pprint
 import os
 import asyncio
+import asyncio
 from dotenv import load_dotenv
 load_dotenv()
 
-def run_provider(provider, model, api_key=None, **kwargs):
+def run_provider(provider, model, api_key=None=None, **kwargs):
+    print(f"\n\n###RUNNING for <{provider}>, <{model}> ###")
     print(f"\n\n###RUNNING for <{provider}>, <{model}> ###")
     llm = LLMCore(provider=provider, api_key=api_key, **kwargs)
 
@@ -58,7 +60,7 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
     
     print("\nAsync Stream")
     async def async_stream():
-        chat_request = build_chat_request(model, chat_input="Hello, my name is Tom Json", is_stream=True)
+        chat_request = build_chat_request(model, chat_input="Hello, my name is Tom", is_stream=True)
         
         response_async = await llm.achat(**chat_request)
         async for p in response_async:
@@ -74,7 +76,7 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
     
     
     print("\nSync Non-Stream")
-    chat_request = build_chat_request(model, chat_input="Hello, my name is Alice Json", is_stream=False)
+    chat_request = build_chat_request(model, chat_input="Hello, my name is Alice", is_stream=False)
     
     response_sync = llm.chat(**chat_request)
     pprint(response_sync)
@@ -82,7 +84,7 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
     
 
     print("\nSync Stream")
-    chat_request = build_chat_request(model, chat_input="Hello, my name is Mary Json", is_stream=True)
+    chat_request = build_chat_request(model, chat_input="Hello, my name is Mary", is_stream=True)
     
     response_sync_stream = llm.chat(**chat_request)
     for p in response_sync_stream:
@@ -126,7 +128,6 @@ def build_chat_request(model: str, chat_input: str, is_stream: bool, max_tokens:
             "parameters": {
                 "temperature": 0,
                 "max_tokens": max_tokens,
-                # "response_format": {"type": "json_object"},
                 "functions": None,
             }
         }
@@ -138,35 +139,75 @@ def multiple_provider_runs(provider:str, model:str, num_runs:int, api_key:str, *
         latencies = run_provider(provider=provider, model=model, api_key=api_key, **kwargs)
         pprint(latencies)
     
+def run_chat_all_providers():    
+    # OpenAI
+    multiple_provider_runs(provider="openai", model="gpt-4o-mini", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
+    multiple_provider_runs(provider="openai", model="o3-mini", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
+    #multiple_provider_runs(provider="openai", model="o1-preview", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
+
+
+    # Azure
+    multiple_provider_runs(provider="azure", model="gpt-4o-mini", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
+    #multiple_provider_runs(provider="azure", model="gpt-4o", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
+    #multiple_provider_runs(provider="azure", model="o1-mini", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
+    #multiple_provider_runs(provider="azure", model="o1-preview", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
+
+
+    #multiple_provider_runs(provider="anthropic", model="claude-3-opus-20240229", num_runs=1, api_key=os.environ["ANTHROPIC_API_KEY"])
+
+    #multiple_provider_runs(provider="azure", model="o1-preview", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
+    #multiple_provider_runs(provider="azure", model="o1-mini", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
+
+
+    multiple_provider_runs(provider="vertexai", model="gemini-1.5-flash", num_runs=1, api_key=os.environ["GOOGLE_API_KEY"])
+
+    # Bedrock
+    multiple_provider_runs(provider="bedrock", model="us.amazon.nova-lite-v1:0", num_runs=1, api_key=None, region=os.environ["BEDROCK_REGION"], secret_key=os.environ["BEDROCK_SECRET_KEY"], access_key=os.environ["BEDROCK_ACCESS_KEY"])
+    #multiple_provider_runs(provider="bedrock", model="anthropic.claude-3-5-sonnet-20241022-v2:0", num_runs=1, api_key=None, region=os.environ["BEDROCK_REGION"], secret_key=os.environ["BEDROCK_SECRET_KEY"], access_key=os.environ["BEDROCK_ACCESS_KEY"])
+
+run_chat_all_providers()
+
+
+import base64
+
+def messages(img_path):
+    """
+    Creates a message payload with both text and image.
+    Adapts format based on the provider.
+    """
+    with open(img_path, "rb") as f:
+        image_bytes = f.read()
+        
+    base64_image = base64.b64encode(image_bytes).decode("utf-8")
+    return [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "What's in this image?"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "https://awsmp-logos.s3.amazonaws.com/seller-zx4pk43qpmxoa/53d235806f343cec94aac3c577d81c13.png"},
+                },
+            ],
+        }
+    ]
+
+def run_send_imgs():
+    provider="bedrock"
+    model="us.amazon.nova-lite-v1:0"
+    chat_input=messages(img_path="./libs/llmstudio/tests/integration_tests/test_data/llmstudio-logo.jpeg")
+    chat_request = build_chat_request(model=model, chat_input=chat_input, is_stream=False)
+    llm = LLMCore(provider=provider, api_key=os.environ["OPENAI_API_KEY"], region=os.environ["BEDROCK_REGION"], secret_key=os.environ["BEDROCK_SECRET_KEY"], access_key=os.environ["BEDROCK_ACCESS_KEY"])
+    response_sync = llm.chat(**chat_request)
+    #print(response_sync)
+    response_sync.clean_print()
     
-# Self-Hosted
-multiple_provider_runs(provider="self-hosted", 
-                       model="deepseek-r1:1.5b", 
-                       api_key=os.environ["API_KEY"],
-                       base_url=os.environ["BASE_URL"],
-                       num_runs=1)
-
-# OpenAI
-# multiple_provider_runs(provider="openai", model="gpt-4o-mini", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
-# multiple_provider_runs(provider="openai", model="o3-mini", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
-#multiple_provider_runs(provider="openai", model="o1-preview", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
-
-
-# Azure
-# multiple_provider_runs(provider="azure", model="gpt-4o-mini", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
-#multiple_provider_runs(provider="azure", model="gpt-4o", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
-#multiple_provider_runs(provider="azure", model="o1-mini", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
-#multiple_provider_runs(provider="azure", model="o1-preview", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
-
-
-#multiple_provider_runs(provider="anthropic", model="claude-3-opus-20240229", num_runs=1, api_key=os.environ["ANTHROPIC_API_KEY"])
-
-#multiple_provider_runs(provider="azure", model="o1-preview", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
-#multiple_provider_runs(provider="azure", model="o1-mini", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
-
-
-# multiple_provider_runs(provider="vertexai", model="gemini-1.5-flash", num_runs=1, api_key=os.environ["GOOGLE_API_KEY"])
-
-# Bedrock
-# multiple_provider_runs(provider="bedrock", model="us.amazon.nova-lite-v1:0", num_runs=1, api_key=None, region=os.environ["BEDROCK_REGION"], secret_key=os.environ["BEDROCK_SECRET_KEY"], access_key=os.environ["BEDROCK_ACCESS_KEY"])
-#multiple_provider_runs(provider="bedrock", model="anthropic.claude-3-5-sonnet-20241022-v2:0", num_runs=1, api_key=None, region=os.environ["BEDROCK_REGION"], secret_key=os.environ["BEDROCK_SECRET_KEY"], access_key=os.environ["BEDROCK_ACCESS_KEY"])
+    #for p in response_sync:
+    #    if p.metrics:
+    #        p.clean_print()
+    
+run_send_imgs()

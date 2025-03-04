@@ -1729,7 +1729,7 @@ pytest = ["pytest (>=7.0.0)", "rich (>=13.9.4,<14.0.0)"]
 
 [[package]]
 name = "llmstudio-core"
-version = "1.0.3"
+version = "1.0.3a1"
 description = "LLMStudio core capabilities for routing llm calls for any vendor. No proxy server required. For that use llmstudio[proxy]"
 optional = false
 python-versions = "^3.9"
@@ -1750,7 +1750,7 @@ url = "../core"
 
 [[package]]
 name = "llmstudio-proxy"
-version = "1.0.5"
+version = "1.0.5a1"
 description = "LLMstudio Proxy is the module of LLMstudio that allows calling any LLM as a Service Provider in proxy server. By leveraging LLMstudio Proxy, you can have a centralized point for connecting to any provider running independently from your application."
 optional = false
 python-versions = "^3.9"
@@ -1773,7 +1773,7 @@ url = "../proxy"
 
 [[package]]
 name = "llmstudio-tracker"
-version = "1.1.0"
+version = "1.1.0a2"
 description = "LLMstudio Tracker is the module of LLMstudio that allows monitoring and logging your LLM calls. By leveraging LLMstudio Tracker, users can gain insights on model performance and streamline development workflows with actionable analytics."
 optional = false
 python-versions = ">=3.9,<3.13"
@@ -3941,4 +3941,4 @@ tracker = ["llmstudio-tracker"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "5c2f7d3ca364372bc091948e938de5a3e522715b5e17fde1215c5c59c5d8518f"
+content-hash = "4fb80d2536264c16244f42b7badadcc3d5deac5de303eb2c45f050fa9e75301e"

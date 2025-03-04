@@ -254,6 +254,17 @@ providers:
         input_token_cost: 0.0000011
         cached_token_cost: 0.00000055
         output_token_cost: 0.0000044
+      o1-preview:
+        mode: chat
+        max_completion_tokens: 128000
+        input_token_cost: 0.000015
+        output_token_cost: 0.000060
+      o1-mini:
+        mode: chat
+        max_completion_tokens: 128000
+        input_token_cost: 0.000003
+        cached_token_cost: 0.0000015
+        output_token_cost: 0.000012
       gpt-4o-mini:
         mode: chat
         max_tokens: 128000
