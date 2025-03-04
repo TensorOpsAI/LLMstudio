@@ -27,7 +27,7 @@ def get_temperature(location):
 
 
 agent_request = CreateAgentRequest(
-    name="weather-expert-20",
+    name="weather-expert-21",
     agent_resource_role_arn="arn:aws:iam::563576320055:role/test-agent-ICNQP",
     model="anthropic.claude-3-5-sonnet-20241022-v2:0",
     instructions=(
@@ -102,9 +102,8 @@ def run_conversation():
                             )
                         )
                 # Submit the outputs back to the assistant
-                submit_outputs_request = RunAgentRequest(
-                    agent_id=assistant.agent_id,
-                    alias_id=assistant.agent_alias_id,
+                submit_outputs_request = RunAgentRequest.from_agent(
+                    agent=assistant,
                     thread_id=result.thread_id,
                     tool_outputs=tool_outputs,
                     run_id=result.run_id

@@ -102,8 +102,8 @@ def run_conversation():
                             )
                         )
                 # Submit the outputs back to the assistant
-                submit_outputs_request = RunAgentRequest(
-                    agent_id=assistant.agent_id,
+                submit_outputs_request = RunAgentRequest.from_agent(
+                    agent=assistant,
                     thread_id=result.thread_id,
                     tool_outputs=tool_outputs,
                     run_id=result.run_id
