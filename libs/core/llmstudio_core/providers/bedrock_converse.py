@@ -335,20 +335,22 @@ class BedrockConverseProvider(ProviderCore):
             return messages, system_prompt
 
     @staticmethod
-    def _base64_to_bytes(image_url: str) -> bytes:
+    def _b64_data_url_to_bytes(b64_data_url: str) -> bytes:
         """
-        Extracts and decodes Base64 image data from a 'data:image/...;base64,...' URL.
+        Extracts and decodes Base64 image data from a 'data:image/...;base64,...' data URL.
         Returns the raw image bytes.
         """
-        if not image_url.startswith("data:image/"):
+        if not b64_data_url.startswith("data:image/"):
             raise ValueError("Invalid Base64 image URL")
 
-        base64_data = re.sub(r"^data:image/[^;]+;base64,", "", image_url)
+        base64_data = re.sub(r"^data:image/[^;]+;base64,", "", b64_data_url)
 
         try:
             return base64.b64decode(base64_data)
         except Exception as e:
-            raise ValueError(f"Failed to decode Base64: {e} ; for Base64: {image_url}")
+            raise ValueError(
+                f"Failed to decode Base64: {e} ; For Base64 Data Url: {b64_data_url}"
+            )
 
     @staticmethod
     def _get_img_format_from_bytes(image_bytes: bytes) -> str:
@@ -380,7 +382,7 @@ class BedrockConverseProvider(ProviderCore):
         - If it's a normal URL, downloads and encodes the image in Base64.
         """
         if image_url.startswith("data:image/"):
-            return BedrockConverseProvider._base64_to_bytes(image_url)
+            return BedrockConverseProvider._b64_data_url_to_bytes(image_url)
 
         elif image_url.startswith(("http://", "https://")):
             response = requests.get(image_url)
