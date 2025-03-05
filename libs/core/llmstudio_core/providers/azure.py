@@ -1,5 +1,5 @@
 import os
-from typing import Any, AsyncGenerator, Generator
+from typing import Any, AsyncGenerator, Generator, Union
 
 import openai
 from llmstudio_core.exceptions import ProviderError
