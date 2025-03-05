@@ -345,7 +345,10 @@ class BedrockConverseProvider(ProviderCore):
 
         base64_data = re.sub(r"^data:image/[^;]+;base64,", "", image_url)
 
-        return base64.b64decode(base64_data)
+        try:
+            return base64.b64decode(base64_data)
+        except Exception as e:
+            raise ValueError(f"Failed to decode Base64: {e} ; for Base64: {image_url}")
 
     @staticmethod
     def _get_img_format_from_bytes(image_bytes: bytes) -> str:
