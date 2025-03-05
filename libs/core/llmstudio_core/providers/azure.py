@@ -1,22 +1,10 @@
-import ast
-import json
 import os
-import time
-import uuid
 from typing import Any, AsyncGenerator, Generator, Union
 
 import openai
 from llmstudio_core.exceptions import ProviderError
 from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
-from openai import AzureOpenAI, OpenAI
-from openai.types.chat import ChatCompletionChunk
-from openai.types.chat.chat_completion_chunk import (
-    Choice,
-    ChoiceDelta,
-    ChoiceDeltaFunctionCall,
-    ChoiceDeltaToolCall,
-    ChoiceDeltaToolCallFunction,
-)
+from openai import AzureOpenAI
 
 
 @provider
@@ -27,28 +15,18 @@ class AzureProvider(ProviderCore):
         api_key=None,
         api_endpoint=None,
         api_version=None,
-        base_url=None,
         **kwargs,
     ):
         super().__init__(config, **kwargs)
         self.API_KEY = api_key or os.getenv("AZURE_API_KEY")
         self.API_ENDPOINT = api_endpoint
         self.API_VERSION = api_version or os.getenv("AZURE_API_VERSION")
-        self.BASE_URL = base_url
-        self.is_llama = False
-        self.has_tools_functions = False
 
-        if self.BASE_URL and (self.API_ENDPOINT is None):
-            self._client = OpenAI(
-                api_key=self.API_KEY,
-                base_url=self.BASE_URL,
-            )
-        else:
-            self._client = AzureOpenAI(
-                api_key=self.API_KEY,
-                azure_endpoint=self.API_ENDPOINT,
-                api_version=self.API_VERSION,
-            )
+        self._client = AzureOpenAI(
+            api_key=self.API_KEY,
+            azure_endpoint=self.API_ENDPOINT,
+            api_version=self.API_VERSION,
+        )
 
     @staticmethod
     def _provider_config_name():
@@ -82,68 +60,20 @@ class AzureProvider(ProviderCore):
                         returned from the API.
         """
 
-        self.is_llama = "llama" in request.model.lower()
-        self.is_openai = "gpt" in request.model.lower()
-        self.has_tools = request.parameters.get("tools") is not None
-        self.has_functions = request.parameters.get("functions") is not None
-
         try:
-            messages = self.prepare_messages(request)
-
-            tool_args = {}
-            if not self.is_llama and self.has_tools and self.is_openai:
-                tool_args = {
-                    "tools": request.parameters.get("tools"),
-                    "tool_choice": "auto" if request.parameters.get("tools") else None,
-                }
-
-            function_args = {}
-            if not self.is_llama and self.has_functions and self.is_openai:
-                function_args = {
-                    "functions": request.parameters.get("functions"),
-                    "function_call": "auto"
-                    if request.parameters.get("functions")
-                    else None,
-                }
-
-            base_args = {
-                "model": request.model,
-                "messages": messages,
-                "stream": True,
-            }
-
-            combined_args = {
-                **base_args,
-                **tool_args,
-                **function_args,
+            return self._client.chat.completions.create(
+                model=request.model,
+                messages=(
+                    [{"role": "user", "content": request.chat_input}]
+                    if isinstance(request.chat_input, str)
+                    else request.chat_input
+                ),
+                stream=True,
+                stream_options={"include_usage": True},
                 **request.parameters,
-            }
-            return self._client.chat.completions.create(**combined_args)
-
-        except openai._exceptions.APIConnectionError as e:
-            raise ProviderError(f"There was an error reaching the endpoint: {e}")
-
-        except openai._exceptions.APIStatusError as e:
-            raise ProviderError(e.response.json())
-
-    def prepare_messages(self, request: ChatRequest):
-        if self.is_llama and (self.has_tools or self.has_functions):
-            user_message = self.convert_to_openai_format(request.chat_input)
-            content = "<|begin_of_text|>"
-            content = self.build_llama_system_message(
-                user_message,
-                content,
-                request.parameters.get("tools"),
-                request.parameters.get("functions"),
             )
-            content = self.build_llama_conversation(user_message, content)
-            return [{"role": "user", "content": content}]
-        else:
-            return (
-                [{"role": "user", "content": request.chat_input}]
-                if isinstance(request.chat_input, str)
-                else request.chat_input
-            )
+        except openai._exceptions.APIError as e:
+            raise ProviderError(str(e))
 
     async def aparse_response(
         self, response: AsyncGenerator, **kwargs

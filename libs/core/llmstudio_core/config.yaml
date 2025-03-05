@@ -171,18 +171,34 @@ providers:
         min: 0
         max: 500
         step: 1
-  ollama:
-    id: ollama
-    name: Ollama
+  self-hosted:
+    id: self-hosted
+    name: Self Hosted
     chat: true
     embed: true
     keys:
     models:
-      llama2:
+      deepseek-r1:1.5b:
         mode: chat
-        max_tokens: 0
+        max_tokens: 128000
         input_token_cost: 0
         output_token_cost: 0
+
+      deepseek-r1-tool-calling:
+        mode: chat
+        max_tokens: 128000
+        input_token_cost: 0
+        output_token_cost: 0
+      llama3.2:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0
+        output_token_cost: 0
+      Llama-3-3-70B-Instruct-llmstudio:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.00000071
+        output_token_cost: 0.00000071
     parameters:
       temperature:
         name: "Temperature"

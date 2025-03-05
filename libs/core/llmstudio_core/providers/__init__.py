@@ -4,7 +4,7 @@ from typing import Optional
 from llmstudio_core.providers.azure import AzureProvider
 from llmstudio_core.providers.bedrock_converse import BedrockConverseProvider
 
-# from llmstudio_core.providers.ollama import OllamaProvider #TODO: adapt it
+from llmstudio_core.providers.self_hosted import SelfHostedProvider
 from llmstudio_core.providers.openai import OpenAIProvider
 from llmstudio_core.providers.provider import ProviderCore, provider_registry
 from llmstudio_core.providers.vertexai import VertexAIProvider
