@@ -27,7 +27,7 @@ def get_temperature(location):
 
 
 agent_request = CreateAgentRequest(
-    name="weather-expert-21",
+    name="weather-expert-25",
     agent_resource_role_arn="arn:aws:iam::563576320055:role/test-agent-ICNQP",
     model="anthropic.claude-3-5-sonnet-20241022-v2:0",
     instructions=(
