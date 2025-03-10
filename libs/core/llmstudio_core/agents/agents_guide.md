@@ -1,6 +1,6 @@
 ## LLMStudio Agents Documentation
 
-This is a brief overveiw of the main functions and data types you need to be aware of to interact with LLMStudio agents, to see examples of the usage of this wrapper with openai and bedrock agents see `weather_example_bedrock.py` and `weather_example_openai.py` in the examples folder
+This is a brief overveiw of the main functions and data types you need to be aware of to interact with LLMStudio agents, to see examples of the usage of this wrapper with openai and bedrock agents see [`weather_example_bedrock.py`](https://github.com/TensorOpsAI/LLMstudio/blob/678e7b6a1c68a08ebcc7409722954d41bd02d0ac/examples/weather_example_bedrock.py) and [`weather_example_openai.py`](https://github.com/TensorOpsAI/LLMstudio/blob/678e7b6a1c68a08ebcc7409722954d41bd02d0ac/examples/weather_example_openai.py) in the examples folder
 
 ### Functions
 
