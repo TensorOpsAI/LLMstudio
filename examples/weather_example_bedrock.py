@@ -3,6 +3,9 @@ import os
 from llmstudio_core.agents import AgentManagerCore
 from llmstudio_core.agents.data_models import ToolCall, ToolOutput, ResultBase, CreateAgentRequest, RunAgentRequest
 
+# os.environ["BEDROCK_ACCESS_KEY"] = ""
+# os.environ["BEDROCK_SECRET_KEY"] = ""
+# os.environ["BEDROCK_REGION"] = ""
 agent_manager = AgentManagerCore("bedrock")
 
 # Define a function to get the temperature

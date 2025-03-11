@@ -3,7 +3,9 @@ import os
 from llmstudio_core.agents import AgentManagerCore
 from llmstudio_core.agents.data_models import ToolCall, ToolOutput, ResultBase, CreateAgentRequest, RunAgentRequest
 
-os.environ["OPENAI_API_TYPE"] = "openai"
+#Setup your envirounment variables
+# os.environ["OPENAI_API_TYPE"] = "openai"
+# os.environ["OPENAI_API_KEY"] = ""
 agent_manager = AgentManagerCore("openai")
 
 # Define a function to get the temperature
