@@ -510,3 +510,10 @@ providers:
         min: 0
         max: 2
         step: 0.01
+agents:
+  openai:
+    id: openai
+    name: OpenAI Assistant
+  bedrock:
+    id: bedrock
+    name: Bedrock Agent

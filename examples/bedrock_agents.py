@@ -1,0 +1,102 @@
+import os
+from llmstudio_core.agents import AgentManagerCore
+from llmstudio_core.agents.bedrock.data_models import BedrockToolCall
+from llmstudio_core.agents.data_models import ResultBase, ToolCall, ToolOutput, RunAgentRequest, CreateAgentRequest
+import boto3
+import uuid
+
+bedrock_agent_manager = AgentManagerCore("bedrock")
+
+agent_prompt = """You are an advanced AI agent with capabilities in code execution, chart generation, and complex data analysis. Your primary function is to assist users by solving problems and fulfilling requests through these capabilities. Here are your key attributes and instructions:
+
+Code Execution:
+
+You have access to a Python environment where you can write and execute code in real-time.
+When asked to perform calculations or data manipulations, always use this code execution capability to ensure accuracy.
+After executing code, report the exact output and explain the results.
+
+
+Data Analysis:
+
+You excel at complex data analysis tasks. This includes statistical analysis, data visualization, and machine learning applications.
+Approach data analysis tasks systematically: understand the problem, prepare the data, perform the analysis, and interpret the results.
+
+
+Problem-Solving Approach:
+
+When presented with a problem or request, break it down into steps.
+Clearly communicate your thought process and the steps you're taking.
+If a task requires multiple steps or tools, outline your approach before beginning.
+"""
+
+tools = [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_current_temperature",
+        "description": "Get the current temperature for a specific location",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "location": {
+              "type": "string",
+              "description": "The city and state, e.g., San Francisco, CA"
+            },
+            "unit": {
+              "type": "string",
+              "enum": ["Celsius", "Fahrenheit"],
+              "description": "The temperature unit to use. Infer this from the user's location."
+            }
+          },
+          "required": ["location", "unit"]
+        }
+      }
+    }
+    ]
+
+agent_request = CreateAgentRequest(
+    model="anthropic.claude-3-5-sonnet-20241022-v2:0",
+    instructions=agent_prompt,
+    tools=tools,
+    name=f"test-agent-{uuid.uuid4()}",
+    agent_alias="test-alias", # BEDROCK EXCLUSIVE
+    agent_resource_role_arn="arn:aws:iam::563576320055:role/test-agent-ICNQP" # BEDROCK EXCLUSIVE
+)
+
+agent = bedrock_agent_manager.create_agent(agent_request.model_dump())
+
+runs = []
+
+for i in range(1,2):
+  run_agent_request = RunAgentRequest(
+    agent_id = agent.agent_id,
+    alias_id=agent.agent_alias_id,#make this optional
+    messages=[
+        {"role": "user", "content": "What is the weather like in Lisbon, PT?"},
+    ]
+  )
+  run = bedrock_agent_manager.run_agent(run_agent_request.model_dump())
+  runs.append(run)
+
+results = [bedrock_agent_manager.retrieve_result(run) for run in runs]
+
+for result in results:
+  if not result.messages[-1].required_action:
+      print(result.messages[-1].content)
+  else:        
+      tool_calls : list[BedrockToolCall] = result.messages[-1].required_action.submit_tools_outputs
+      
+      submit_outputs_request = RunAgentRequest(
+          agent_id=agent.agent_id,
+          thread_id=result.thread_id,
+          alias_id=agent.agent_alias_id,
+          tool_outputs=[]
+      )
+
+      for tool_call in tool_calls:
+          submit_outputs_request.tool_outputs.append(ToolOutput(tool_call_id=tool_call.id, output="10", action_group=tool_call.action_group, function_name=tool_call.function.name))
+
+      outputs_request = submit_outputs_request.model_dump()
+      run = bedrock_agent_manager.submit_tool_outputs(submit_outputs_request.model_dump())
+      result : ResultBase = bedrock_agent_manager.retrieve_result(run)
+      print(result.messages[-1].content)
