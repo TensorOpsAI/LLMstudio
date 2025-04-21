@@ -72,7 +72,7 @@ def create_proxy_app(
     def create_chat_handler(provider_config):
         async def chat_handler(request: Request):
             """Endpoint for chat functionality."""
-            provider_class = provider_registry.get(f"{provider_config.name}".lower())
+            provider_class = provider_registry.get(f"{provider_config.id}".lower())
             provider_instance = provider_class(provider_config)
             request_dict = await request.json()
 

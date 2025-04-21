@@ -8,7 +8,8 @@ import asyncio
 from dotenv import load_dotenv
 load_dotenv()
 
-def run_provider(provider, model, api_key=None, **kwargs):
+def run_provider(provider, model, api_key=None=None, **kwargs):
+    print(f"\n\n###RUNNING for <{provider}>, <{model}> ###")
     print(f"\n\n###RUNNING for <{provider}>, <{model}> ###")
     llm = LLMCore(provider=provider, api_key=api_key, **kwargs)
 
@@ -57,7 +58,11 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
     
     
     print("\nAsync Stream")
+    
+    
+    print("\nAsync Stream")
     async def async_stream():
+        chat_request = build_chat_request(model, chat_input="Hello, my name is Tom", is_stream=True)
         chat_request = build_chat_request(model, chat_input="Hello, my name is Tom", is_stream=True)
         
         response_async = await llm.achat(**chat_request)
@@ -73,6 +78,8 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
     asyncio.run(async_stream())
     
     
+    print("\nSync Non-Stream")
+    chat_request = build_chat_request(model, chat_input="Hello, my name is Alice", is_stream=False)
     print("\nSync Non-Stream")
     chat_request = build_chat_request(model, chat_input="Hello, my name is Alice", is_stream=False)
     
@@ -98,6 +105,7 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
 
 def build_chat_request(model: str, chat_input: str, is_stream: bool, max_tokens: int=1000):
     if model.startswith(('o1', 'o3')):
+    if model.startswith(('o1', 'o3')):
         chat_request = {
             "chat_input": chat_input,
             "model": model,
@@ -105,6 +113,16 @@ def build_chat_request(model: str, chat_input: str, is_stream: bool, max_tokens:
             "retries": 0,
             "parameters": {
                 "max_completion_tokens": max_tokens
+            }
+        }
+    elif 'amazon.nova' in model or 'anthropic.claude' in model:
+        chat_request = {
+            "chat_input": chat_input,
+            "model": model,
+            "is_stream": is_stream,
+            "retries": 0,
+            "parameters": {
+                "maxTokens": max_tokens
             }
         }
     elif 'amazon.nova' in model or 'anthropic.claude' in model:
