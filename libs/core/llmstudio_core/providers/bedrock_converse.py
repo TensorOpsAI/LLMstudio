@@ -335,7 +335,6 @@ class BedrockConverseProvider(ProviderCore):
             return messages, system_prompt
 
     @staticmethod
-
     def _base64_to_bytes(image_url: str) -> bytes:
         """
         Extracts and decodes Base64 image data from a 'data:image/...;base64,...' URL.
