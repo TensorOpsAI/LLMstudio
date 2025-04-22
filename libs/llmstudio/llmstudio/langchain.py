@@ -5,7 +5,6 @@ import logging
 import ssl
 import warnings
 from collections.abc import Iterator, Mapping, Sequence
-from json import JSONDecodeError
 from typing import (
     Any,
     Callable,
@@ -57,7 +56,6 @@ from langchain_core.output_parsers.openai_tools import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
-from langchain_core.tools.base import _stringify
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import BaseModel
 
