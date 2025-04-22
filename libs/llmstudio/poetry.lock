@@ -1888,7 +1888,7 @@ pytest = ["pytest (>=7.0.0)", "rich (>=13.9.4,<14.0.0)"]
 
 [[package]]
 name = "llmstudio-core"
-version = "1.0.4a1"
+version = "1.0.4"
 description = "LLMStudio core capabilities for routing llm calls for any vendor. No proxy server required. For that use llmstudio[proxy]"
 optional = false
 python-versions = "^3.9"

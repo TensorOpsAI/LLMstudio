@@ -8,11 +8,13 @@ import asyncio
 from dotenv import load_dotenv
 load_dotenv()
 
-def run_provider(provider, model, api_key=None, **kwargs):
+def run_provider(provider, model, api_key=None=None, **kwargs):
+    print(f"\n\n###RUNNING for <{provider}>, <{model}> ###")
     print(f"\n\n###RUNNING for <{provider}>, <{model}> ###")
     llm = LLMCore(provider=provider, api_key=api_key, **kwargs)
 
-    latencies = {}    
+    latencies = {}
+    
     print("\nAsync Non-Stream")
     chat_request = build_chat_request(model, chat_input="Hello, my name is Jason", is_stream=False)
     string = """
@@ -49,13 +51,18 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
     """
     #chat_request = build_chat_request(model, chat_input=string, is_stream=False)
     
+    
     response_async = asyncio.run(llm.achat(**chat_request))
     pprint(response_async)
     latencies["async (ms)"]= response_async.metrics["latency_s"]*1000
     
     
     print("\nAsync Stream")
+    
+    
+    print("\nAsync Stream")
     async def async_stream():
+        chat_request = build_chat_request(model, chat_input="Hello, my name is Tom", is_stream=True)
         chat_request = build_chat_request(model, chat_input="Hello, my name is Tom", is_stream=True)
         
         response_async = await llm.achat(**chat_request)
@@ -73,6 +80,8 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
     
     print("\nSync Non-Stream")
     chat_request = build_chat_request(model, chat_input="Hello, my name is Alice", is_stream=False)
+    print("\nSync Non-Stream")
+    chat_request = build_chat_request(model, chat_input="Hello, my name is Alice", is_stream=False)
     
     response_sync = llm.chat(**chat_request)
     pprint(response_sync)
@@ -81,7 +90,6 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
 
     print("\nSync Stream")
     chat_request = build_chat_request(model, chat_input="Hello, my name is Mary", is_stream=True)
-
     
     response_sync_stream = llm.chat(**chat_request)
     for p in response_sync_stream:
@@ -97,6 +105,7 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
 
 def build_chat_request(model: str, chat_input: str, is_stream: bool, max_tokens: int=1000):
     if model.startswith(('o1', 'o3')):
+    if model.startswith(('o1', 'o3')):
         chat_request = {
             "chat_input": chat_input,
             "model": model,
@@ -104,6 +113,16 @@ def build_chat_request(model: str, chat_input: str, is_stream: bool, max_tokens:
             "retries": 0,
             "parameters": {
                 "max_completion_tokens": max_tokens
+            }
+        }
+    elif 'amazon.nova' in model or 'anthropic.claude' in model:
+        chat_request = {
+            "chat_input": chat_input,
+            "model": model,
+            "is_stream": is_stream,
+            "retries": 0,
+            "parameters": {
+                "maxTokens": max_tokens
             }
         }
     elif 'amazon.nova' in model or 'anthropic.claude' in model:
@@ -135,26 +154,19 @@ def multiple_provider_runs(provider:str, model:str, num_runs:int, api_key:str, *
     for _ in range(num_runs):
         latencies = run_provider(provider=provider, model=model, api_key=api_key, **kwargs)
         pprint(latencies)
-
-        
+    
 def run_chat_all_providers():    
     # OpenAI
     multiple_provider_runs(provider="openai", model="gpt-4o-mini", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
     multiple_provider_runs(provider="openai", model="o3-mini", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
     #multiple_provider_runs(provider="openai", model="o1-preview", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
 
-    # Azure
-    multiple_provider_runs(provider="azure", model="gpt-4o-mini", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
-    #multiple_provider_runs(provider="azure", model="gpt-4o", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
-    #multiple_provider_runs(provider="azure", model="o1-mini", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
-    #multiple_provider_runs(provider="azure", model="o1-preview", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
 
     # Azure
     multiple_provider_runs(provider="azure", model="gpt-4o-mini", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
     #multiple_provider_runs(provider="azure", model="gpt-4o", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
     #multiple_provider_runs(provider="azure", model="o1-mini", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
     #multiple_provider_runs(provider="azure", model="o1-preview", num_runs=1, api_key=os.environ["AZURE_API_KEY"], api_version=os.environ["AZURE_API_VERSION"], api_endpoint=os.environ["AZURE_API_ENDPOINT"])
-
 
 
     #multiple_provider_runs(provider="anthropic", model="claude-3-opus-20240229", num_runs=1, api_key=os.environ["ANTHROPIC_API_KEY"])
