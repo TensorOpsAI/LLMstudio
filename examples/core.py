@@ -8,12 +8,11 @@ import asyncio
 from dotenv import load_dotenv
 load_dotenv()
 
-def run_provider(provider, model, api_key=None=None, **kwargs):
+def run_provider(provider, model, api_key=None, **kwargs):
     print(f"\n\n###RUNNING for <{provider}>, <{model}> ###")
     llm = LLMCore(provider=provider, api_key=api_key, **kwargs)
 
     latencies = {}
-    
     print("\nAsync Non-Stream")
     chat_request = build_chat_request(model, chat_input="Hello, my name is Jason", is_stream=False)
     string = """
@@ -57,7 +56,6 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
     
     print("\nAsync Stream")
     async def async_stream():
-        chat_request = build_chat_request(model, chat_input="Hello, my name is Tom", is_stream=True)
         chat_request = build_chat_request(model, chat_input="Hello, my name is Tom", is_stream=True)
         
         response_async = await llm.achat(**chat_request)
