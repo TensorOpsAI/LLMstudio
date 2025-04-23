@@ -10,7 +10,6 @@ load_dotenv()
 
 def run_provider(provider, model, api_key=None=None, **kwargs):
     print(f"\n\n###RUNNING for <{provider}>, <{model}> ###")
-    print(f"\n\n###RUNNING for <{provider}>, <{model}> ###")
     llm = LLMCore(provider=provider, api_key=api_key, **kwargs)
 
     latencies = {}
@@ -54,11 +53,7 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
     
     response_async = asyncio.run(llm.achat(**chat_request))
     pprint(response_async)
-    latencies["async (ms)"]= response_async.metrics["latency_s"]*1000
-    
-    
-    print("\nAsync Stream")
-    
+    latencies["async (ms)"]= response_async.metrics["latency_s"]*1000    
     
     print("\nAsync Stream")
     async def async_stream():
