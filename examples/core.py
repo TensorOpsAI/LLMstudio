@@ -80,8 +80,6 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
     
     print("\nSync Non-Stream")
     chat_request = build_chat_request(model, chat_input="Hello, my name is Alice", is_stream=False)
-    print("\nSync Non-Stream")
-    chat_request = build_chat_request(model, chat_input="Hello, my name is Alice", is_stream=False)
     
     response_sync = llm.chat(**chat_request)
     pprint(response_sync)
@@ -105,7 +103,6 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
 
 def build_chat_request(model: str, chat_input: str, is_stream: bool, max_tokens: int=1000):
     if model.startswith(('o1', 'o3')):
-    if model.startswith(('o1', 'o3')):
         chat_request = {
             "chat_input": chat_input,
             "model": model,
@@ -113,16 +110,6 @@ def build_chat_request(model: str, chat_input: str, is_stream: bool, max_tokens:
             "retries": 0,
             "parameters": {
                 "max_completion_tokens": max_tokens
-            }
-        }
-    elif 'amazon.nova' in model or 'anthropic.claude' in model:
-        chat_request = {
-            "chat_input": chat_input,
-            "model": model,
-            "is_stream": is_stream,
-            "retries": 0,
-            "parameters": {
-                "maxTokens": max_tokens
             }
         }
     elif 'amazon.nova' in model or 'anthropic.claude' in model:
