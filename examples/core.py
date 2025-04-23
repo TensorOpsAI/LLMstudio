@@ -49,7 +49,6 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
     """
     #chat_request = build_chat_request(model, chat_input=string, is_stream=False)
     
-    
     response_async = asyncio.run(llm.achat(**chat_request))
     pprint(response_async)
     latencies["async (ms)"]= response_async.metrics["latency_s"]*1000    
