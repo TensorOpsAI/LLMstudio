@@ -1,0 +1,8 @@
+Generic single-database configuration.
+
+
+1. Track model changes
+Run `alembic revision --autogenerate`
+
+2. Apply schema
+Run `alembic upgrade head`

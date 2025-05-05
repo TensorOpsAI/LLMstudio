@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
+from llmstudio_tracker.base_class import Base
 from llmstudio_tracker.config import DB_TYPE
-from llmstudio_tracker.database import Base
 from llmstudio_tracker.db_utils import JSONEncodedDict
 from sqlalchemy import JSON, Column, DateTime, Integer, String
 
@@ -29,6 +29,7 @@ class LogDefault(Base):
         deployment = Column(String)
         parameters = Column(JSONEncodedDict)
         metrics = Column(JSONEncodedDict)
+        description = Column(String, nullable=True)
     else:
         log_id = Column(Integer, primary_key=True, index=True)
         created_at = Column(
@@ -43,3 +44,4 @@ class LogDefault(Base):
         deployment = Column(String)
         parameters = Column(JSON)
         metrics = Column(JSON)
+        description = Column(String, nullable=True)

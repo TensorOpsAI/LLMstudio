@@ -1,16 +1,31 @@
 
 from llmstudio_core.providers import LLMCore
-
+from llmstudio.providers import LLM
+from llmstudio_tracker.tracker import TrackingConfig
+from llmstudio.server import start_servers
 
 from pprint import pprint
 import os
 import asyncio
 from dotenv import load_dotenv
+import uuid
 load_dotenv()
+
+start_servers(proxy=False, tracker=True)
+
+tracking_config = TrackingConfig(
+            host=os.environ["LLMSTUDIO_TRACKING_HOST"],
+            port=os.environ["LLMSTUDIO_TRACKING_PORT"]
+        )
+
+session_id = str(uuid.uuid4())
+
 
 def run_provider(provider, model, api_key=None, **kwargs):
     print(f"\n\n###RUNNING for <{provider}>, <{model}> ###")
-    llm = LLMCore(provider=provider, api_key=api_key, **kwargs)
+    #llm = LLMCore(provider=provider, api_key=api_key, **kwargs)
+    
+    llm = LLM(provider=provider, api_key=api_key, session_id=session_id, tracking_config=tracking_config, **kwargs)
 
     latencies = {}
     print("\nAsync Non-Stream")

@@ -1,18 +1,15 @@
-from llmstudio_tracker.session import models, schemas
+from llmstudio_tracker.db.models.session import SessionDefault
+from llmstudio_tracker.db.schemas.session import SessionDefaultCreate
 from sqlalchemy.orm import Session
-
-
-def get_project_by_name(db: Session, name: str):
-    return db.query(models.Project).filter(models.Project.name == name).first()
 
 
 def get_session_by_session_id(
     db: Session, session_id: str, skip: int = 0, limit: int = 100
 ):
     return (
-        db.query(models.SessionDefault)
-        .filter(models.SessionDefault.session_id == session_id)
-        .order_by(models.SessionDefault.created_at.asc())
+        db.query(SessionDefault)
+        .filter(SessionDefault.session_id == session_id)
+        .order_by(SessionDefault.created_at.asc())
         .offset(skip)
         .limit(limit)
         .all()
@@ -21,14 +18,12 @@ def get_session_by_session_id(
 
 def get_session_by_message_id(db: Session, message_id: int):
     return (
-        db.query(models.SessionDefault)
-        .filter(models.SessionDefault.message_id == message_id)
-        .first()
+        db.query(SessionDefault).filter(SessionDefault.message_id == message_id).first()
     )
 
 
-def add_session(db: Session, session: schemas.SessionDefaultCreate):
-    db_session = models.SessionDefault(**session.dict())
+def add_session(db: Session, session: SessionDefaultCreate):
+    db_session = session.SessionDefault(**session.model_dump())
 
     db.add(db_session)
     db.commit()
@@ -44,5 +39,5 @@ def update_session(db: Session, message_id: int, extras: dict):
     return existing_session
 
 
-def upsert_session(db: Session, session: schemas.SessionDefaultCreate):
+def upsert_session(db: Session, session: SessionDefaultCreate):
     return add_session(db, session)
