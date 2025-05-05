@@ -15,6 +15,7 @@ class LogDefaultBase(BaseModel):
     deployment: str = None
     parameters: dict = None
     metrics: dict = None
+    description: Optional[str] = None
 
 
 class LogDefaultResponse(LogDefaultBase):

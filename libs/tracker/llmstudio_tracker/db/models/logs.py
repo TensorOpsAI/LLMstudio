@@ -43,3 +43,4 @@ class LogDefault(Base):
         deployment = Column(String)
         parameters = Column(JSON)
         metrics = Column(JSON)
+        chat_input = Column(String)
