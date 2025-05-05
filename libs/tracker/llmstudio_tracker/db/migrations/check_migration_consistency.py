@@ -3,7 +3,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-ALEMBIC_INI = sys.argv[1] if len(sys.argv) > 1 else "alembic.ini"
+ALEMBIC_INI = "alembic.ini"
 
 # Parse alembic.ini for script_location
 def get_script_location(alembic_ini: str) -> Path:

@@ -102,13 +102,9 @@ jobs:
           echo "LLMSTUDIO_TRACKING_HOST=127.0.0.1" >> $GITHUB_ENV
           echo "LLMSTUDIO_TRACKING_PORT=50002" >> $GITHUB_ENV
 
-
       # Check if migrations are consistent with code (That no one forgot to generate the migrations)
       - name: Check for missing Alembic migrations
-        run: poetry run python scripts/check_migration_consistency.py
-
-
-
+        run: poetry run python libs/tracker/llmstudio_tracker/db/migrations/check_migration_consistency.py
 
       # Run Alembic migrations
       - name: Run Alembic migrations
