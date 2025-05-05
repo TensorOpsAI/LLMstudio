@@ -29,6 +29,7 @@ class LogDefault(Base):
         deployment = Column(String)
         parameters = Column(JSONEncodedDict)
         metrics = Column(JSONEncodedDict)
+        description = Column(String)
     else:
         log_id = Column(Integer, primary_key=True, index=True)
         created_at = Column(
@@ -43,4 +44,4 @@ class LogDefault(Base):
         deployment = Column(String)
         parameters = Column(JSON)
         metrics = Column(JSON)
-        chat_input = Column(String)
+        description = Column(String)
