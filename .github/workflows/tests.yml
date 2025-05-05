@@ -104,7 +104,9 @@ jobs:
 
       # Check if migrations are consistent with code (That no one forgot to generate the migrations)
       - name: Check for missing Alembic migrations
-        run: poetry run python libs/tracker/llmstudio_tracker/db/migrations/check_migration_consistency.py
+        run: |
+          source ${{ env.INTEGRATION_ENV }}/bin/activate
+          poetry run python libs/tracker/llmstudio_tracker/db/migrations/check_migration_consistency.py
 
       # Run Alembic migrations
       - name: Run Alembic migrations
