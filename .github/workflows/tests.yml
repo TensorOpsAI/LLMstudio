@@ -107,7 +107,7 @@ jobs:
       - name: Check for missing Alembic migrations
         working-directory: ./libs/llmstudio
         run: |
-          poetry run bash ../tracker/llmstudio_tracker/db/migrations/check_migration_consistency.sh
+          poetry run bash ../tracker/llmstudio_tracker/db/migrations/check_migration_consistency.sh ../../alembic.ini
 
 
 
