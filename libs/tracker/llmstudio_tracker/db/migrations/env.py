@@ -18,6 +18,7 @@ target_metadata = Base.metadata
 load_dotenv()
 
 db_url = os.getenv("LLMSTUDIO_TRACKING_URI")
+print(f"DB URL: {db_url}")
 if not db_url:
     raise RuntimeError("LLMSTUDIO_TRACKING_URI not set in environment")
 
