@@ -20,12 +20,16 @@ tracking_config = TrackingConfig(
 
 session_id = str(uuid.uuid4())
 
+use_logging = True
+
 
 def run_provider(provider, model, api_key=None, **kwargs):
     print(f"\n\n###RUNNING for <{provider}>, <{model}> ###")
-    #llm = LLMCore(provider=provider, api_key=api_key, **kwargs)
     
-    llm = LLM(provider=provider, api_key=api_key, session_id=session_id, tracking_config=tracking_config, **kwargs)
+    if use_logging:
+        llm = LLM(provider=provider, api_key=api_key, session_id=session_id, tracking_config=tracking_config, **kwargs)
+    else:
+        llm = LLMCore(provider=provider, api_key=api_key, **kwargs)
 
     latencies = {}
     print("\nAsync Non-Stream")

@@ -29,7 +29,6 @@ class LogDefault(Base):
         deployment = Column(String)
         parameters = Column(JSONEncodedDict)
         metrics = Column(JSONEncodedDict)
-        description = Column(String, nullable=True)
     else:
         log_id = Column(Integer, primary_key=True, index=True)
         created_at = Column(
@@ -44,4 +43,3 @@ class LogDefault(Base):
         deployment = Column(String)
         parameters = Column(JSON)
         metrics = Column(JSON)
-        description = Column(String, nullable=True)
