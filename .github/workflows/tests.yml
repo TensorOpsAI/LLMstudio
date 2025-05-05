@@ -97,9 +97,10 @@ jobs:
 
       # Set Env vars for sqlite db
       - name: Set hardcoded DB URI, HOST and PORT
-        run: echo "LLMSTUDIO_TRACKING_URI=sqlite:///./test_tracker.db" >> $GITHUB_ENV
-        run: echo "LLMSTUDIO_TRACKING_HOST=127.0.0.1" >> $GITHUB_ENV
-        run: echo "LLMSTUDIO_TRACKING_PORT=50002" >> $GITHUB_ENV
+        run: |
+          echo "LLMSTUDIO_TRACKING_URI=sqlite:///./test_tracker.db" >> $GITHUB_ENV
+          echo "LLMSTUDIO_TRACKING_HOST=127.0.0.1" >> $GITHUB_ENV
+          echo "LLMSTUDIO_TRACKING_PORT=50002" >> $GITHUB_ENV
 
 
       # Check if migrations are consistent with code (That no one forgot to generate the migrations)
