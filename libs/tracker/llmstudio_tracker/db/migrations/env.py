@@ -1,6 +1,7 @@
 import os
 from logging.config import fileConfig
 
+import llmstudio_tracker.base
 from alembic import context
 from dotenv import load_dotenv
 from llmstudio_tracker.base_class import Base
