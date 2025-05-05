@@ -90,7 +90,7 @@ jobs:
       - name: Install llmstudio
         working-directory: ./libs/llmstudio
         run: |
-          poetry install
+          poetry install --with tracker
           INTEGRATION_ENV=$(poetry env info --path)
           echo $INTEGRATION_ENV
           echo "INTEGRATION_ENV=$INTEGRATION_ENV" >> $GITHUB_ENV

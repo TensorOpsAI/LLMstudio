@@ -11,7 +11,8 @@ MIGRATIONS_DIR="${SCRIPT_LOCATION}/versions"
 echo "🔍 Checking for missing Alembic migrations in $MIGRATIONS_DIR..."
 
 # Generate a temporary migration
-alembic -c "$ALEMBIC_INI" revision --autogenerate -m "check for changes"
+poetry run alembic -c "$ALEMBIC_INI" revision --autogenerate -m "check for changes"
+
 
 # Check if any files changed (i.e. a new migration was generated)
 if ! git diff --exit-code > /dev/null; then
