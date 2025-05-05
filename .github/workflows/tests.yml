@@ -105,7 +105,10 @@ jobs:
 
       # Check if migrations are consistent with code (That no one forgot to generate the migrations)
       - name: Check for missing Alembic migrations
-        run: bash libs/tracker/llmstudio_tracker/db/migrations/check_migration_consistency.sh
+        working-directory: ./libs/llmstudio
+        run: |
+          poetry run bash ../tracker/llmstudio_tracker/db/migrations/check_migration_consistency.sh
+
 
 
       # Run Alembic migrations
