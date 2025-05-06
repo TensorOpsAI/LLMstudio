@@ -28,6 +28,10 @@ is_sqlite = url_obj.drivername.startswith("sqlite")
 
 config.set_main_option("sqlalchemy.url", db_url)
 
+alembic_table_name = (
+    os.getenv("LLMSTUDIO_ALEMBIC_TABLE_NAME") or "llmstudio_alembic_version"
+)
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -46,6 +50,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        version_table=alembic_table_name,
     )
 
     with context.begin_transaction():
@@ -72,6 +77,7 @@ def run_migrations_online() -> None:
                 target_metadata=target_metadata,
                 render_as_batch=is_sqlite,
                 compare_type=True,
+                version_table=alembic_table_name,
             )
 
             with context.begin_transaction():
