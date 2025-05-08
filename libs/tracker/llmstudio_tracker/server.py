@@ -1,4 +1,3 @@
-import subprocess
 from threading import Event, Thread
 
 import requests
@@ -9,6 +8,7 @@ from llmstudio_tracker.config import TRACKING_HOST, TRACKING_PORT
 from llmstudio_tracker.db.endpoints.logs import LogsRoutes
 from llmstudio_tracker.db.endpoints.prompt_manager import PromptsRoutes
 from llmstudio_tracker.db.endpoints.session import SessionsRoutes
+from llmstudio_tracker.db.migrations.utils import run_alembic_upgrade
 from llmstudio_tracker.utils import get_current_version
 
 TRACKING_HEALTH_ENDPOINT = "/health"
@@ -101,63 +101,3 @@ def setup_tracking_server():
         )
         _tracker_server_started = True
     return tracker_thread
-
-
-def run_alembic_upgrade():
-    try:
-        if alembic_is_up_to_date():
-            print("Alembic: DB is already up-to-date.")
-            return
-
-        print("Alembic: DB is not up-to-date. Running Alembic upgrade...")
-        subprocess.run(["poetry", "run", "alembic", "upgrade", "head"], check=True)
-        print("Alembic: Upgrade successful.")
-    except subprocess.CalledProcessError as e:
-        print(f"Alembic: Upgrade failed: {e}")
-        raise
-
-
-def alembic_is_up_to_date() -> bool:
-    """Returns True if the DB is already at the latest revision."""
-    try:
-        current = (
-            subprocess.check_output(
-                ["poetry", "run", "alembic", "current"], stderr=subprocess.DEVNULL
-            )
-            .decode()
-            .strip()
-        )
-
-        head = (
-            subprocess.check_output(
-                ["poetry", "run", "alembic", "heads"], stderr=subprocess.DEVNULL
-            )
-            .decode()
-            .strip()
-        )
-
-        current_rev_line = next(
-            (
-                line
-                for line in current.splitlines()
-                if line.strip() and not line.startswith("DB URL")
-            ),
-            "",
-        )
-        head_rev_line = next(
-            (
-                line
-                for line in head.splitlines()
-                if line.strip() and not line.startswith("DB URL")
-            ),
-            "",
-        )
-
-        current_rev = current_rev_line.split(" ")[0]
-        head_rev = head_rev_line.split(" ")[0]
-
-        return current_rev == head_rev
-
-    except subprocess.CalledProcessError as e:
-        print("Alembic: Check if up-to-date failed. Upgrading head to be safe.")
-        return False
