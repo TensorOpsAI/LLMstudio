@@ -82,7 +82,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pypoetry
-          key: poetry-integration-${{ runner.os }}-${{ hashFiles('libs/llmstudio/poetry.lock') }}
+          key: poetry-integration-${{ runner.os }}-${{ hashFiles('libs/llmstudio/poetry.lock', 'libs/llmstudio/pyproject.toml') }}
           restore-keys: |
             poetry-integration-${{ runner.os }}-
 
@@ -90,10 +90,23 @@ jobs:
       - name: Install llmstudio
         working-directory: ./libs/llmstudio
         run: |
-          poetry install
+          poetry install --extras tracker
           INTEGRATION_ENV=$(poetry env info --path)
           echo $INTEGRATION_ENV
           echo "INTEGRATION_ENV=$INTEGRATION_ENV" >> $GITHUB_ENV
+
+      # Set Env vars for sqlite db
+      - name: Set hardcoded DB URI, HOST and PORT
+        run: |
+          echo "LLMSTUDIO_TRACKING_URI=sqlite:///./test_tracker.db" >> $GITHUB_ENV
+          echo "LLMSTUDIO_TRACKING_HOST=127.0.0.1" >> $GITHUB_ENV
+          echo "LLMSTUDIO_TRACKING_PORT=50002" >> $GITHUB_ENV
+
+      # Run Alembic migrations
+      - name: Run Alembic migrations
+        run: |
+          source ${{ env.INTEGRATION_ENV }}/bin/activate
+          poetry run alembic upgrade head
 
       # Run Integration Tests
       - name: Run Integration Tests

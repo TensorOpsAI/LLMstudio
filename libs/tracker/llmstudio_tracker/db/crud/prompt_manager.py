@@ -1,4 +1,5 @@
-from llmstudio_tracker.prompt_manager import models, schemas
+from llmstudio_tracker.db.models.prompt_manager import PromptDefault
+from llmstudio_tracker.db.schemas.prompt_manager import PromptDefaultBase
 from sqlalchemy.orm import Session
 
 
@@ -6,24 +7,20 @@ def get_prompt_by_name_model_provider(
     db: Session, name: str, model: str, provider: str
 ):
     return (
-        db.query(models.PromptDefault)
+        db.query(PromptDefault)
         .filter(
-            models.PromptDefault.name == name,
-            models.PromptDefault.model == model,
-            models.PromptDefault.provider == provider,
-            models.PromptDefault.is_active == True,
+            PromptDefault.name == name,
+            PromptDefault.model == model,
+            PromptDefault.provider == provider,
+            PromptDefault.is_active == True,
         )
-        .order_by(models.PromptDefault.version.desc())
+        .order_by(PromptDefault.version.desc())
         .first()
     )
 
 
 def get_prompt_by_id(db: Session, prompt_id: str):
-    return (
-        db.query(models.PromptDefault)
-        .filter(models.PromptDefault.prompt_id == prompt_id)
-        .first()
-    )
+    return db.query(PromptDefault).filter(PromptDefault.prompt_id == prompt_id).first()
 
 
 def get_prompt(
@@ -40,14 +37,14 @@ def get_prompt(
     )
 
     if not prompt:
-        return schemas.PromptDefault()
+        return PromptDefaultBase()
 
     return prompt
 
 
-def add_prompt(db: Session, prompt: schemas.PromptDefault):
+def add_prompt(db: Session, prompt: PromptDefaultBase):
 
-    prompt_created = models.PromptDefault.create_with_incremental_version(
+    prompt_created = PromptDefault.create_with_incremental_version(
         db,
         config=prompt.config,
         prompt=prompt.prompt,
@@ -63,7 +60,7 @@ def add_prompt(db: Session, prompt: schemas.PromptDefault):
     return prompt_created
 
 
-def update_prompt(db: Session, prompt: schemas.PromptDefault):
+def update_prompt(db: Session, prompt: PromptDefaultBase):
     if prompt.prompt_id:
         existing_prompt = get_prompt_by_id(db, prompt.prompt_id)
     else:
@@ -85,7 +82,7 @@ def update_prompt(db: Session, prompt: schemas.PromptDefault):
     return existing_prompt
 
 
-def delete_prompt(db: Session, prompt: schemas.PromptDefault):
+def delete_prompt(db: Session, prompt: PromptDefaultBase):
     if prompt.prompt_id:
         existing_prompt = get_prompt_by_id(db, prompt.prompt_id)
     else:

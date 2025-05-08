@@ -1,8 +1,8 @@
 import uuid
 from datetime import datetime, timezone
 
+from llmstudio_tracker.base_class import Base
 from llmstudio_tracker.config import DB_TYPE
-from llmstudio_tracker.database import Base
 from llmstudio_tracker.db_utils import JSONEncodedDict
 from sqlalchemy import (
     JSON,

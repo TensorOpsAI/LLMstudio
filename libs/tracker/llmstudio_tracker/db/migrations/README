@@ -1,0 +1,33 @@
+# How to use Alembic for DB Schema Migrations
+
+Schema migration without losing any data.
+
+## 1. Make your changes
+
+Make your changes to the models and schemas under `libs/tracker/llmstudio_tracking/db`.
+
+## 2. Setup
+Ensure Alembic is installed (included via llmstudio-tracker extra):
+```
+poetry install --extras tracker
+```
+
+Make sure your environment variable LLMSTUDIO_TRACKING_URI is set correctly for the DB, `alembic.ini` will be using this.
+
+## 3. Creating Migrations
+Whenever you make changes to your SQLAlchemy models, generate a new migration:
+```
+poetry run alembic revision --autogenerate -m "describe your change"
+```
+
+This will create a migration file in `libs/tracker/llmstudio_tracking/db/migrations/versions/`.
+Review the generated migration file and adjust if needed.
+
+
+## 4. Applying Migrations
+Run all unapplied migrations:
+```
+poetry run alembic upgrade head
+```
+
+You will now have a table on your DB with the applied migration id.

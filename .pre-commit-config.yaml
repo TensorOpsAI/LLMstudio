@@ -30,7 +30,7 @@ repos:
     hooks:
       - id: autoflake
         files: libs/
-        exclude: 'libs/core/llmstudio_core/providers/__init__.py|libs/llmstudio/llmstudio/providers/__init__.py'
+        exclude: 'libs/core/llmstudio_core/providers/__init__.py|libs/llmstudio/llmstudio/providers/__init__.py|libs/tracker/llmstudio_tracker/db/migrations/env.py|libs/tracker/llmstudio_tracker/base.py'
         args:
         - --remove-all-unused-imports
         - --recursive

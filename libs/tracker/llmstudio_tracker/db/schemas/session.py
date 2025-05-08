@@ -10,7 +10,7 @@ class SessionDefaultBase(BaseModel):
     extras: Dict[str, Any] = None
 
 
-class SessionDefault(SessionDefaultBase):
+class SessionDefaultResponse(SessionDefaultBase):
     message_id: int
     created_at: datetime
     updated_at: datetime
