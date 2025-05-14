@@ -1,4 +1,5 @@
 import os
+import sys
 from logging.config import fileConfig
 
 import llmstudio_tracker.base
@@ -33,6 +34,27 @@ alembic_table_name = (
 )
 
 
+IS_AUTO_GENERATING = "--autogenerate" in sys.argv
+
+
+unsupported_db_types = ["bigquery"]
+TRACKING_URI = os.environ["LLMSTUDIO_TRACKING_URI"]
+DB_TYPE = TRACKING_URI.split("://")[0]
+
+if not DB_TYPE:
+    raise ValueError(f"DB_TYPE needs to be defined in environment for Alembic to work.")
+
+if DB_TYPE in unsupported_db_types:
+    # Detect if autogenerate is being run
+    if IS_AUTO_GENERATING:
+        raise RuntimeError(
+            f"Alembic autogenerate is not supported for DB_TYPE='{DB_TYPE}'"
+        )
+
+    # Prevent any form of migration application
+    print(f"[Alembic] Skipping all migration actions — unsupported DB_TYPE='{DB_TYPE}'")
+
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
@@ -45,6 +67,10 @@ def run_migrations_offline() -> None:
     script output.
 
     """
+    if DB_TYPE in unsupported_db_types:
+        print(f"[Alembic] Skipping migration — unsupported DB_TYPE='{DB_TYPE}'")
+        return
+
     context.configure(
         url=db_url,
         target_metadata=target_metadata,
@@ -65,6 +91,11 @@ def run_migrations_online() -> None:
 
     """
     try:
+
+        if DB_TYPE in unsupported_db_types:
+            print(f"[Alembic] Skipping migration — unsupported DB_TYPE='{DB_TYPE}'")
+            return
+
         connectable = engine_from_config(
             config.get_section(config.config_ini_section, {}),
             prefix="sqlalchemy.",
