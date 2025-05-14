@@ -105,6 +105,7 @@ jobs:
       # Run Alembic migrations
       - name: Run Alembic migrations
         run: |
+          poetry install --extras tracker
           poetry run alembic upgrade head
 
       # Run Integration Tests
