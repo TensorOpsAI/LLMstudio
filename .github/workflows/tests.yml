@@ -102,11 +102,11 @@ jobs:
           echo "LLMSTUDIO_TRACKING_HOST=127.0.0.1" >> $GITHUB_ENV
           echo "LLMSTUDIO_TRACKING_PORT=50002" >> $GITHUB_ENV
 
-      # Run Alembic migrations - Uncomment when tracker v1.1.2 is released
-      #- name: Run Alembic migrations
-      #  run: |
-      #    poetry install --extras tracker
-      #    poetry run alembic upgrade head
+      # Run Alembic migrations
+      - name: Run Alembic migrations
+        run: |
+          poetry install --extras tracker
+          poetry run alembic upgrade head
 
       # Run Integration Tests
       - name: Run Integration Tests
