@@ -108,6 +108,7 @@ def run_migrations_online() -> None:
                 target_metadata=target_metadata,
                 render_as_batch=is_sqlite,
                 compare_type=True,
+                compare_server_default=True,
                 version_table=alembic_table_name,
             )
 
