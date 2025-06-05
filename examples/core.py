@@ -13,6 +13,7 @@ load_dotenv()
 
 start_servers(proxy=False, tracker=True)
 
+# To test with MySQL or Postgres: before running this script update the LLMSTUDIO_TRACKING_URI env var in .env and do - cd examples & docker compose up
 tracking_config = TrackingConfig(
             host=os.environ["LLMSTUDIO_TRACKING_HOST"],
             port=os.environ["LLMSTUDIO_TRACKING_PORT"]
@@ -210,18 +211,19 @@ def messages(img_path):
         }
     ]
 
-def run_send_imgs():
-    provider="bedrock"
-    model="us.amazon.nova-lite-v1:0"
+def run_send_imgs(provider: str, model: str):
+    print(f"Running Chat With Images for Provider: '{provider}' and Model: '{model}'")
     chat_input=messages(img_path="./libs/llmstudio/tests/integration_tests/test_data/llmstudio-logo.jpeg")
     chat_request = build_chat_request(model=model, chat_input=chat_input, is_stream=False)
     llm = LLMCore(provider=provider, api_key=os.environ["OPENAI_API_KEY"], region=os.environ["BEDROCK_REGION"], secret_key=os.environ["BEDROCK_SECRET_KEY"], access_key=os.environ["BEDROCK_ACCESS_KEY"])
     response_sync = llm.chat(**chat_request)
-    #print(response_sync)
     response_sync.clean_print()
+    #print(f"Answer: {response_sync.chat_output}")
     
     #for p in response_sync:
     #    if p.metrics:
     #        p.clean_print()
     
-run_send_imgs()
+run_send_imgs(provider="bedrock", model="us.amazon.nova-lite-v1:0")
+run_send_imgs(provider="openai", model="gpt-4o-mini")
+#run_send_imgs(provider="openai", model="o4-mini")
