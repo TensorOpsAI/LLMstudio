@@ -1,8 +1,8 @@
-"""Initial schema
+"""initial_schema_setup
 
-Revision ID: 6053ab0a97dc
+Revision ID: 76452705dac2
 Revises:
-Create Date: 2025-05-05 11:27:42.586355
+Create Date: 2025-05-19 16:07:58.586960
 
 """
 from typing import Sequence, Union
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "6053ab0a97dc"
+revision: str = "76452705dac2"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -24,15 +24,16 @@ def upgrade() -> None:
         "logs_default",
         sa.Column("log_id", sa.Integer(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("session_id", sa.String(), nullable=True),
-        sa.Column("chat_input", sa.String(), nullable=True),
-        sa.Column("chat_output", sa.String(), nullable=True),
+        sa.Column("session_id", sa.String(length=191), nullable=True),
+        sa.Column("chat_input", sa.Text(), nullable=True),
+        sa.Column("chat_output", sa.Text(), nullable=True),
         sa.Column("context", sa.JSON(), nullable=True),
-        sa.Column("provider", sa.String(), nullable=True),
-        sa.Column("model", sa.String(), nullable=True),
-        sa.Column("deployment", sa.String(), nullable=True),
+        sa.Column("provider", sa.String(length=191), nullable=True),
+        sa.Column("model", sa.String(length=191), nullable=True),
+        sa.Column("deployment", sa.String(length=191), nullable=True),
         sa.Column("parameters", sa.JSON(), nullable=True),
         sa.Column("metrics", sa.JSON(), nullable=True),
+        sa.Column("extras", sa.JSON(), nullable=True),
         sa.PrimaryKeyConstraint("log_id"),
     )
     with op.batch_alter_table("logs_default", schema=None) as batch_op:
@@ -42,15 +43,15 @@ def upgrade() -> None:
 
     op.create_table(
         "prompts",
-        sa.Column("prompt_id", sa.String(), nullable=False),
+        sa.Column("prompt_id", sa.String(length=191), nullable=False),
         sa.Column("config", sa.JSON(), nullable=True),
-        sa.Column("prompt", sa.String(), nullable=True),
+        sa.Column("prompt", sa.Text(), nullable=True),
         sa.Column("is_active", sa.Boolean(), nullable=True),
-        sa.Column("name", sa.String(), nullable=False),
-        sa.Column("model", sa.String(), nullable=False),
-        sa.Column("provider", sa.String(), nullable=False),
+        sa.Column("name", sa.String(length=191), nullable=False),
+        sa.Column("model", sa.String(length=191), nullable=False),
+        sa.Column("provider", sa.String(length=191), nullable=False),
         sa.Column("version", sa.Integer(), nullable=False),
-        sa.Column("label", sa.String(), nullable=True),
+        sa.Column("label", sa.String(length=191), nullable=True),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=True),
         sa.PrimaryKeyConstraint("prompt_id"),
@@ -61,7 +62,7 @@ def upgrade() -> None:
     op.create_table(
         "sessions",
         sa.Column("message_id", sa.Integer(), nullable=False),
-        sa.Column("session_id", sa.String(), nullable=True),
+        sa.Column("session_id", sa.String(length=191), nullable=True),
         sa.Column("chat_history", sa.JSON(), nullable=True),
         sa.Column("extras", sa.JSON(), nullable=True),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True),

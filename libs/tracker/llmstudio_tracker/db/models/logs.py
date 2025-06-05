@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from llmstudio_tracker.base_class import Base
 from llmstudio_tracker.config import DB_TYPE
 from llmstudio_tracker.db_utils import JSONEncodedDict
-from sqlalchemy import JSON, Column, DateTime, Integer, String
+from sqlalchemy import JSON, Column, DateTime, Integer, String, Text
 
 
 class LogDefault(Base):
@@ -35,13 +35,13 @@ class LogDefault(Base):
         created_at = Column(
             DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
         )
-        session_id = Column(String)
-        chat_input = Column(String)
-        chat_output = Column(String)
+        session_id = Column(String(191))
+        chat_input = Column(Text)
+        chat_output = Column(Text)
         context = Column(JSON)
-        provider = Column(String)
-        model = Column(String)
-        deployment = Column(String)
+        provider = Column(String(191))
+        model = Column(String(191))
+        deployment = Column(String(191))
         parameters = Column(JSON)
         metrics = Column(JSON)
         extras = Column(JSON)

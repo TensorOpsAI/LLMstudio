@@ -11,6 +11,7 @@ from sqlalchemy import (
     DateTime,
     Integer,
     String,
+    Text,
     UniqueConstraint,
     event,
     func,
@@ -30,17 +31,17 @@ class PromptDefault(Base):
         config = Column(JSONEncodedDict, nullable=True)
     else:
         prompt_id = Column(
-            String, primary_key=True, default=lambda: str(uuid.uuid4())
+            String(191), primary_key=True, default=lambda: str(uuid.uuid4())
         )  # Generate UUID as a string
         config = Column(JSON, nullable=True)
 
-    prompt = Column(String)
+    prompt = Column(Text)
     is_active = Column(Boolean, default=False)
-    name = Column(String, nullable=False)
-    model = Column(String, nullable=False)
-    provider = Column(String, nullable=False)
+    name = Column(String(191), nullable=False)
+    model = Column(String(191), nullable=False)
+    provider = Column(String(191), nullable=False)
     version = Column(Integer, nullable=False)
-    label = Column(String)
+    label = Column(String(191))
     updated_at = Column(
         DateTime(timezone=True),
         onupdate=lambda: datetime.now(timezone.utc),

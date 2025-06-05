@@ -23,7 +23,7 @@ class SessionDefault(Base):
 
     else:
         message_id = Column(Integer, primary_key=True, index=True)
-        session_id = Column(String, index=True)
+        session_id = Column(String(191), index=True)
         chat_history = Column(JSON)
         extras = Column(JSON)
 
