@@ -14,7 +14,7 @@ keywords = ["ml", "ai", "llm", "llmops", "openai", "langchain", "chatgpt", "llms
 "Bug Tracker" = "https://github.com/tensoropsai/llmstudio/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.13"
+python = ">=3.9,<3.14"
 pydantic = "^2.5"
 python-dotenv = ">=0.4.0,<2.0.0"
 langchain = "^0"
