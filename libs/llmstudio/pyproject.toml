@@ -17,8 +17,8 @@ keywords = ["ml", "ai", "llm", "llmops", "openai", "langchain", "chatgpt", "llms
 python = ">=3.9,<3.13"
 pydantic = "^2.5"
 python-dotenv = ">=0.4.0,<2.0.0"
-langchain = "^0"
-langchain-experimental = "^0"
+langchain = ">=0.3,<2"
+langchain-experimental = ">=0.3,<2"
 llmstudio-core = "^1.0.0"
 
 llmstudio-tracker = { version = "^1.1.0a0", optional = true }
