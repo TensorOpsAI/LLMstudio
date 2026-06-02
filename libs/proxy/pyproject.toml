@@ -6,7 +6,7 @@ authors = ["Claudio Lemos <claudio.lemos@tensorops.ai>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.14"
+python = ">=3.10,<3.15"
 pydantic = "^2.5"
 requests = "^2.31"
 fastapi = "^0.128"
