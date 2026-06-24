@@ -252,7 +252,6 @@ class BedrockConverseProvider(ProviderCore):
     def _process_messages(
         chat_input: Union[str, List[Dict[str, str]]]
     ) -> List[Dict[str, Union[List[Dict[str, str]], str]]]:
-
         if isinstance(chat_input, str):
             return [
                 {
@@ -337,7 +336,9 @@ class BedrockConverseProvider(ProviderCore):
                     system_prompt = [{"text": message.get("content")}]
 
             if messages and messages[-1].get("role") == "assistant":
-                messages.append({"role": "user", "content": [{"text": "Please proceed."}]})
+                messages.append(
+                    {"role": "user", "content": [{"text": "Please proceed."}]}
+                )
 
             return messages, system_prompt
 
@@ -445,7 +446,9 @@ class BedrockConverseProvider(ProviderCore):
                 elif isinstance(tool_choice, str):
                     result["toolChoice"] = {"tool": {"name": tool_choice}}
                 elif isinstance(tool_choice, dict):
-                    name = (tool_choice.get("function") or {}).get("name") or tool_choice.get("name")
+                    name = (tool_choice.get("function") or {}).get(
+                        "name"
+                    ) or tool_choice.get("name")
                     if name:
                         result["toolChoice"] = {"tool": {"name": name}}
 
@@ -471,7 +474,14 @@ class BedrockConverseProvider(ProviderCore):
 
     @staticmethod
     def _process_parameters(parameters: dict) -> dict:
-        remove_keys = ["system", "stop", "tools", "functions", "tool_choice", "response_format"]
+        remove_keys = [
+            "system",
+            "stop",
+            "tools",
+            "functions",
+            "tool_choice",
+            "response_format",
+        ]
         for key in remove_keys:
             parameters.pop(key, None)
         return parameters
