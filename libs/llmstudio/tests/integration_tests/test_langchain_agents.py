@@ -1,9 +1,10 @@
 import pytest
-from langchain import hub
-from langchain.agents import AgentExecutor, create_openai_tools_agent
-from langchain.agents.openai_functions_agent.base import create_openai_functions_agent
-from langchain.tools import tool
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_classic.agents import AgentExecutor, create_openai_tools_agent
+from langchain_classic.agents.openai_functions_agent.base import (
+    create_openai_functions_agent,
+)
+from langchain_classic.tools import tool
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from llmstudio.langchain import ChatLLMstudio
 from llmstudio.providers import LLM
 
@@ -32,7 +33,14 @@ def dim_lights(brightness: float) -> bool:
 def assistant_functions(chat_llm: ChatLLMstudio, question: str) -> str:
     tools = [power_disco_ball, start_music, dim_lights]
 
-    prompt = hub.pull("hwchase17/openai-functions-agent")
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", "You are a helpful assistant"),
+            MessagesPlaceholder("chat_history", optional=True),
+            ("human", "{input}"),
+            MessagesPlaceholder("agent_scratchpad"),
+        ]
+    )
 
     agent = create_openai_functions_agent(llm=chat_llm, tools=tools, prompt=prompt)
 
