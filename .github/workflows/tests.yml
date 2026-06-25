@@ -14,13 +14,13 @@ jobs:
   unit-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       # Set up Python environment
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
-          python-version: ">=3.9 <3.13"
+          python-version: "3.12"
 
       # Install Poetry
       - name: Install Poetry
@@ -29,7 +29,7 @@ jobs:
 
       # Cache Poetry Dependencies
       - name: Cache Poetry dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pypoetry
           key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
@@ -55,13 +55,13 @@ jobs:
     needs: unit-tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       # Set up Python environment
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
-          python-version: ">=3.9 <3.13"
+          python-version: "3.12"
 
       # Install Poetry
       - name: Install Poetry
@@ -79,7 +79,7 @@ jobs:
 
       # Cache Poetry Dependencies
       - name: Cache Poetry dependencies (Integration Tests)
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pypoetry
           key: poetry-integration-${{ runner.os }}-${{ hashFiles('libs/llmstudio/poetry.lock', 'libs/llmstudio/pyproject.toml') }}
