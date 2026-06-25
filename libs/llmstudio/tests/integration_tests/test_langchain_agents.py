@@ -1,13 +1,9 @@
 import pytest
-from langchainhub import Client as _HubClient
-from langchain_classic.agents import AgentExecutor, create_openai_tools_agent
-from langchain_classic.agents.openai_functions_agent.base import (
-    create_openai_functions_agent,
-)
-from langchain_classic.tools import tool
+from langchain import hub
+from langchain.agents import AgentExecutor, create_openai_tools_agent
+from langchain.agents.openai_functions_agent.base import create_openai_functions_agent
+from langchain.tools import tool
 from langchain_core.prompts import ChatPromptTemplate
-
-hub = _HubClient()
 from llmstudio.langchain import ChatLLMstudio
 from llmstudio.providers import LLM
 
