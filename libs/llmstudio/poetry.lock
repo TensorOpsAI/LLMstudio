@@ -2108,7 +2108,7 @@ version = "0.1.18"
 description = "The LangChain Hub API client"
 optional = false
 python-versions = "<4.0,>=3.8.1"
-groups = ["main"]
+groups = ["dev"]
 files = [
     {file = "langchainhub-0.1.18-py3-none-any.whl", hash = "sha256:11501f15e7f34715ecc8892587daa35c6f2a3005e1f2926c9bcabd31fc2c100c"},
     {file = "langchainhub-0.1.18.tar.gz", hash = "sha256:f2d0d8bf3abe4ca5e70511d8220bdc9ccea28d5267bcfd0e5ef9c53bd5bd3bad"},
@@ -2323,7 +2323,7 @@ files = [
 
 [[package]]
 name = "llmstudio-core"
-version = "1.1.5a4"
+version = "1.1.5a5"
 description = "LLMStudio core capabilities for routing llm calls for any vendor. No proxy server required. For that use llmstudio[proxy]"
 optional = false
 python-versions = ">=3.10,<3.15"
@@ -4642,7 +4642,7 @@ version = "2.33.0.20260518"
 description = "Typing stubs for requests"
 optional = false
 python-versions = ">=3.10"
-groups = ["main"]
+groups = ["dev"]
 files = [
     {file = "types_requests-2.33.0.20260518-py3-none-any.whl", hash = "sha256:626d697d1adaaff76e2044dc8c5c051d8f21abc157bdfe204a75558076fe0bf0"},
     {file = "types_requests-2.33.0.20260518.tar.gz", hash = "sha256:df7bd3bfe0ca8402dfb841e7d9be714bb5578203283d66d7dc4ef69343449a5e"},
@@ -5370,4 +5370,4 @@ tracker = ["llmstudio-tracker"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.15"
-content-hash = "fbd298dd075ec3018aaef2e9401209093e87b9642f8ec74282e3d1ed160adf40"
+content-hash = "abd88fd2d0fe99b7187c77a95c6afb170c490e6b9dc3fa60cce2d30414dc5507"
