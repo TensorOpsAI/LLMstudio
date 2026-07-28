@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "llmstudio"
-version = "1.0.6"
+version = "1.1.1a3"
 description = "Prompt Perfection at Your Fingertips"
 authors = ["Cláudio Lemos <claudio@tensorops.ai>"]
 license = "MIT"
@@ -14,14 +14,14 @@ keywords = ["ml", "ai", "llm", "llmops", "openai", "langchain", "chatgpt", "llms
 "Bug Tracker" = "https://github.com/tensoropsai/llmstudio/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.13"
+python = ">=3.10,<3.15"
 pydantic = "^2.5"
 python-dotenv = ">=0.4.0,<2.0.0"
-langchain = "^0"
+langchain = "^1.2.8"
 langchain-experimental = "^0"
 llmstudio-core = "^1.0.0"
 
-llmstudio-tracker = { version = "^1.1.0a0", optional = true }
+llmstudio-tracker = { version = "^1.1.2a0", optional = true }
 llmstudio-proxy = { version = "^1.0.1", optional = true }
 
 [tool.poetry.extras]
@@ -37,6 +37,7 @@ black = "^23.7"
 pre-commit = "^3.7"
 flake8= "^7"
 ipykernel = "^6"
+langchainhub = "^0"
 llmstudio-core = { path = "../core/", develop = true }
 llmstudio-tracker = { path = "../tracker/", develop = true }
 llmstudio-proxy = { path = "../proxy/", develop = true }

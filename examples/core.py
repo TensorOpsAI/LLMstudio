@@ -1,16 +1,35 @@
 
 from llmstudio_core.providers import LLMCore
-
+from llmstudio.providers import LLM
+from llmstudio_tracker.tracker import TrackingConfig
+from llmstudio.server import start_servers
 
 from pprint import pprint
 import os
 import asyncio
 from dotenv import load_dotenv
+import uuid
 load_dotenv()
+
+start_servers(proxy=False, tracker=True)
+
+tracking_config = TrackingConfig(
+            host=os.environ["LLMSTUDIO_TRACKING_HOST"],
+            port=os.environ["LLMSTUDIO_TRACKING_PORT"]
+        )
+
+session_id = str(uuid.uuid4())
+
+use_logging = True
+
 
 def run_provider(provider, model, api_key=None, **kwargs):
     print(f"\n\n###RUNNING for <{provider}>, <{model}> ###")
-    llm = LLMCore(provider=provider, api_key=api_key, **kwargs)
+    
+    if use_logging:
+        llm = LLM(provider=provider, api_key=api_key, session_id=session_id, tracking_config=tracking_config, **kwargs)
+    else:
+        llm = LLMCore(provider=provider, api_key=api_key, **kwargs)
 
     latencies = {}
     print("\nAsync Non-Stream")
@@ -94,7 +113,7 @@ Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots 
     return latencies
 
 def build_chat_request(model: str, chat_input: str, is_stream: bool, max_tokens: int=1000):
-    if model.startswith(('o1', 'o3')):
+    if model.startswith(('o1', 'o3', 'o4')):
         chat_request = {
             "chat_input": chat_input,
             "model": model,
@@ -137,7 +156,7 @@ def multiple_provider_runs(provider:str, model:str, num_runs:int, api_key:str, *
 def run_chat_all_providers():    
     # OpenAI
     multiple_provider_runs(provider="openai", model="gpt-4o-mini", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
-    multiple_provider_runs(provider="openai", model="o3-mini", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
+    multiple_provider_runs(provider="openai", model="o4-mini", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
     #multiple_provider_runs(provider="openai", model="o1-preview", api_key=os.environ["OPENAI_API_KEY"], num_runs=1)
 
 

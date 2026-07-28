@@ -14,13 +14,13 @@ jobs:
   unit-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       # Set up Python environment
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
-          python-version: ">=3.9 <3.13"
+          python-version: ">=3.10 <3.15"
 
       # Install Poetry
       - name: Install Poetry
@@ -29,7 +29,7 @@ jobs:
 
       # Cache Poetry Dependencies
       - name: Cache Poetry dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pypoetry
           key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
@@ -55,13 +55,13 @@ jobs:
     needs: unit-tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       # Set up Python environment
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
-          python-version: ">=3.9 <3.13"
+          python-version: ">=3.10 <3.15"
 
       # Install Poetry
       - name: Install Poetry
@@ -79,10 +79,10 @@ jobs:
 
       # Cache Poetry Dependencies
       - name: Cache Poetry dependencies (Integration Tests)
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pypoetry
-          key: poetry-integration-${{ runner.os }}-${{ hashFiles('libs/llmstudio/poetry.lock') }}
+          key: poetry-integration-${{ runner.os }}-${{ hashFiles('libs/llmstudio/poetry.lock', 'libs/llmstudio/pyproject.toml') }}
           restore-keys: |
             poetry-integration-${{ runner.os }}-
 
@@ -90,10 +90,23 @@ jobs:
       - name: Install llmstudio
         working-directory: ./libs/llmstudio
         run: |
-          poetry install
+          poetry install --extras tracker
           INTEGRATION_ENV=$(poetry env info --path)
           echo $INTEGRATION_ENV
           echo "INTEGRATION_ENV=$INTEGRATION_ENV" >> $GITHUB_ENV
+
+      # Set Env vars for sqlite db
+      - name: Set hardcoded DB URI, HOST and PORT
+        run: |
+          echo "LLMSTUDIO_TRACKING_URI=sqlite:///./test_tracker.db" >> $GITHUB_ENV
+          echo "LLMSTUDIO_TRACKING_HOST=127.0.0.1" >> $GITHUB_ENV
+          echo "LLMSTUDIO_TRACKING_PORT=50002" >> $GITHUB_ENV
+
+      # Run Alembic migrations
+      - name: Run Alembic migrations
+        run: |
+          source ${{ env.INTEGRATION_ENV }}/bin/activate
+          poetry run alembic upgrade head
 
       # Run Integration Tests
       - name: Run Integration Tests

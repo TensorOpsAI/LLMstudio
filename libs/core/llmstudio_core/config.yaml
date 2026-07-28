@@ -42,6 +42,26 @@ providers:
         max_tokens: 100000
         input_token_cost: 0.00000163
         output_token_cost: 0.00000551
+      claude-opus-4-6:
+        mode: chat
+        max_tokens: 1000000
+        input_token_cost: 0.000005
+        output_token_cost: 0.000025
+      claude-opus-4-7:
+        mode: chat
+        max_tokens: 1000000
+        input_token_cost: 0.000005
+        output_token_cost: 0.000025
+      claude-sonnet-4-6:
+        mode: chat
+        max_tokens: 1000000
+        input_token_cost: 0.000003
+        output_token_cost: 0.000015
+      claude-haiku-4-5-20251001:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.000001
+        output_token_cost: 0.000005
     parameters:
       temperature:
         name: "Temperature"
@@ -126,6 +146,26 @@ providers:
         max_tokens: 100000
         input_token_cost: 0.000008
         output_token_cost: 0.000024
+      anthropic.claude-opus-4-6:
+        mode: chat
+        max_tokens: 1000000
+        input_token_cost: 0.000005
+        output_token_cost: 0.000025
+      anthropic.claude-opus-4-7:
+        mode: chat
+        max_tokens: 1000000
+        input_token_cost: 0.000005
+        output_token_cost: 0.000025
+      anthropic.claude-sonnet-4-6:
+        mode: chat
+        max_tokens: 1000000
+        input_token_cost: 0.000003
+        output_token_cost: 0.000015
+      anthropic.claude-haiku-4-5-20251001-v1:0:
+        mode: chat
+        max_tokens: 200000
+        input_token_cost: 0.000001
+        output_token_cost: 0.000005
       us.amazon.nova-pro-v1:0:
         mode: chat
         max_tokens: 300000

@@ -9,12 +9,13 @@ repository = "https://github.com/tensoropsai/llmstudio"
 documentation = "https://docs.llmstudio.ai"
 readme = "README.md"
 keywords = ["ml", "ai", "llm", "llmops", "openai", "langchain", "chatgpt", "llmstudio", "tensorops"]
+package-mode = false
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/tensoropsai/llmstudio/issues"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.10,<3.15"
 
 [tool.poetry.group.dev.dependencies]
 llmstudio = { path = "libs/llmstudio/", develop = true }

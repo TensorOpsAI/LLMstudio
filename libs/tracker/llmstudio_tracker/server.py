@@ -5,9 +5,10 @@ import uvicorn
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from llmstudio_tracker.config import TRACKING_HOST, TRACKING_PORT
-from llmstudio_tracker.logs.endpoints import LogsRoutes
-from llmstudio_tracker.prompt_manager.endpoints import PromptsRoutes
-from llmstudio_tracker.session.endpoints import SessionsRoutes
+from llmstudio_tracker.db.endpoints.logs import LogsRoutes
+from llmstudio_tracker.db.endpoints.prompt_manager import PromptsRoutes
+from llmstudio_tracker.db.endpoints.session import SessionsRoutes
+from llmstudio_tracker.db.migrations.utils import run_alembic_upgrade
 from llmstudio_tracker.utils import get_current_version
 
 TRACKING_HEALTH_ENDPOINT = "/health"
@@ -94,6 +95,7 @@ def setup_tracking_server():
     global _tracker_server_started
     tracker_thread = None
     if not _tracker_server_started:
+        run_alembic_upgrade()
         tracker_thread = start_server_component(
             TRACKING_HOST, TRACKING_PORT, run_tracker_app, "Tracker"
         )

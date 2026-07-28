@@ -1,17 +1,17 @@
 [tool.poetry]
 name = "llmstudio-core"
-version = "1.0.4"
+version = "1.1.5a5"
 description = "LLMStudio core capabilities for routing llm calls for any vendor. No proxy server required. For that use llmstudio[proxy]"
 authors = ["Cláudio Lemos <claudio.lemos@tensorops.ai>"]
 license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.10,<3.15"
 pydantic = "^2.5"
 requests = "^2.31"
 openai = "^1.26"
-tiktoken = "^0.7"
+tiktoken = "^0"
 pyyaml = "^6"
 boto3 = "^1.35.54"
 

@@ -71,6 +71,8 @@ class BedrockConverseProvider(ProviderCore):
                 else system_prompt
             )
 
+            output_config = self._process_response_format(request.parameters)
+
             client_params = {
                 "modelId": request.model,
                 "messages": messages,
@@ -79,6 +81,8 @@ class BedrockConverseProvider(ProviderCore):
             }
             if tools:
                 client_params["toolConfig"] = tools
+            if output_config:
+                client_params["outputConfig"] = output_config
 
             return self._client.converse_stream(**client_params)
         except Exception as e:
@@ -248,7 +252,6 @@ class BedrockConverseProvider(ProviderCore):
     def _process_messages(
         chat_input: Union[str, List[Dict[str, str]]]
     ) -> List[Dict[str, Union[List[Dict[str, str]], str]]]:
-
         if isinstance(chat_input, str):
             return [
                 {
@@ -332,20 +335,30 @@ class BedrockConverseProvider(ProviderCore):
                 if message.get("role") in ["system"]:
                     system_prompt = [{"text": message.get("content")}]
 
+            if messages and messages[-1].get("role") == "assistant":
+                messages.append(
+                    {"role": "user", "content": [{"text": "Please proceed."}]}
+                )
+
             return messages, system_prompt
 
     @staticmethod
-    def _base64_to_bytes(image_url: str) -> bytes:
+    def _b64_data_url_to_bytes(b64_data_url: str) -> bytes:
         """
-        Extracts and decodes Base64 image data from a 'data:image/...;base64,...' URL.
+        Extracts and decodes Base64 image data from a 'data:image/...;base64,...' data URL.
         Returns the raw image bytes.
         """
-        if not image_url.startswith("data:image/"):
+        if not b64_data_url.startswith("data:image/"):
             raise ValueError("Invalid Base64 image URL")
 
-        base64_data = re.sub(r"^data:image/[^;]+;base64,", "", image_url)
+        base64_data = re.sub(r"^data:image/[^;]+;base64,", "", b64_data_url)
 
-        return base64.b64decode(base64_data)
+        try:
+            return base64.b64decode(base64_data)
+        except Exception as e:
+            raise ValueError(
+                f"Failed to decode Base64: {e} ; For Base64 Data Url: {b64_data_url}"
+            )
 
     @staticmethod
     def _get_img_format_from_bytes(image_bytes: bytes) -> str:
@@ -377,7 +390,7 @@ class BedrockConverseProvider(ProviderCore):
         - If it's a normal URL, downloads and encodes the image in Base64.
         """
         if image_url.startswith("data:image/"):
-            return BedrockConverseProvider._base64_to_bytes(image_url)
+            return BedrockConverseProvider._b64_data_url_to_bytes(image_url)
 
         elif image_url.startswith(("http://", "https://")):
             response = requests.get(image_url)
@@ -423,14 +436,52 @@ class BedrockConverseProvider(ProviderCore):
                     }
                 }
                 tool_configurations.append(tool_config)
-            return {"tools": tool_configurations}
+
+            result = {"tools": tool_configurations}
+
+            tool_choice = parameters.get("tool_choice")
+            if tool_choice and tool_choice not in ("auto", "none"):
+                if tool_choice in ("required", "any"):
+                    result["toolChoice"] = {"any": {}}
+                elif isinstance(tool_choice, str):
+                    result["toolChoice"] = {"tool": {"name": tool_choice}}
+                elif isinstance(tool_choice, dict):
+                    name = (tool_choice.get("function") or {}).get(
+                        "name"
+                    ) or tool_choice.get("name")
+                    if name:
+                        result["toolChoice"] = {"tool": {"name": name}}
+
+            return result
 
         except ValidationError:
             return parameters.get("tools", parameters.get("functions"))
 
     @staticmethod
+    def _process_response_format(parameters: dict) -> Optional[Dict]:
+        response_format = parameters.get("response_format")
+        if not response_format or not isinstance(response_format, dict):
+            return None
+        if response_format.get("type") == "json_schema":
+            schema = response_format.get("json_schema", {}).get("schema", {})
+            return {
+                "textFormat": {
+                    "type": "json_schema",
+                    "structure": {"jsonSchema": schema},
+                }
+            }
+        return None
+
+    @staticmethod
     def _process_parameters(parameters: dict) -> dict:
-        remove_keys = ["system", "stop", "tools", "functions"]
+        remove_keys = [
+            "system",
+            "stop",
+            "tools",
+            "functions",
+            "tool_choice",
+            "response_format",
+        ]
         for key in remove_keys:
             parameters.pop(key, None)
         return parameters

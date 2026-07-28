@@ -11,7 +11,7 @@ class PromptInfo(BaseModel):
     provider: Optional[str] = None
 
 
-class PromptDefault(BaseModel):
+class PromptDefaultBase(BaseModel):
     prompt_id: Optional[str] = None
     config: Optional[Dict] = {}
     prompt: Optional[str] = None
@@ -23,3 +23,7 @@ class PromptDefault(BaseModel):
     provider: Optional[str] = None
     updated_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
+
+
+class PromptDefaultResponse(PromptDefaultBase):
+    pass
