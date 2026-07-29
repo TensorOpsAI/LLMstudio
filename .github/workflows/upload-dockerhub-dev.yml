@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: develop
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       # Set up Docker Buildx
       - name: Set up Docker Buildx
