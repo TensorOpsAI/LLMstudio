@@ -1,3 +1,5 @@
+import asyncio
+import random
 import time
 import uuid
 from abc import ABC, abstractmethod
@@ -32,6 +34,30 @@ from openai.types.chat.chat_completion_message_tool_call import Function
 from pydantic import BaseModel, ValidationError
 
 provider_registry = {}
+
+
+def _is_retryable_error(error: Exception) -> bool:
+    error_str = str(error).lower()
+    error_msg = str(error)
+    retryable_keywords = [
+        "throttling",
+        "ratelimit",
+        "rate limit",
+        "toomanyrequests",
+        "too many requests",
+        "429",
+    ]
+    for keyword in retryable_keywords:
+        if keyword in error_str:
+            return True
+    try:
+        if hasattr(error, "response"):
+            error_code = error.response.get("Error", {}).get("Code", "")
+            if error_code == "ThrottlingException":
+                return True
+    except Exception:
+        pass
+    return False
 
 
 def provider(cls):
@@ -209,7 +235,7 @@ class ProviderCore(Provider):
 
         self.validate_model(request)
 
-        for _ in range(request.retries + 1):
+        for attempt in range(request.retries + 1):
             try:
                 start_time = time.time()
                 response = await self.agenerate_client(request)
@@ -219,12 +245,11 @@ class ProviderCore(Provider):
                     return response_handler
                 else:
                     return await response_handler.__anext__()
-            # except HTTPException as e:
-            #     if e.status_code == 429:
-            #         continue  # Retry on rate limit error
-            #     else:
-            #         raise e  # Raise other HTTP exceptions
             except Exception as e:
+                if _is_retryable_error(e) and attempt < request.retries:
+                    backoff = min(2 ** attempt, 32) + random.uniform(0, 1)
+                    await asyncio.sleep(backoff)
+                    continue
                 raise ProviderError(str(e))
         raise ProviderError("Too many requests")
 
@@ -285,7 +310,7 @@ class ProviderCore(Provider):
 
         self.validate_model(request)
 
-        for _ in range(request.retries + 1):
+        for attempt in range(request.retries + 1):
             try:
                 start_time = time.time()
                 response = self.generate_client(request)
@@ -295,12 +320,11 @@ class ProviderCore(Provider):
                     return response_handler
                 else:
                     return response_handler.__next__()
-            # except HTTPExceptio as e:
-            #     if e.status_code == 429:
-            #         continue  # Retry on rate limit error
-            #     else:
-            #         raise e  # Raise other HTTP exceptions
             except Exception as e:
+                if _is_retryable_error(e) and attempt < request.retries:
+                    backoff = min(2 ** attempt, 32) + random.uniform(0, 1)
+                    time.sleep(backoff)
+                    continue
                 raise ProviderError(str(e))
         raise ProviderError("Too many requests")
 
