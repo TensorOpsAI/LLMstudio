@@ -17,6 +17,7 @@ from typing import (
 
 import boto3
 import requests
+from botocore.config import Config
 from llmstudio_core.exceptions import ProviderError
 from llmstudio_core.providers.provider import ChatRequest, ProviderCore, provider
 from llmstudio_core.utils import OpenAIToolFunction
@@ -46,6 +47,7 @@ class BedrockConverseProvider(ProviderCore):
             aws_secret_access_key=self.secret_key
             if self.secret_key
             else os.getenv("BEDROCK_SECRET_KEY"),
+            config=Config(retries={"mode": "adaptive", "max_attempts": 6}),
         )
 
     @staticmethod
